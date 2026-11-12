@@ -178,3 +178,46 @@ Esta é uma fundação de backend, não uma migração completa de autenticaçã
 
 O campo `date` usa a data operacional do documento diário. O endpoint retorna sucesso somente após a transação Firestore. A interface ainda precisa resolver o UID do destinatário e enviar o token Firebase atual.
 
+## 9. Decisão de escopo — primeira versão funcional com PIN individual (12/11/2026)
+
+A primeira entrega será validada operacionalmente antes da ativação da autenticação robusta. Isso não cancela nem substitui as fases futuras deste documento.
+
+### Primeira versão
+- Cada usuário terá seu próprio PIN; não haverá uma senha compartilhada como identidade de todos.
+- O ADM poderá criar usuários, atribuir perfil e definir ou redefinir o PIN inicial.
+- Supervisor e Operador entrarão com seu PIN individual e terão a interface ajustada ao perfil.
+- O PIN `0000` poderá ser usado somente como PIN provisório inicial, com orientação para troca quando o fluxo estiver disponível.
+- Os módulos operacionais devem funcionar de ponta a ponta: leitura, gravação, filtros, persistência, delegação conforme a regra operacional aprovada e histórico visível.
+- A validação será feita em ciclos curtos, com testes diários e registro de aprovado, pendente e defeito.
+
+### Limite de segurança da versão com PIN
+O PIN individual nesta fase é um mecanismo provisório de identificação e organização de acesso para demonstração/teste controlado. Não equivale a autenticação forte. Não apresentar a versão como protegida contra adulteração no navegador, acesso direto ao Firestore ou falsificação de identidade. Não usar essa fase para dados pessoais ou operacionais sensíveis em produção sem aprovação explícita da organização e controles adicionais.
+
+Não armazenar PIN em texto puro. A implementação deve minimizar exposição e evitar incluir PIN em logs, auditoria, exportações ou documentos públicos. Um hash calculado exclusivamente no navegador não transforma um PIN curto em credencial forte; portanto, não deve ser descrito como proteção equivalente ao backend.
+
+### Arquitetura que deve ser preservada desde já
+Mesmo com PIN simples na primeira versão, manter as responsabilidades separadas para permitir substituição gradual do mecanismo de autenticação:
+
+1. **AuthProvider**: interface única para entrar, sair e obter o usuário atual. A primeira implementação será `PinAuthProvider`; a futura poderá ser `FirebaseAuthProvider` ou sessão emitida pela API.
+2. **UserRepository**: leitura e manutenção dos cadastros, perfis, estado ativo e módulos habilitados. A interface não deve depender da estrutura física atual do documento Firestore.
+3. **PermissionService**: centralizar a matriz perfil + módulo + ação. A tela consulta essa camada para exibir/ocultar ações, sem espalhar comparações de nomes de perfil pelo código.
+4. **OperationalRepository**: centralizar operações de leitura e gravação de OMs, insumos, máquinas, SIM Cards e demais módulos, evitando chamadas Firestore duplicadas e dispersas na interface.
+5. **AuditService**: centralizar os eventos operacionais com estrutura estável (ator, ação, módulo, registro, data/hora e detalhes necessários). Na primeira fase, o registro é apenas histórico operacional do ambiente de teste; na fase robusta, a autoria e o horário serão validados/gerados no servidor e a trilha será protegida contra alteração pelo cliente.
+6. **DelegationService**: manter uma operação única de delegação, com validações e histórico. Na primeira fase, só habilitar o fluxo se o comportamento e os limites do ambiente de teste estiverem claros; na fase robusta, encaminhar a operação à API autenticada já preparada.
+
+### Regras de evolução
+- Componentes de tela não devem validar PIN diretamente nem escrever PIN em documentos de dados operacionais.
+- Não usar nome exibido como identificador estável; cada usuário deve ter um ID interno único, preservado na migração.
+- Perfis e permissões devem ser dados estruturados, não inferidos pelo texto do nome do usuário.
+- Não acoplar o código à implementação provisória de PIN. A migração futura deve trocar o provedor de autenticação e o adaptador de persistência, preservando telas, regras operacionais e histórico.
+- A API Firebase Admin já adicionada permanece como fundação futura, mas não deve ser tratada como login funcional da primeira fase até que haja integração e testes completos.
+- A variável de ambiente da conta de serviço não torna o frontend seguro nem bloqueia gravações diretas. As regras atuais do Firestore precisam ser auditadas antes de qualquer uso real com dados sensíveis.
+
+### Critério de aceite da primeira versão
+- ADM cria usuário com identificador único, nome, perfil e PIN individual.
+- PIN incorreto não permite entrar; usuário inativo não consegue iniciar sessão na interface.
+- O usuário conectado é identificado de forma consistente nas telas e no histórico operacional.
+- As permissões visuais seguem a matriz acordada para ADM, Supervisor e Operador.
+- Os fluxos operacionais salvam, recarregam e preservam dados e filtros conforme especificado.
+- Testes de regressão diários são registrados; defeitos críticos impedem considerar a funcionalidade concluída.
+- A documentação deixa explícito que a autenticação por PIN é provisória e que a fase robusta continua planejada.

@@ -1805,7 +1805,7 @@
       const button = document.getElementById("btn-account-auth");
       document.getElementById("account-auth-error").classList.add("hidden");
       if (!/^[A-Z0-9._-]{2,30}$/.test(username)) return setAccountAuthError("Informe um usuário válido.");
-      if (!/^\\d{4}$/.test(pin)) return setAccountAuthError("O PIN deve conter exatamente 4 números.");
+      if (!/^\d{4}$/.test(pin)) return setAccountAuthError("O PIN deve conter exatamente 4 números.");
       const user = state.users[username];
       if (!user || user.active === false) return setAccountAuthError("Usuário não encontrado ou desativado.");
       button.disabled = true;
@@ -1813,7 +1813,7 @@
       try {
         if (!user.pinConfigured || !user.pinHash || !user.pinSalt) {
           if (username !== "ADM" || pin !== TEMP_INITIAL_PIN) return setAccountAuthError("Conta ainda não configurada. Verifique o usuário e a senha provisória.");
-          if (!/^\\d{4}$/.test(pin2) || pin2 === TEMP_INITIAL_PIN) return setAccountAuthError("Crie um PIN pessoal de 4 dígitos diferente de 0000.");
+          if (!/^\d{4}$/.test(pin2) || pin2 === TEMP_INITIAL_PIN) return setAccountAuthError("Crie um PIN pessoal de 4 dígitos diferente de 0000.");
           const result = await hashAccountPin(pin2);
           state.users[username] = { ...user, pinSalt: result.salt, pinHash: result.hash, pinConfigured: true, mustChangePin: false, updatedAt: new Date().toISOString() };
           await syncConfigToCloud();

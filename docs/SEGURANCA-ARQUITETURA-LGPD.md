@@ -59,16 +59,19 @@ Como o Firebase Authentication não oferece autenticação nativa por nome de us
 
 ## 6. Matriz inicial de permissões
 
-Esta matriz é uma proposta inicial e precisa de aprovação da liderança antes da implementação definitiva. O perfil Supervisor terá poderes de coordenação operacional delimitados (como delegar OMs emergenciais), sem poderes de administração de identidade.
+Esta matriz é uma proposta inicial e precisa de aprovação da liderança antes da implementação definitiva. O Supervisor possui autonomia de coordenação, mas as ações são liberadas separadamente por módulo. Ter permissão para delegar não significa ter permissão para editar, validar, cancelar ou concluir uma demanda.
 
 | Ação | Operador | Supervisor | Administrador |
-|---|---:|---:|
+|---|---|---|---|
 | Consultar módulos liberados | Sim | Sim | Sim |
 | Consultar indicadores e visão geral | Conforme acesso | Sim | Sim |
-| Criar/editar demanda operacional | Conforme módulo | Sim, quando necessário |
-| Alterar status operacional | Conforme regra | Sim, com justificativa quando aplicável |
+| Criar/editar demanda operacional | Conforme módulo | Conforme permissão específica | Sim, quando necessário |
+| Alterar status operacional | Conforme regra | Conforme permissão específica | Conforme regra |
 | Consultar Ao Vivo | Conforme política | Sim | Sim |
-| Delegar/atribuir OM emergencial | Não, salvo autorização específica | Sim | Sim, quando necessário |
+| Delegar/reatribuir OM emergencial | Não, salvo autorização | Sim, conforme habilitação | Sim, quando necessário |
+| Delegar/reatribuir OMs de Máquinas | Não, salvo autorização | A definir por módulo | Sim, quando necessário |
+| Delegar/reatribuir OMs de SIM Cards | Não, salvo autorização | A definir por módulo | Sim, quando necessário |
+| Delegar/reatribuir demandas de Insumos | Não, salvo autorização | A definir por módulo | Sim, quando necessário |
 | Consultar auditoria operacional | Não, salvo liberação | Sim, conforme escopo | Sim |
 | Gerenciar usuários | Não | Não | Sim |
 | Redefinir senha de usuário | Não | Não | Sim |
@@ -76,7 +79,18 @@ Esta matriz é uma proposta inicial e precisa de aprovação da liderança antes
 | Alterar permissões | Não | Não | Sim |
 | Alterar configurações globais | Não, salvo permissão específica | Não | Sim |
 | Consultar auditoria administrativa | Não | Não, salvo autorização específica | Sim |
-| Apagar trilha de auditoria | Não | Não |
+| Apagar trilha de auditoria | Não | Não | Não |
+
+### Regras para delegação por módulo
+
+- A autorização deve ser definida por combinação de perfil, módulo e ação (por exemplo: `supervisor + emergenciais + delegate`).
+- O Supervisor só pode atribuir a demanda a usuário ativo, habilitado no módulo e autorizado para aquela atividade.
+- A delegação não altera o autor original da OM e não permite executar ações em nome do operador.
+- Registrar UID do Supervisor, UID do operador designado, OM, módulo, data/hora do servidor, ação e motivo quando exigido.
+- Reatribuições devem preservar o histórico anterior e a justificativa aplicável.
+- Não conceder permissões automaticamente por meio da delegação.
+- Antes de liberar delegação em Máquinas, SIM Cards ou Insumos, validar o fluxo de trabalho, regras de negócio, status, efeitos de sincronização e impactos nos relatórios daquele módulo.
+- A matriz final deverá ser aprovada pela liderança operacional e implementada no backend e nas regras do banco, não apenas na interface.
 
 A administração do sistema não deve significar permissão irrestrita para apagar registros de auditoria.
 

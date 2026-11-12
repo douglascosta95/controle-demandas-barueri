@@ -2696,16 +2696,54 @@
     }
 
     function switchTab(tabName) {
-      document.querySelectorAll(".nav-tab").forEach(btn => {
-        if (btn.dataset.tab === tabName) {
-          btn.classList.add("tab-active");
-        } else {
-          btn.classList.remove("tab-active");
-        }
-      });
-      document.querySelectorAll(".tab-panel").forEach(panel => {
-        panel.classList.toggle("hidden", panel.id !== `tab-${tabName}`);
-      });
+
+  // Remove seleção atual
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.classList.remove('active');
+  });
+
+  // Esconde todos os painéis
+  document.querySelectorAll('.tab-panel').forEach(panel => {
+    panel.classList.add('hidden');
+  });
+
+  // Ativa botão selecionado
+  const activeTab =
+    document.querySelector(`[data-tab="${tabName}"]`);
+
+  if (activeTab) {
+    activeTab.classList.add('active');
+  }
+
+  // Mostra painel selecionado
+  const activePanel =
+    document.getElementById(`tab-${tabName}`);
+
+  if (activePanel) {
+    activePanel.classList.remove('hidden');
+  }
+
+  // Atualiza título da tela
+
+  const titles = {
+    maquinas: "1. ATENDIMENTO MÁQUINAS",
+    simcards: "2. ATENDIMENTO SIM CARDS",
+    performance: "📊 PERFORMANCE",
+    importar: "3. IMPORTAR DRP & SORTEIOS",
+    emergenciais: "4. OMS EMERGENCIAIS",
+    canceladas: "5. OMS CANCELADAS",
+    grade: "6. BASE GRADE"
+  };
+
+  const titleElement =
+    document.getElementById('current-screen-title');
+
+  if (titleElement) {
+    titleElement.textContent =
+      titles[tabName] || tabName;
+  }
+
+}
       
       // Atualiza o título/indicador visual da aba ativa no topo da área de trabalho
       const titles = {

@@ -956,6 +956,27 @@
     </div>
   </section>
 
+  <section id="tab-insumos" class="tab-panel hidden space-y-5">
+    <div class="dashboard-panel space-y-4">
+      <div class="panel-heading"><div><h3>Atendimento de Insumos</h3><p>Importe a planilha da demanda, confira os registros e mantenha o histórico por data.</p></div></div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <label class="text-xs font-semibold">Data da demanda<input id="insumos-date" type="date" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"></label>
+        <div class="md:col-span-2 text-xs"><label for="insumos-file" class="font-semibold block mb-1">Arquivo da demanda (.xlsx, .xls ou .csv)</label><input id="insumos-file" type="file" accept=".xlsx,.xls,.csv" class="w-full text-xs"><p class="text-slate-500 mt-1">A primeira aba da planilha será lida. A importação não altera a base de Máquinas/SIM Cards.</p></div>
+        <div class="flex items-end"><button id="btn-insumos-import-file" type="button" class="w-full px-4 py-2 rounded-lg bg-purple-700 text-white text-xs font-bold">Ler arquivo</button></div>
+      </div>
+      <details class="text-xs"><summary class="cursor-pointer font-semibold text-violet-700">Ou colar os dados manualmente</summary><textarea id="insumos-import" rows="3" placeholder="OM | PA | Observação | Quantidade | VOL | Transportadora | Status | Colaborador" class="mt-2 w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"></textarea><button id="btn-insumos-import" type="button" class="mt-2 px-4 py-2 rounded-lg bg-slate-700 text-white font-bold">Importar texto</button></details>
+      <p class="text-[11px] text-slate-500">Colunas reconhecidas: OM, PA/AGÊNCIA/DESTINO, OBSERVAÇÃO, QUANTIDADE/QTD, VOL, TRANSPORTADORA, STATUS e COLABORADOR. A classificação fiscal é automática: destinos AG solicitam NF; PA/Corner não.</p>
+    </div>
+    <div class="dashboard-panel">
+      <div class="flex items-center justify-between gap-3 mb-3"><div><h3 class="font-extrabold">Demandas da data selecionada</h3><p id="insumos-count" class="text-xs text-slate-500">0 registros</p></div><button id="btn-insumos-fracionar" type="button" class="px-4 py-2 rounded-lg bg-violet-700 text-white text-xs font-bold">Fracionar lote completo</button></div>
+      <div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-left border-b border-slate-200 dark:border-slate-700"><th class="p-2">OM</th><th class="p-2">PA / Destino</th><th class="p-2">Observação</th><th class="p-2">Qtd.</th><th class="p-2">Transportadora</th><th class="p-2">Tipo</th><th class="p-2">Status</th><th class="p-2">Colaborador</th><th class="p-2">NF?</th></tr></thead><tbody id="insumos-tbody"></tbody></table></div>
+    </div>
+    <div class="dashboard-panel space-y-3">
+      <div class="flex items-center justify-between gap-3"><div><h3 class="font-extrabold">Resultado do fracionamento</h3><p class="text-xs text-slate-500">Todas as demandas são fracionadas em conjunto; a cópia para NF inclui apenas AG.</p></div><button id="btn-insumos-copy-nf" type="button" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-bold">Copiar relação para NF (AG)</button></div>
+      <div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-left border-b border-slate-200 dark:border-slate-700"><th class="p-2">OM</th><th class="p-2">COD SAP</th><th class="p-2">MODELO</th><th class="p-2">AGÊNCIA</th><th class="p-2">Quantidade</th><th class="p-2">VOL</th><th class="p-2">PESO</th></tr></thead><tbody id="insumos-result-tbody"><tr><td colspan="7" class="p-4 text-slate-500">Importe as demandas e clique em Fracionar lote.</td></tr></tbody></table></div>
+    </div>
+  </section>
+
   <!-- FOOTER CORPORATIVO -->
   <footer class="border-t border-slate-200 bg-white py-3 px-4 mt-8">
     <div class="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-500">
@@ -1626,22 +1647,90 @@
       return /^AG(?:[ ._-]|$)/.test(clean) ? "AG" : "PA";
     }
 
+    function normalizeInsumoHeader(value) {
+      return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "");
+    }
+
+    function mapInsumoRow(values, idx) {
+      const [om, destino, observacao, qtdRaw, volRaw, transporte, status, colaborador] = values;
+      const qtd = Number(String(qtdRaw || "").replace(",", "."));
+      if (!om || !destino || !Number.isFinite(qtd) || qtd <= 0) return null;
+      const tipo = classifyInsumoDestination(destino);
+      return {
+        id: "ins-" + Date.now() + "-" + idx + "-" + Math.random().toString(36).slice(2,7),
+        om: String(om).trim(), destino: String(destino).trim(), observacao: String(observacao || "").trim(),
+        qtd, vol: Number(String(volRaw || "1").replace(",", ".")) || 1,
+        transporte: String(transporte || "").trim(), status: String(status || "NOVA").trim(),
+        colaborador: String(colaborador || "").trim(), tipo, nf: tipo === "AG"
+      };
+    }
+
     function parseInsumosRows(raw) {
-      return raw.split(/\r?\n/).map(line => line.trim()).filter(Boolean).filter(line => !/^OM[\t|]/i.test(line)).map((line, idx) => {
+      return raw.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map((line, idx) => {
         const parts = (line.includes("\t") ? line.split("\t") : line.split("|")).map(v => v.trim());
-        if (parts.length < 4) return null;
-        const [om, destino, observacao, qtdRaw, volRaw, transporte, status, colaborador] = parts;
-        const qtd = Number(String(qtdRaw || "").replace(",", "."));
-        if (!om || !destino || !Number.isFinite(qtd) || qtd <= 0) return null;
-        return {
-          id: `ins-${Date.now()}-${idx}-${Math.random().toString(36).slice(2,7)}`,
-          om, destino, observacao: observacao || "", qtd,
-          vol: Number(String(volRaw || "1").replace(",", ".")) || 1,
-          transporte: transporte || "", status: status || "NOVA",
-          colaborador: colaborador || "", tipo: classifyInsumoDestination(destino),
-          nf: classifyInsumoDestination(destino) === "AG"
-        };
+        if (idx === 0 && normalizeInsumoHeader(parts[0]) === "OM") return null;
+        return mapInsumoRow(parts, idx);
       }).filter(Boolean);
+    }
+
+    function parseInsumosMatrix(matrix) {
+      if (!matrix || !matrix.length) return [];
+      const header = matrix[0].map(normalizeInsumoHeader);
+      const aliases = {
+        om: ["OM","ORDEMMONTAGEM","NUMEROOM"],
+        destino: ["PA","AGENCIA","DESTINO","BASE","PONTOATENDIMENTO"],
+        observacao: ["OBSERVACAO","DESCRICAO","MATERIAL","ITEM"],
+        qtd: ["QUANTIDADE","QTD","QTDE","AVANCO"],
+        vol: ["VOL","VOLUME","VOLUMES"],
+        transporte: ["TRANSPORTADORA","TRANSPORTE"],
+        status: ["STATUS","SITUACAO"],
+        colaborador: ["COLABORADOR","RESPONSAVEL","OPERADOR"]
+      };
+      const indexes = {};
+      Object.entries(aliases).forEach(([key, names]) => { indexes[key] = header.findIndex(h => names.includes(h)); });
+      const hasHeader = indexes.om >= 0 && indexes.destino >= 0 && indexes.qtd >= 0;
+      const rows = hasHeader ? matrix.slice(1) : matrix;
+      return rows.map((row, idx) => {
+        const values = hasHeader
+          ? ["om","destino","observacao","qtd","vol","transporte","status","colaborador"].map(key => indexes[key] >= 0 ? row[indexes[key]] : "")
+          : row.slice(0,8);
+        return mapInsumoRow(values, idx);
+      }).filter(Boolean);
+    }
+
+    async function handleInsumosFileUpload() {
+      const input = document.getElementById("insumos-file");
+      const file = input.files && input.files[0];
+      if (!file) return showToast("Selecione a planilha de Insumos primeiro.");
+      try {
+        const buffer = await file.arrayBuffer();
+        let matrix;
+        if (/\.csv$/i.test(file.name)) {
+          const text = new TextDecoder("utf-8").decode(buffer);
+          const delimiter = (text.split(/\r?\n/)[0].match(/;/g) || []).length > (text.split(/\r?\n/)[0].match(/,/g) || []).length ? ";" : ",";
+          matrix = text.split(/\r?\n/).filter(line => line.trim()).map(line => line.split(delimiter).map(v => v.replace(/^"|"$/g,"").trim()));
+        } else {
+          const workbook = XLSX.read(new Uint8Array(buffer), {type:"array", cellDates:false});
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          matrix = XLSX.utils.sheet_to_json(sheet, {header:1, defval:"", raw:false});
+        }
+        const rows = parseInsumosMatrix(matrix);
+        if (!rows.length) return showToast("Não encontrei linhas válidas. Confira os cabeçalhos e a coluna de quantidade.");
+        await importInsumosRows(rows, file.name);
+        input.value = "";
+      } catch (err) {
+        console.error("Falha na importação de Insumos:", err);
+        showToast("Não foi possível ler o arquivo. Verifique se é XLSX, XLS ou CSV.");
+      }
+    }
+
+    async function importInsumosRows(rows, sourceName) {
+      const existing = new Set(state.insumos.map(x => String(x.om)));
+      const fresh = rows.filter(x => !existing.has(String(x.om)));
+      state.insumos.push(...fresh);
+      await syncInsumosToCloud();
+      renderInsumos();
+      showToast(fresh.length + " demandas importadas de " + sourceName + "; " + (rows.length-fresh.length) + " OMs já existentes ignoradas.");
     }
 
     function renderInsumos() {
@@ -3240,16 +3329,12 @@
         renderInsumos();
         subscribeCloudInsumos(state.insumosDate);
       });
+      document.getElementById("btn-insumos-import-file").addEventListener("click", handleInsumosFileUpload);
       document.getElementById("btn-insumos-import").addEventListener("click", async () => {
         const rows = parseInsumosRows(document.getElementById("insumos-import").value);
         if (!rows.length) return showToast("Nenhuma linha válida. Confira as colunas e a quantidade.");
-        const existing = new Set(state.insumos.map(x => x.om));
-        const fresh = rows.filter(x => !existing.has(x.om));
-        state.insumos.push(...fresh);
+        await importInsumosRows(rows, "texto colado");
         document.getElementById("insumos-import").value = "";
-        await syncInsumosToCloud();
-        renderInsumos();
-        showToast(`${fresh.length} demandas importadas; ${rows.length-fresh.length} OMs já existentes ignoradas.`);
       });
       document.getElementById("btn-insumos-fracionar").addEventListener("click", fracionarInsumos);
       document.getElementById("btn-insumos-copy-nf").addEventListener("click", copyInsumosNf);

@@ -119,3 +119,62 @@ O campo `colaborador` será tratado como **responsável atual legado**, não com
 
 Não será adicionado botão ativo de delegação nem gravação client-side de atribuição antes da camada de autenticação/autorização. Isso evitará criar um fluxo que pareça protegido, mas possa ser forjado pelo próprio navegador.
 
+## 8. Primeira fundação de API (12/11/2026)
+
+Foram adicionados à branch, sem ativação no frontend:
+
+- `api/_lib/firebase-admin.js`: inicialização do Firebase Admin por credencial de ambiente e verificação de ID token Firebase (inclui verificação de revogação).
+- `api/auth/me.js`: endpoint autenticado para consultar identidade e claims.
+- `api/oms/delegate.js`: endpoint POST para delegar OM emergencial, validar perfil/permissão, validar destinatário ativo/habilitado, preservar histórico de atribuição e atualizar o documento diário em transação Firestore.
+- `package.json`: dependência `firebase-admin` para execução das funções Node na Vercel.
+
+### Claims exigidas (assinadas pelo Firebase Admin)
+
+A autorização é baseada em custom claims assinadas, nunca em `role`, `permissions` ou `modules` enviados no corpo da requisição:
+
+```json
+{
+  "role": "supervisor",
+  "permissions": {
+    "emergenciais": { "delegate": true }
+  },
+  "modules": ["emergenciais"]
+}
+```
+
+Para ADM, a claim `role` deve ser `admin`. Para o destinatário, a claim `modules` deve conter `emergenciais`. O documento `system_users/{uid}` mantém o cadastro operacional e precisa conter ao menos `active: true` e `name`. A API não aceita o nome ou perfil enviado pelo navegador como prova de identidade.
+
+### Configuração necessária na Vercel
+
+Cadastrar em Project Settings → Environment Variables:
+
+- `FIREBASE_SERVICE_ACCOUNT_JSON`: JSON completo da conta de serviço Firebase Admin, com permissão mínima necessária para Auth e Firestore. Nunca colocar esse valor no GitHub, HTML, navegador ou documentação.
+- `CD_FIREBASE_APP_ID`: ID usado no caminho Firestore da aplicação. Se omitido, a API usa `cd-barueri-sp`; confirmar que corresponde ao ID atualmente usado pelo frontend.
+
+Instalar/deployar a branch para a Vercel depois de configurar as variáveis. As funções ainda não ficam utilizáveis sem essas variáveis, os usuários Firebase provisionados, os documentos `system_users/{uid}` e as custom claims corretas.
+
+### Limites desta entrega
+
+Esta é uma fundação de backend, não uma migração completa de autenticação. O frontend legado ainda permite autenticação anônima e gravações diretas no Firestore. Portanto:
+
+- Não apresentar o botão de delegação nem considerar a API liberada para operação até integrar o frontend com Firebase Auth individual e ID token.
+- Revisar e publicar regras Firestore que bloqueiem clientes não autorizados de gravar atribuições, histórico, documentos de usuário e trilha de auditoria. O Admin SDK da API opera com privilégios administrativos e não substitui as regras para os clientes.
+- A tela atual ainda não chama `/api/oms/delegate`; esta entrega não altera o comportamento operacional existente.
+- Antes de produção, testar com contas de ADM, Supervisor autorizado, Supervisor sem permissão, Operador habilitado, Operador desabilitado e usuário anônimo; testar também OM inexistente, cancelada, não emergencial e reatribuição.
+- A auditoria legada do cliente continua editável pelo próprio cliente. A imutabilidade completa requer migrar o log para coleção própria gravada exclusivamente pelo backend e bloquear escrita direta dos clientes.
+
+### Contrato inicial da API
+
+`POST /api/oms/delegate` com Bearer ID token Firebase e JSON:
+
+```json
+{
+  "date": "2026-11-12",
+  "om": "OM-12345",
+  "targetUid": "UID_FIREBASE_DO_OPERADOR",
+  "reason": "Redistribuição de demanda emergencial"
+}
+```
+
+O campo `date` usa a data operacional do documento diário. O endpoint retorna sucesso somente após a transação Firestore. A interface ainda precisa resolver o UID do destinatário e enviar o token Firebase atual.
+

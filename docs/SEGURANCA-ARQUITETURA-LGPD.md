@@ -8,17 +8,29 @@ Este documento define os requisitos mínimos de segurança e privacidade para ev
 
 A documentação descreve requisitos e decisões pretendidas. Ela não certifica que todos os controles já estejam implementados.
 
-## 2. Situação técnica identificada
+## 2. Situação técnica identificada — auditoria da branch
 
-Na versão do código analisada durante o planejamento:
-- O frontend está concentrado em `index.html`.
-- A aplicação utiliza Firebase Authentication e Firestore.
-- O fluxo ainda contém autenticação anônima como alternativa.
-- Há configuração operacional persistida no Firestore, incluindo PINs, operadores e catálogo SAP.
-- Dados diários de demandas e insumos são sincronizados com o Firestore.
-- Existe uma constante legada `TEMP_INITIAL_PIN = "0000"`.
+Inspeção do `index.html` na branch `refactor/dashboard-navigation` em 12/11/2026:
 
-Esses pontos exigem migração cuidadosa. A presença de autenticação anônima e PIN compartilhado não deve ser tratada como modelo final de identidade. Não remover ou alterar o fluxo atual sem planejar migração, testes, regras do Firestore e preservação dos dados existentes.
+- O frontend e a lógica operacional estão concentrados em `index.html` (arquivo único, aproximadamente 379 mil caracteres na inspeção).
+- A aplicação inicializa Firebase Authentication e Firestore.
+- Se não houver `__initial_auth_token`, o código executa `signInAnonymously(auth)`. Portanto, ainda existe caminho de acesso anônimo.
+- A sincronização diária grava OMs e `auditLog` em `artifacts/{appId}/public/data/demandas_dias/{data}`.
+- A configuração compartilhada grava `pins`, `operators` e `sapCatalog` em `artifacts/{appId}/public/data/config/operator_pins`.
+- O módulo Insumos também sincroniza dados em coleção diária.
+- O fluxo de identificação atual usa seleção de operador e PIN no navegador, com `sessionStorage` para manter o nome do operador.
+- A constante `TEMP_INITIAL_PIN = "0000"` ainda existe e o fluxo de primeiro acesso a utiliza.
+- As alterações operacionais atribuem `updatedBy` usando `state.currentOperator`, valor controlado pelo frontend.
+- A lista de operadores é uma configuração operacional; ela não equivale a cadastro de identidade autenticada.
+- Não foram encontrados na raiz os arquivos `package.json`, `vercel.json`, `firebase.json` ou `firestore.rules`, nem funções em `api/` nos caminhos verificados. A estrutura de backend e as regras do Firestore precisam ser localizadas/confirmadas antes de desenhar o deploy seguro.
+
+### Consequência para a delegação
+
+**Não é seguro liberar delegação com base apenas em `state.currentOperator`, PIN local, `sessionStorage`, perfil em JavaScript ou botão oculto.** Qualquer pessoa que consiga alterar o estado no navegador poderia tentar se passar por Supervisor. O histórico de delegação também seria falsificável se o autor viesse do cliente.
+
+Por esse motivo, a primeira entrega técnica não deve ser um botão de delegar. Deve ser a fundação de identidade e autorização confiável, seguida da API de delegação e só então da interface. Não adicionar agora uma delegação apresentada como protegida enquanto o backend não consegue identificar e autorizar o Supervisor.
+
+A migração deverá preservar os dados existentes e manter uma estratégia de compatibilidade/rollback. Não desativar autenticação anônima nem alterar regras de produção sem plano de migração e validação do acesso aos dados.
 
 ## 3. Modelo de identidade planejado
 

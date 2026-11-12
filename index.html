@@ -1821,6 +1821,8 @@
         createdAt: new Date().toISOString(), updatedAt: null
       };
       await syncConfigToCloud();
+      pushAudit("CONTAS", `Conta ${username} criada com perfil ${role === USER_ROLES.SUPERVISOR ? "Supervisor" : "Operador"}${operatorName ? " vinculada a " + operatorName : ""}.`);
+      await syncToCloud();
       document.getElementById("account-new-username").value = "";
       renderAccountsList();
       showToast("Conta criada. Primeiro acesso com PIN provisório 0000.");
@@ -1836,12 +1838,15 @@
       if (resetButton) {
         if (!confirm("Redefinir o PIN de " + username + "? A pessoa deverá usar 0000 e cadastrar um novo PIN no próximo acesso.")) return;
         state.users[username] = { ...user, pinConfigured: false, pinSalt: "", pinHash: "", mustChangePin: true, updatedAt: new Date().toISOString() };
+        pushAudit("CONTAS", `PIN da conta ${username} redefinido por ${state.currentUser.username}.`);
       } else if (toggleButton) {
         const nextActive = !user.active;
         if (!confirm((nextActive ? "Ativar" : "Desativar") + " a conta " + username + "?")) return;
         state.users[username] = { ...user, active: nextActive, updatedAt: new Date().toISOString() };
+        pushAudit("CONTAS", `Conta ${username} ${nextActive ? "ativada" : "desativada"} por ${state.currentUser.username}.`);
       }
       await syncConfigToCloud();
+      await syncToCloud();
       renderAccountsList();
       showToast("Conta atualizada.");
     }
@@ -2516,8 +2521,10 @@
     function pushAudit(om, actionText) {
       const now = new Date();
       const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const accountUsername = state.currentUser?.username || null;
+      const role = state.currentUser?.role || null;
       const who = state.currentUser ? (state.currentUser.username + (state.currentUser.operatorName ? " · " + state.currentUser.operatorName : "")) : (state.currentOperator || "SISTEMA");
-      state.auditLog.unshift({ who, om: String(om || "—"), actionText: String(actionText || ""), time, date: state.date, timestamp: now.toISOString() });
+      state.auditLog.unshift({ who, accountUsername, role, om: String(om || "—"), actionText: String(actionText || ""), time, date: state.date, timestamp: now.toISOString() });
       if (state.auditLog.length > 500) state.auditLog.length = 500;
       renderAuditFeed();
       if (document.getElementById("audit-modal").classList.contains("flex") && auditViewDate === state.date) {
@@ -4058,9 +4065,16 @@
           syncToCloud();
           renderAll();
         } else if (field === "colaborador") {
-          item.colaborador = el.value;
-          pushAudit(om, `Atribuída a ${el.value || "ninguém"}`);
-          item.updatedBy = state.currentOperator;
+          const previousAssignee = item.colaborador || "";
+          const nextAssignee = el.value || "";
+          if (previousAssignee !== nextAssignee) {
+            if (!Array.isArray(item.delegationHistory)) item.delegationHistory = [];
+            if (!item.originalAssignee) item.originalAssignee = previousAssignee;
+            item.delegationHistory.push({ from: previousAssignee, to: nextAssignee, by: state.currentUser?.username || state.currentOperator || "SISTEMA", role: state.currentUser?.role || null, at: new Date().toISOString() });
+            pushAudit(om, `Responsável alterado: ${previousAssignee || "não atribuído"} → ${nextAssignee || "não atribuído"}`);
+          }
+          item.colaborador = nextAssignee;
+          item.updatedBy = state.currentUser?.username || state.currentOperator;
           item.updatedAt = nowTime;
           syncToCloud();
           renderAll();

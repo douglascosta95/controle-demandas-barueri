@@ -1609,7 +1609,7 @@
       const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
       const ref = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "insumos_dias", dateStr);
       state.insumosCloudUnsub = fbFirestoreMod.onSnapshot(ref, snap => {
-        if (dateStr !== state.date) return;
+        if (dateStr !== state.insumosDate) return;
         if (snap.exists()) {
           const data = snap.data();
           if (Array.isArray(data.insumos)) {
@@ -1715,7 +1715,7 @@
           output.push({
             om: item.om, sap: findSapCode(item.destino),
             modelo: deriveInsumoModel(item.observacao, part.carrier),
-            agencia: item.destino, quantidade: part.qty, vol: 1,
+            agencia: item.destino, quantidade: part.qty, vol: item.vol || 1,
             peso: (part.qty * 0.04).toFixed(2), tipo: item.tipo
           });
         });

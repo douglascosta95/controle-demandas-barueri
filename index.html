@@ -1755,14 +1755,18 @@
       }
     }
 
-    // ==================== GESTÃO DE CONTAS (SOMENTE ADM) ====================
+    // ==================== GESTÃO DE CONTAS (ADM E SUPERVISOR) ====================
+    function canManageAccounts() {
+      return Boolean(state.currentUser && [USER_ROLES.ADMIN, USER_ROLES.SUPERVISOR].includes(state.currentUser.role));
+    }
+
     function setAccountAdminControls() {
       const button = document.getElementById("btn-open-accounts-modal");
-      if (button) button.classList.toggle("hidden", !isAdmin());
+      if (button) button.classList.toggle("hidden", !canManageAccounts());
     }
 
     function openAccountsModal() {
-      if (!isAdmin()) return showToast("Apenas ADM pode gerenciar contas.");
+      if (!canManageAccounts()) return showToast("Seu perfil não permite gerenciar contas.");
       const select = document.getElementById("account-new-operator");
       select.innerHTML = '<option value="">Sem vínculo operacional</option>';
       state.operators.forEach(name => {
@@ -1791,10 +1795,10 @@
       container.innerHTML = users.map(user => {
         const status = user.active ? "Ativa" : "Desativada";
         const pinStatus = user.pinConfigured ? "PIN cadastrado" : "Aguardando primeiro acesso";
-        const linked = user.operatorName ? " • " + user.operatorName : "";
-        const canManage = user.username !== "ADM";
+        const linked = user.operatorName ? " • " + escapeSapHtml(user.operatorName) : "";
+        const canManage = user.username !== "ADM" && (isAdmin() || user.username !== state.currentUser.username);
         return '<div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-700 p-3">' +
-          '<div class="min-w-0"><div class="text-xs font-bold text-slate-800 dark:text-white">' + user.username + ' <span class="font-medium text-purple-600">· ' + (roleNames[user.role] || "Operador") + '</span></div>' +
+          '<div class="min-w-0"><div class="text-xs font-bold text-slate-800 dark:text-white">' + escapeSapHtml(user.username) + ' <span class="font-medium text-purple-600">· ' + (roleNames[user.role] || "Operador") + '</span></div>' +
           '<div class="text-[10px] text-slate-500 mt-1">' + status + ' • ' + pinStatus + linked + '</div></div>' +
           (canManage ? '<div class="flex gap-1"><button data-account-reset="' + user.username + '" class="px-2 py-1 rounded-lg border border-amber-300 text-amber-700 text-[10px] font-bold">Redefinir PIN</button><button data-account-toggle="' + user.username + '" class="px-2 py-1 rounded-lg border border-slate-300 text-slate-600 text-[10px] font-bold">' + (user.active ? "Desativar" : "Ativar") + '</button></div>' : '<span class="text-[10px] font-bold text-emerald-600">Conta principal</span>') +
           '</div>';
@@ -1802,7 +1806,7 @@
     }
 
     async function createAccount() {
-      if (!isAdmin()) return showToast("Apenas ADM pode criar contas.");
+      if (!canManageAccounts()) return showToast("Seu perfil não permite criar contas.");
       const username = document.getElementById("account-new-username").value.trim().toUpperCase();
       const role = document.getElementById("account-new-role").value;
       const operatorName = document.getElementById("account-new-operator").value || null;
@@ -1823,7 +1827,7 @@
     }
 
     async function handleAccountAdminAction(event) {
-      if (!isAdmin()) return showToast("Apenas ADM pode gerenciar contas.");
+      if (!canManageAccounts()) return showToast("Seu perfil não permite gerenciar contas.");
       const resetButton = event.target.closest("[data-account-reset]");
       const toggleButton = event.target.closest("[data-account-toggle]");
       const username = resetButton?.dataset.accountReset || toggleButton?.dataset.accountToggle;
@@ -2382,7 +2386,7 @@
     }
 
     function requireOperator() {
-      if (state.currentUser && state.currentUser.role === USER_ROLES.ADMIN) return true;
+      if (state.currentUser) return true;
       if (!state.currentOperator) {
         showToast("Selecione seu nome e digite seu PIN no topo antes de editar!");
         document.getElementById("current-operator").focus();
@@ -2512,7 +2516,7 @@
     function pushAudit(om, actionText) {
       const now = new Date();
       const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-      const who = state.currentOperator || "SISTEMA";
+      const who = state.currentUser ? (state.currentUser.username + (state.currentUser.operatorName ? " · " + state.currentUser.operatorName : "")) : (state.currentOperator || "SISTEMA");
       state.auditLog.unshift({ who, om: String(om || "—"), actionText: String(actionText || ""), time, date: state.date, timestamp: now.toISOString() });
       if (state.auditLog.length > 500) state.auditLog.length = 500;
       renderAuditFeed();
@@ -3867,8 +3871,7 @@
       document.getElementById("account-new-role").addEventListener("change", () => {
         const role = document.getElementById("account-new-role").value;
         const select = document.getElementById("account-new-operator");
-        select.disabled = role === "supervisor";
-        if (role === "supervisor") select.value = "";
+        select.disabled = false;
       });
 
       // Modal Gerenciar Equipe

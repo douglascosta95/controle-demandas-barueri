@@ -55,7 +55,26 @@ Capacitar Administradores e Operadores para utilizar o sistema com segurança, c
 - Reconhecer quando deve interromper e pedir ajuda.
 - Proteger dados e credenciais.
 
-### Trilha C — Liderança operacional (complementar)
+### Trilha C — Supervisor
+
+**Carga horária sugerida: 1 hora e 30 minutos**
+
+| Módulo | Conteúdo | Tempo |
+|---|---|---:|
+| S1 — Visão geral | Indicadores, módulos e responsabilidades | 20 min |
+| S2 — Acompanhamento | Pendências, divergências, Ao Vivo e histórico | 25 min |
+| S3 — Auditoria e privacidade | Consulta responsável, limites de acesso e LGPD | 20 min |
+| S4 — Escalonamento | Solicitações ao ADM, incidentes e contingência | 10 min |
+| S5 — Avaliação prática | Cenário de acompanhamento e encaminhamento | 15 min |
+
+**Competências esperadas do Supervisor**
+- Acompanhar a operação sem executar administração de contas.
+- Interpretar indicadores e eventos dentro da finalidade operacional.
+- Identificar divergências e encaminhar correções ao responsável.
+- Respeitar a privacidade e os limites de consulta.
+- Escalonar incidentes sem tentar contornar controles.
+
+### Trilha D — Liderança operacional (complementar)
 
 **Carga horária sugerida: 60 minutos**
 - Visão geral dos módulos e indicadores.

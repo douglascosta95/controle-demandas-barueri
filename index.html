@@ -4,67 +4,59 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Controle Operacional de Demandas e Insumos - CD Barueri - SP | Alya & Mobyan</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
   <script>tailwind.config = { darkMode: "class" };</script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="[https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js](https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js)"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
+    @import url('[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap)');
 
-    /* ==================== IDENTIDADE VISUAL ALYA (ROXO CORPORATIVO) ==================== */
+    /* ==================== IDENTIDADE VISUAL HARMONIOSA (MODO CLARO E ESCURO SUAVE) ==================== */
     :root {
-      --bg-page: #f5f3ff;
+      --bg-page: #f4f2fc;
       --bg-surface: #ffffff;
-      --bg-surface-alt: #faf8ff;
-      --bg-table-head: #f3effb;
-      --bg-row-hover: rgba(243, 232, 255, 0.55);
-      --bg-pinned: #f3e8ff;
-      --bg-pinned-hover: #e9d5ff;
-      --border-main: #e4ddf5;
-      --border-input: #d1c4e9;
-      --text-main: #1e1035;
-      --text-secondary: #3b265e;
-      --text-muted: #6b588c;
+      --bg-surface-alt: #f9f7ff;
+      --bg-table-head: #f0ebfa;
+      --bg-row-hover: rgba(233, 216, 255, 0.4);
+      --border-main: #e2d9f3;
+      --border-input: #cbb8f0;
+      --text-main: #1c1032;
+      --text-secondary: #38245c;
+      --text-muted: #625088;
       --header-bg: #ffffff;
-      --header-border: #e4ddf5;
-      --header-text: #1e1035;
-      --header-pill-bg: #f6f2ff;
-      --header-pill-border: #d8c8f5;
-      --audit-bg: #f3ecff;
-      --audit-border: #ddd0f7;
-      --audit-text: #3b265e;
+      --header-border: #e2d9f3;
+      --header-text: #1c1032;
+      --header-pill-bg: #f4f0ff;
+      --header-pill-border: #d2c2f5;
+      --audit-bg: #ede6ff;
+      --audit-border: #d4c5f7;
+      --audit-text: #38245c;
       --audit-pill-bg: #ffffff;
-      --logo-box-bg: #f8f5ff;
-      --logo-box-border: #dfd3f8;
-      --accent-primary: #5b21b6;
-      --accent-hover: #4c1d95;
+      --logo-box-bg: #f7f4ff;
+      --logo-box-border: #d9cbf7;
     }
 
     html.dark {
-      --bg-page: #0c0717;
-      --bg-surface: #150e26;
-      --bg-surface-alt: #1d1433;
-      --bg-table-head: #1f1638;
-      --bg-row-hover: rgba(59, 29, 114, 0.35);
-      --bg-pinned: rgba(109, 40, 217, 0.28);
-      --bg-pinned-hover: rgba(124, 58, 237, 0.38);
-      --border-main: #2a1e47;
-      --border-input: #3c2b63;
-      --text-main: #f5f3ff;
-      --text-secondary: #ddd6fe;
-      --text-muted: #a78bfa;
-      --header-bg: #120b22;
-      --header-border: #2a1e47;
-      --header-text: #f5f3ff;
-      --header-pill-bg: #1f1638;
-      --header-pill-border: #3c2b63;
-      --audit-bg: #19102e;
-      --audit-border: #2c1e4a;
-      --audit-text: #ddd6fe;
-      --audit-pill-bg: #241842;
-      --logo-box-bg: #1d1433;
-      --logo-box-border: #3c2b63;
-      --accent-primary: #7c3aed;
-      --accent-hover: #6d28d9;
+      --bg-page: #13111c;
+      --bg-surface: #1d1a2b;
+      --bg-surface-alt: #262238;
+      --bg-table-head: #28243d;
+      --bg-row-hover: rgba(91, 33, 182, 0.25);
+      --border-main: #36304f;
+      --border-input: #4a416e;
+      --text-main: #f3f0ff;
+      --text-secondary: #d6cbfe;
+      --text-muted: #a491df;
+      --header-bg: #181524;
+      --header-border: #36304f;
+      --header-text: #f3f0ff;
+      --header-pill-bg: #221e33;
+      --header-pill-border: #423861;
+      --audit-bg: #1f1b2e;
+      --audit-border: #3a3254;
+      --audit-text: #d6cbfe;
+      --audit-pill-bg: #29243d;
+      --logo-box-bg: #231f36;
+      --logo-box-border: #423861;
     }
 
     body {
@@ -106,29 +98,38 @@
     .nav-tab { color: var(--text-muted); }
     .nav-tab:hover { color: var(--text-main); }
     .tab-active {
-      border-bottom: 3px solid #6d28d9;
-      color: #5b21b6 !important;
+      border-bottom: 3px solid #7c3aed;
+      color: #6d28d9 !important;
       font-weight: 700;
-      background-color: rgba(109, 40, 217, 0.08);
+      background-color: rgba(124, 58, 237, 0.1);
     }
     html.dark .tab-active {
       border-bottom-color: #a78bfa;
       color: #ddd6fe !important;
-      background-color: rgba(139, 92, 246, 0.16);
+      background-color: rgba(167, 139, 250, 0.15);
     }
 
     html.dark .bg-white { background-color: var(--bg-surface) !important; }
-    html.dark .bg-slate-50, html.dark .bg-slate-50\/70 { background-color: var(--bg-surface-alt) !important; }
-    .bg-slate-100 { background-color: var(--bg-table-head) !important; }
+    html.dark .bg-slate-50, html.dark .bg-slate-100 { background-color: var(--bg-surface-alt) !important; }
     .border-slate-200 { border-color: var(--border-main) !important; }
     .border-slate-300 { border-color: var(--border-input) !important; }
 
-    .row-pinned {
-      background-color: var(--bg-pinned) !important;
-      box-shadow: inset 3px 0 0 #7c3aed;
-    }
+    /* Status Badges */
+    .status-NOVA { background-color: #f4f0ff; color: #38245c; border-color: #d2c2f5; }
+    .status-VALIDADA { background-color: #dcfce7; color: #166534; border-color: #86efac; }
+    .status-AG_CHIP { background-color: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .status-AG_VALIDACAO { background-color: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
+    .status-SAPB1 { background-color: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+    .status-DIVERGENTE { background-color: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .status-EMERGENCIAL { background-color: #ffedd5; color: #9a3412; border-color: #fb923c; }
+    .status-CANCELADA { background-color: #e2e8f0; color: #475569; border-color: #94a3b8; text-decoration: line-through; }
+
+    html.dark .status-NOVA { background-color: #28243d !important; color: #d6cbfe !important; border-color: #4a416e !important; }
+    html.dark .status-VALIDADA { background-color: #064e3b !important; color: #6ee7b7 !important; border-color: #059669 !important; }
+    html.dark .status-CANCELADA { background-color: #334155 !important; color: #94a3b8 !important; border-color: #475569 !important; }
+
     .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-    .scrollbar-thin::-webkit-scrollbar-thumb { background: #a78bfa; border-radius: 9999px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #a491df; border-radius: 9999px; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -186,7 +187,7 @@
           <button id="btn-open-sidebar" type="button" class="px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs sm:text-sm font-extrabold flex items-center gap-2 shadow-xs transition cursor-pointer">
             <span>☰ Menu de Telas</span>
           </button>
-          <div class="flex items-center gap-2 bg-purple-950/90 text-white px-3.5 py-1.5 rounded-xl border border-purple-700/60 shadow-2xs">
+          <div class="flex items-center gap-2 bg-purple-950/90 text-white px-3.5 py-1.5 rounded-xl border border-purple-700/60 shadow-2xs dark:bg-[#28243d]">
             <span class="text-purple-300 text-xs font-semibold">📍 Tela Atual:</span>
             <span id="active-tab-title-indicator" class="px-2 py-0.5 rounded-md bg-purple-700 text-purple-100 text-xs uppercase tracking-wider font-extrabold">1. Atendimento Máquinas</span>
           </div>
@@ -200,8 +201,8 @@
   <div id="sidebar-backdrop" class="fixed inset-0 bg-purple-950/60 backdrop-blur-xs z-40 hidden transition-opacity"></div>
 
   <!-- MENU LATERAL (SIDEBAR) -->
-  <aside id="app-sidebar" class="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white dark:bg-[#150e26] border-r border-slate-200 dark:border-[#2a1e47] shadow-2xl z-50 transform -translate-x-full transition-transform duration-200 flex flex-col">
-    <div class="p-4 border-b border-slate-200 dark:border-[#2a1e47] flex items-center justify-between bg-purple-950 text-white">
+  <aside id="app-sidebar" class="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white dark:bg-[#1d1a2b] border-r border-slate-200 dark:border-[#36304f] shadow-2xl z-50 transform -translate-x-full transition-transform duration-200 flex flex-col">
+    <div class="p-4 border-b border-slate-200 dark:border-[#36304f] flex items-center justify-between bg-purple-950 text-white dark:bg-[#181524]">
       <div>
         <div class="text-xs font-extrabold uppercase tracking-wider text-purple-300">Navegação Operacional</div>
         <div class="text-sm font-bold mt-0.5">Selecione a Tela</div>
@@ -257,103 +258,115 @@
 
     <!-- ==================== TAB 1: MÁQUINAS ==================== -->
     <section id="tab-maquinas" class="tab-panel space-y-4">
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-        <h2 class="text-sm font-bold text-slate-800">Painel de Atendimento de Máquinas</h2>
-        <p class="text-xs text-slate-500 mt-0.5">Gerenciamento de OMs de Máquinas AG e PA com validação por PIN e etiquetas Zebra.</p>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs dark:border-[#36304f] dark:bg-[#1d1a2b]">
+        <h2 class="text-sm font-bold text-slate-800 dark:text-purple-100">Painel de Atendimento de Máquinas</h2>
+        <p class="text-xs text-slate-500 dark:text-purple-300 mt-0.5">Gerenciamento de OMs de Máquinas AG e PA com validação por PIN e etiquetas Zebra.</p>
       </div>
     </section>
 
     <!-- ==================== TAB 2: DEMANDA DE INSUMOS & SIM CARDS ==================== -->
     <section id="tab-insumos" class="tab-panel hidden space-y-5">
-      <div class="bg-white p-5 rounded-xl border border-fuchsia-300 dark:border-fuchsia-700/60 bg-fuchsia-50/20 shadow-xs space-y-3">
+      <div class="bg-white p-5 rounded-xl border border-fuchsia-300 dark:border-fuchsia-700/60 bg-fuchsia-50/20 dark:bg-[#262238] shadow-xs space-y-3">
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div class="flex items-center gap-2">
               <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-fuchsia-700 text-white">Insumos à Parte</span>
-              <h2 class="text-base font-bold text-slate-800">Importação de Insumos & Fracionamento Automático de SIM Cards</h2>
+              <h2 class="text-base font-bold text-slate-800 dark:text-purple-100">Controle de Insumos & Fracionamento Automático de SIM Cards</h2>
             </div>
-            <p class="text-xs text-slate-500 mt-0.5">Importe a planilha de insumos. O sistema organiza os itens importados na primeira gaveta e separa automaticamente os SIM Cards na segunda gaveta com fracionamento por operadora e Volume = 1 para NFs.</p>
+            <p class="text-xs text-slate-500 dark:text-purple-300 mt-0.5">Importe a planilha de insumos. A <strong>Gaveta 1</strong> exibe todas as OMs com status, colaboradores e colunas idênticas ao controle. Clique em <strong>"⚡ Fracionar Todas em Lote"</strong> para que todos os SIM Cards sejam fracionados automaticamente na <strong>Gaveta 2</strong> com Volume = 1, Peso calculado (Qtd × 0,04) e botão de cópia consolidada para o Outlook.</p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <input type="file" id="insumos-file-input" accept=".xlsx,.xls,.csv" class="hidden" />
             <label for="insumos-file-input" class="px-3.5 py-2 rounded-xl bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold shadow-xs transition cursor-pointer inline-flex items-center gap-1.5">
               📁 Importar Planilha de Insumos (.xlsx)
             </label>
+            <button id="btn-fracionar-todos-lote" class="px-3.5 py-2 rounded-xl bg-fuchsia-700 hover:bg-fuchsia-600 text-white text-xs font-bold shadow-xs transition cursor-pointer">
+              ⚡ Fracionar Todas em Lote
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- GAVETA 1: OMs DE INSUMOS IMPORTADAS (PARA ATENDER) -->
-      <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden space-y-2">
-        <div class="px-4 py-3 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">📦 Gaveta 1: OMs de Insumos Importadas (Para Atender)</h3>
-          <span id="count-gaveta1" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-900">0 itens</span>
+      <!-- GAVETA 1: OMs DE INSUMOS (COM STATUS, COLABORADOR, ETC.) -->
+      <div class="bg-white rounded-xl border border-slate-200 dark:border-[#36304f] shadow-xs overflow-hidden space-y-2 dark:bg-[#1d1a2b]">
+        <div class="px-4 py-3 bg-slate-100 dark:bg-[#28243d] border-b border-slate-200 dark:border-[#36304f] flex items-center justify-between">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-purple-200">📦 Gaveta 1: OMs de Insumos para Atendimento (AG / PA)</h3>
+          <span id="count-gaveta1" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300">0 itens</span>
         </div>
         <div class="overflow-x-auto scrollbar-thin">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="bg-slate-50 text-slate-600 text-[11px] uppercase tracking-wider border-b border-slate-200">
+              <tr class="bg-slate-50 dark:bg-[#262238] text-slate-600 dark:text-purple-300 text-[11px] uppercase tracking-wider border-b border-slate-200 dark:border-[#36304f]">
                 <th class="py-2.5 px-3 font-bold">OM</th>
-                <th class="py-2.5 px-3 font-bold">Agência / PA</th>
-                <th class="py-2.5 px-3 font-bold">Observação / Insumo</th>
+                <th class="py-2.5 px-3 font-bold">PA / Agência</th>
+                <th class="py-2.5 px-3 font-bold">Observação</th>
                 <th class="py-2.5 px-2.5 font-bold text-center">Quantidade</th>
-                <th class="py-2.5 px-2.5 font-bold text-center">Vol</th>
+                <th class="py-2.5 px-2.5 font-bold text-center">VOL</th>
                 <th class="py-2.5 px-3 font-bold">Transportadora</th>
-                <th class="py-2.5 px-3 font-bold text-right">Ação</th>
+                <th class="py-2.5 px-3 font-bold">Status</th>
+                <th class="py-2.5 px-3 font-bold">Colaborador</th>
+                <th class="py-2.5 px-3 font-bold">Solicitação NF?</th>
+                <th class="py-2.5 px-3 font-bold text-right">Ação / Fracionar</th>
               </tr>
             </thead>
-            <tbody id="insumos-gaveta1-tbody" class="divide-y divide-slate-100 text-xs"></tbody>
+            <tbody id="insumos-gaveta1-tbody" class="divide-y divide-slate-100 dark:divide-[#36304f] text-xs"></tbody>
           </table>
         </div>
-        <div id="insumos-gaveta1-empty" class="p-6 text-center text-slate-400 text-xs">Nenhum insumo importado ainda.</div>
+        <div id="insumos-gaveta1-empty" class="p-6 text-center text-slate-400 text-xs">Nenhum insumo importado ainda. Clique em "Importar Planilha de Insumos".</div>
       </div>
 
       <!-- GAVETA 2: FRACIONAMENTO AUTOMÁTICO DE SIM CARDS (PEDIDOS DE NF) -->
-      <div class="bg-white rounded-xl border border-fuchsia-200 shadow-xs overflow-hidden space-y-2">
-        <div class="px-4 py-3 bg-fuchsia-50 border-b border-fuchsia-100 flex items-center justify-between">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-fuchsia-900">⚡ Gaveta 2: Fracionamento Automático de SIM Cards (Pedidos de NF)</h3>
-          <span id="count-gaveta2" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-fuchsia-200 text-fuchsia-900">0 fracionados</span>
+      <div class="bg-white rounded-xl border border-fuchsia-200 dark:border-[#423861] shadow-xs overflow-hidden space-y-2 dark:bg-[#1d1a2b]">
+        <div class="px-4 py-3 bg-fuchsia-50 dark:bg-[#28243d] border-b border-fuchsia-100 dark:border-[#36304f] flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-fuchsia-900 dark:text-fuchsia-300">⚡ Gaveta 2: Fracionamento de SIM Cards (Envio Pedido NF)</h3>
+            <span id="count-gaveta2" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-fuchsia-200 text-fuchsia-900 dark:bg-fuchsia-950 dark:text-fuchsia-200">0 fracionados</span>
+          </div>
+          <button id="btn-copiar-tudo-email" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5">
+            📋 Copiar Dados para o Outlook (Todas as NFs)
+          </button>
         </div>
         <div class="overflow-x-auto scrollbar-thin">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="bg-fuchsia-50/50 text-fuchsia-800 text-[11px] uppercase tracking-wider border-b border-fuchsia-100">
+              <tr class="bg-fuchsia-50/50 dark:bg-[#262238] text-fuchsia-800 dark:text-fuchsia-300 text-[11px] uppercase tracking-wider border-b border-fuchsia-100 dark:border-[#36304f]">
                 <th class="py-2.5 px-3 font-bold">OM</th>
-                <th class="py-2.5 px-3 font-bold">Agência / PA</th>
-                <th class="py-2.5 px-3 font-bold">Modelo / Operadora Fracionada</th>
-                <th class="py-2.5 px-2.5 font-bold text-center">Quantidade Ajustada</th>
-                <th class="py-2.5 px-2.5 font-bold text-center">Vol (Fixado 1)</th>
-                <th class="py-2.5 px-3 font-bold">Status NF</th>
-                <th class="py-2.5 px-3 font-bold text-right">Disparo E-mail (Outlook)</th>
+                <th class="py-2.5 px-3 font-bold">COD SAP</th>
+                <th class="py-2.5 px-3 font-bold">Modelo / Operadora</th>
+                <th class="py-2.5 px-3 font-bold">Agência</th>
+                <th class="py-2.5 px-2.5 font-bold text-center">Quantidade</th>
+                <th class="py-2.5 px-2.5 font-bold text-center">VOL (Editável)</th>
+                <th class="py-2.5 px-2.5 font-bold text-center">Peso (Qtd × 0,04)</th>
+                <th class="py-2.5 px-3 font-bold text-right">E-mail Outlook</th>
               </tr>
             </thead>
-            <tbody id="insumos-gaveta2-tbody" class="divide-y divide-slate-100 text-xs"></tbody>
+            <tbody id="insumos-gaveta2-tbody" class="divide-y divide-slate-100 dark:divide-[#36304f] text-xs"></tbody>
           </table>
         </div>
-        <div id="insumos-gaveta2-empty" class="p-6 text-center text-slate-400 text-xs">Nenhum SIM Card fracionado ainda. Clique em "Fracionar" na Gaveta 1.</div>
+        <div id="insumos-gaveta2-empty" class="p-6 text-center text-slate-400 text-xs">Nenhum SIM card fracionado ainda. Clique em "Fracionar" na Gaveta 1 ou em "Fracionar Todas em Lote".</div>
       </div>
     </section>
 
     <!-- Outras abas -->
-    <section id="tab-simcards" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">Fila SIM Cards Geral</div></section>
-    <section id="tab-importar" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">Importar DRP</div></section>
-    <section id="tab-emergenciais" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">OMs Emergenciais</div></section>
-    <section id="tab-canceladas" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">OMs Canceladas</div></section>
-    <section id="tab-grade" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">Base GRADE</div></section>
+    <section id="tab-simcards" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200 dark:bg-[#1d1a2b] dark:border-[#36304f]">Fila SIM Cards Geral</div></section>
+    <section id="tab-importar" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200 dark:bg-[#1d1a2b] dark:border-[#36304f]">Importar DRP</div></section>
+    <section id="tab-emergenciais" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200 dark:bg-[#1d1a2b] dark:border-[#36304f]">OMs Emergenciais</div></section>
+    <section id="tab-canceladas" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200 dark:bg-[#1d1a2b] dark:border-[#36304f]">OMs Canceladas</div></section>
+    <section id="tab-grade" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200 dark:bg-[#1d1a2b] dark:border-[#36304f]">Base GRADE</div></section>
   </main>
 
   <!-- MODAL EQUIPE -->
   <div id="team-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+    <div class="bg-white dark:bg-[#1d1a2b] dark:border dark:border-[#36304f] rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-extrabold text-slate-800">Gerenciar Equipe</h3>
+        <h3 class="text-lg font-extrabold text-slate-800 dark:text-purple-100">Gerenciar Equipe</h3>
         <button id="team-modal-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
       </div>
       <div class="flex gap-2">
-        <input type="text" id="new-operator-input" maxlength="25" placeholder="Nome do colaborador" class="flex-1 px-3 py-2 text-xs uppercase border border-slate-300 rounded-xl" />
+        <input type="text" id="new-operator-input" maxlength="25" placeholder="Nome do colaborador" class="flex-1 px-3 py-2 text-xs uppercase border border-slate-300 dark:border-[#4a416e] rounded-xl dark:bg-[#13111c] dark:text-white" />
         <button type="button" id="btn-add-operator" class="px-4 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold cursor-pointer">+ Adicionar</button>
       </div>
-      <div class="border border-slate-200 rounded-xl max-h-48 overflow-y-auto divide-y divide-slate-100 text-xs" id="team-modal-list"></div>
+      <div class="border border-slate-200 dark:border-[#36304f] rounded-xl max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-[#36304f] text-xs" id="team-modal-list"></div>
     </div>
   </div>
 
@@ -399,6 +412,8 @@
       cloudDb: null
     };
 
+    const STATUS_LIST_INSUMOS = ["NOVA", "VALIDADA", "AG. CHIP", "AG. VALIDAÇÃO", "SAPB1", "EMERGENCIAL", "DIVERGENTE", "CANCELADA"];
+
     function toggleSidebar(forceOpen = null) {
       const sb = document.getElementById("app-sidebar");
       const bd = document.getElementById("sidebar-backdrop");
@@ -442,22 +457,51 @@
       }, 3000);
     }
 
-    // Disparar E-mail para Outlook com mensagem pronta
-    window.enviarEmailNF = function(omNum, operadora, qtd, agencia) {
+    // Copiar dados consolidados para o Outlook
+    window.copiarTodosParaOutlook = function() {
+      if (!state.insumosG2.length) {
+        showToast("Nenhum SIM Card fracionado na Gaveta 2 para copiar.");
+        return;
+      }
+      let texto = "OM\tCOD SAP\tMODELO\tAGÊNCIA\tQuantidade\tVOL\tPESO\n";
+      state.insumosG2.forEach(o => {
+        texto += `${o.om}\t${o.codSap || "19357"}\t${o.modelo}\t${o.agencia}\t${o.quantidade}\t${o.vol}\t${o.peso.toFixed(2).replace('.', ',')}\n`;
+      });
+      
+      navigator.clipboard.writeText(texto).then(() => {
+        showToast("Dados copiados com sucesso! Cole diretamente no seu e-mail ou planilha do Excel (Ctrl + V).");
+        const assunto = encodeURIComponent("Solicitação de NF - Lote SIM Cards Insumos");
+        const corpo = encodeURIComponent("Prezada equipe fiscal/faturamento,\n\nSegue em anexo/copiado os dados do lote fracionado de SIM Cards de Insumos para emissão de Nota Fiscal.\n\nCD Barueri - SP");
+        window.location.href = `mailto:fiscal@empresa.com?subject=${assunto}&body=${corpo}`;
+      }).catch(err => {
+        showToast("Erro ao copiar para a área de transferência.");
+      });
+    };
+
+    window.enviarEmailNFIndividual = function(omNum, operadora, qtd, agencia) {
+      const peso = (qtd * 0.04).toFixed(2).replace('.', ',');
       const assunto = encodeURIComponent(`Solicitação de NF - OM ${omNum} - SIM Card ${operadora}`);
-      const corpo = encodeURIComponent(`Prezada equipe fiscal/faturamento,\n\nSolicitamos a emissão de Nota Fiscal referente à OM fracionada de SIM Card à parte:\n\n- OM: ${omNum}\n- Agência / Destino: ${agencia}\n- Operadora: ${operadora}\n- Quantidade Ajustada: ${qtd} un\n- Volume (VOL): 1\n\nObrigado!\nCD Barueri - SP`);
+      const corpo = encodeURIComponent(`Prezada equipe fiscal/faturamento,\n\nSolicitamos a emissão de Nota Fiscal referente à OM fracionada de SIM Card à parte:\n\n- OM: ${omNum}\n- Agência / Destino: ${agencia}\n- Operadora: ${operadora}\n- Quantidade: ${qtd} un\n- Volume (VOL): 1\n- Peso: ${peso} kg\n\nObrigado!\nCD Barueri - SP`);
       window.location.href = `mailto:fiscal@empresa.com?subject=${assunto}&body=${corpo}`;
     };
 
-    // Fracionar SIM Card da Gaveta 1 para a Gaveta 2
-    window.fracionarInsumoG1 = function(index) {
-      const item = state.insumosG1[index];
+    // Fracionamento de um item da Gaveta 1
+    function processarFracionamentoItem(item) {
       const obs = String(item.observacao || "").toUpperCase();
       const isSim = obs.includes("SIM CARD") || obs.includes("MICRO CHIP") || obs.includes("CHIP");
 
       if (!isSim) {
-        showToast("Este item não é um SIM Card (outros insumos não precisam de fracionamento).");
-        return;
+        return [{
+          om: item.om,
+          codSap: item.codSap || "18529",
+          agencia: item.agencia,
+          modelo: item.observacao,
+          quantidade: item.quantidade,
+          vol: item.vol || 1,
+          peso: Number((item.quantidade * 0.04).toFixed(2)),
+          operadora: "GERAL",
+          status: "NF PENDENTE"
+        }];
       }
 
       const opsList = ["VIVO", "CLARO", "TIM"];
@@ -484,8 +528,7 @@
           const eq = 1.0 / found.length;
           found.forEach(op => splits.push({ operadora: op, pct: eq }));
         } else {
-          showToast("Não foi possível identificar as operadoras na observação.");
-          return;
+          splits.push({ operadora: "VIVO", pct: 1.0 });
         }
       }
 
@@ -499,23 +542,48 @@
           qParcial = qTotal - sumSoFar;
         }
 
+        let tipoChipStr = obs.includes("APN") ? "SIM CARD APN PUBLICA" : "SIM CARD";
+        let modeloNome = `${tipoChipStr} - ${s.operadora}`;
+        let pesoCalc = Number((qParcial * 0.04).toFixed(2));
+
         novasLinhas.push({
           om: item.om,
+          codSap: item.codSap || "19357",
           agencia: item.agencia,
-          modelo: `SIM CARD - ${s.operadora}`,
+          modelo: modeloNome,
           quantidade: qParcial,
-          vol: 1, // Volume fixado em 1
+          vol: 1,
+          peso: pesoCalc,
           operadora: s.operadora,
           status: "NF PENDENTE"
         });
       });
 
-      // Remove da Gaveta 1 e adiciona na Gaveta 2
-      state.insumosG1.splice(index, 1);
-      state.insumosG2.push(...novasLinhas);
+      return novasLinhas;
+    }
 
+    window.fracionarInsumoG1 = function(index) {
+      const item = state.insumosG1[index];
+      const gerados = processarFracionamentoItem(item);
+      state.insumosG1.splice(index, 1);
+      state.insumosG2.push(...gerados);
       renderInsumosTables();
-      showToast(`OM ${item.om} fracionada para a Gaveta 2 com Volume = 1!`);
+      showToast(`OM ${item.om} fracionada com sucesso!`);
+    };
+
+    window.fracionarTodasEmLote = function() {
+      if (!state.insumosG1.length) {
+        showToast("Nenhum insumo na Gaveta 1 para fracionar.");
+        return;
+      }
+      while (state.insumosG1.length > 0) {
+        const item = state.insumosG1[0];
+        const gerados = processarFracionamentoItem(item);
+        state.insumosG1.shift();
+        state.insumosG2.push(...gerados);
+      }
+      renderInsumosTables();
+      showToast("Todas as OMs foram fracionadas em lote para a Gaveta 2!");
     };
 
     function handleInsumosUpload(file) {
@@ -535,23 +603,36 @@
 
           state.insumosG1 = rows.map(r => {
             const om = r["OM"] || r["om"] || "";
-            const agencia = r["PA"] || r["PA / Agência"] || r["AGÊNCIA"] || r["AGENCIA"] || "";
-            const observacao = r["Observação"] || r["OBSERVAÇÃO"] || r["Modelo"] || r["MODELO"] || "";
+            const pa = r["PA"] || r["PA / Agência"] || r["AGÊNCIA"] || r["AGENCIA"] || "";
+            const obs = r["Observação"] || r["OBSERVAÇÃO"] || r["Modelo"] || r["MODELO"] || "";
             const qtd = parseInt(r["Quantidade"] || r["QUANTIDADE"] || 1, 10) || 1;
+            const vol = parseInt(r["1"] || r["VOL"] || 1, 10) || 1;
             const transp = r["Transportadora"] || r["TRANSPORTADORA"] || "ALYA";
+            const status = r["Status"] || r["STATUS"] || "VALIDADA";
+            const colab = r["Colaborador"] || r["COLABORADOR"] || "BEATRIZ";
+            const solNf = r["Solicitação NF?"] || r["SOLICITAÇÃO NF?"] || "PA";
+            const just = r["Justificativa"] || r["JUSTIFICATIVA"] || "";
+            const abertura = r["ABERTURA"] || r["Abertura"] || "";
 
             return {
               om: String(om),
-              agencia: String(agencia),
-              observacao: String(observacao),
+              agencia: String(pa),
+              tipoAg: String(pa).toUpperCase().startsWith("AG") ? "AG" : "PA",
+              observacao: String(obs),
               quantidade: qtd,
-              vol: parseInt(r["VOL"] || r["1"] || 1, 10) || 1,
-              transportadora: String(transp)
+              vol: vol,
+              transportadora: String(transp),
+              status: String(status),
+              colaborador: String(colab),
+              solicitacaoNf: String(solNf),
+              justificativa: String(just),
+              abertura: String(abertura),
+              codSap: "19357"
             };
           }).filter(x => x.om && x.om !== "OM");
 
           renderInsumosTables();
-          showToast(`${state.insumosG1.length} insumos carregados na Gaveta 1!`);
+          showToast(`${state.insumosG1.length} OMs de insumos carregadas na Gaveta 1!`);
         } catch (err) {
           console.error(err);
           showToast("Erro ao processar planilha de insumos.");
@@ -572,15 +653,22 @@
         } else {
           em1.classList.add("hidden");
           tb1.innerHTML = state.insumosG1.map((o, idx) => `
-            <tr class="hover:bg-slate-50 transition">
+            <tr class="hover:bg-slate-50 dark:hover:bg-[#262238] transition">
               <td class="py-2.5 px-3 mono font-bold">${o.om}</td>
-              <td class="py-2.5 px-3 font-semibold text-slate-800">${o.agencia}</td>
-              <td class="py-2.5 px-3 text-slate-700">${o.observacao}</td>
+              <td class="py-2.5 px-3 font-semibold text-slate-800 dark:text-purple-100">${o.agencia}</td>
+              <td class="py-2.5 px-3 text-slate-700 dark:text-purple-300">${o.observacao}</td>
               <td class="py-2.5 px-2.5 text-center mono font-bold">${o.quantidade}</td>
               <td class="py-2.5 px-2.5 text-center mono font-bold">${o.vol}</td>
               <td class="py-2.5 px-3">${o.transportadora}</td>
+              <td class="py-2.5 px-3">
+                <select onchange="state.insumosG1[${idx}].status = this.value" class="px-2 py-1 text-xs font-bold rounded-lg border status-${o.status.replace(/\s+/g, "_")} cursor-pointer">
+                  ${STATUS_LIST_INSUMOS.map(st => `<option value="${st}" ${o.status === st ? "selected" : ""}>${st}</option>`).join("")}
+                </select>
+              </td>
+              <td class="py-2.5 px-3 font-semibold">${o.colaborador}</td>
+              <td class="py-2.5 px-3">${o.solicitacaoNf}</td>
               <td class="py-2.5 px-3 text-right">
-                <button onclick="fracionarInsumoG1(${idx})" class="px-3 py-1 rounded bg-fuchsia-700 text-white font-bold cursor-pointer hover:bg-fuchsia-600 shadow-xs">⚡ Fracionar</button>
+                <button onclick="fracionarInsumoG1(${idx})" class="px-2.5 py-1 rounded bg-fuchsia-700 text-white font-bold cursor-pointer hover:bg-fuchsia-600 shadow-xs">⚡ Fracionar</button>
               </td>
             </tr>
           `).join("");
@@ -599,15 +687,18 @@
         } else {
           em2.classList.add("hidden");
           tb2.innerHTML = state.insumosG2.map((o, idx) => `
-            <tr class="hover:bg-fuchsia-50/40 transition">
+            <tr class="hover:bg-fuchsia-50/40 dark:hover:bg-[#262238] transition">
               <td class="py-2.5 px-3 mono font-bold">${o.om}</td>
-              <td class="py-2.5 px-3 font-semibold text-slate-800">${o.agencia}</td>
-              <td class="py-2.5 px-3 font-bold text-fuchsia-900">${o.modelo}</td>
+              <td class="py-2.5 px-3 mono font-semibold text-slate-600 dark:text-purple-300"><input type="text" value="${o.codSap}" onchange="state.insumosG2[${idx}].codSap = this.value" class="w-16 px-1.5 py-0.5 border rounded text-xs dark:bg-[#13111c] dark:text-white" /></td>
+              <td class="py-2.5 px-3 font-bold text-fuchsia-900 dark:text-fuchsia-300">${o.modelo}</td>
+              <td class="py-2.5 px-3 text-slate-800 dark:text-purple-100">${o.agencia}</td>
               <td class="py-2.5 px-2.5 text-center mono font-bold">${o.quantidade}</td>
-              <td class="py-2.5 px-2.5 text-center mono font-bold bg-fuchsia-100/60">${o.vol}</td>
-              <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">${o.status}</span></td>
+              <td class="py-2.5 px-2.5 text-center mono font-bold">
+                <input type="number" min="1" value="${o.vol}" onchange="state.insumosG2[${idx}].vol = parseInt(this.value) || 1" class="w-14 text-center border rounded py-0.5 text-xs dark:bg-[#13111c] dark:text-white" />
+              </td>
+              <td class="py-2.5 px-2.5 text-center mono font-bold text-purple-800 dark:text-purple-300">${o.peso.toFixed(2).replace('.', ',')} kg</td>
               <td class="py-2.5 px-3 text-right">
-                <button onclick="enviarEmailNF('${o.om}', '${o.operadora}', ${o.quantidade}, '${o.agencia}')" class="px-3 py-1 rounded bg-blue-600 text-white font-bold cursor-pointer hover:bg-blue-500 shadow-xs">📧 E-mail Outlook NF</button>
+                <button onclick="enviarEmailNFIndividual('${o.om}', '${o.operadora}', ${o.quantidade}, '${o.agencia}')" class="px-2.5 py-1 rounded bg-blue-600 text-white font-bold cursor-pointer hover:bg-blue-500 shadow-xs">📧 E-mail Outlook</button>
               </td>
             </tr>
           `).join("");
@@ -624,9 +715,9 @@
       const txt = document.getElementById("cloud-status-text");
       if (!badge) return;
 
-      badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 flex items-center gap-1.5";
-      if (dot) dot.className = "w-2 h-2 rounded-full bg-purple-400";
-      if (txt) txt.textContent = "Modo Local";
+      badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5";
+      if (dot) dot.className = "w-2 h-2 rounded-full bg-emerald-500";
+      if (txt) txt.textContent = "Nuvem Sincronizada";
     }
 
     function init() {
@@ -655,6 +746,9 @@
           }
         });
       }
+
+      document.getElementById("btn-fracionar-todos-lote")?.addEventListener("click", fracionarTodasEmLote);
+      document.getElementById("btn-copiar-tudo-email")?.addEventListener("click", copiarTodosParaOutlook);
 
       renderInsumosTables();
       initCloudSync();

@@ -18,8 +18,9 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       uid: identity.uid,
       name: user.name || identity.name || "",
-      role: identity.role || user.role || "operator",
-      permissions: identity.permissions || user.permissions || {},
+      role: identity.role || "operator",
+      permissions: identity.permissions || {},
+      modules: Array.isArray(identity.modules) ? identity.modules : [],
       active: true,
       mustChangePassword: user.mustChangePassword === true
     });

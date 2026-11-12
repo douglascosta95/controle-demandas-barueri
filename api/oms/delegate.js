@@ -48,9 +48,10 @@ module.exports = async function handler(req, res) {
       return res.status(404).json({ error: "Operador destinatário não encontrado." });
     }
     const target = targetSnap.data();
-    if (target.active !== true ||
-        !Array.isArray(target.modules) ||
-        !target.modules.includes(MODULE_KEY)) {
+    const targetAuth = await admin.auth(app).getUser(targetUid);
+    const targetModules = Array.isArray(targetAuth.customClaims?.modules)
+      ? targetAuth.customClaims.modules : [];
+    if (target.active !== true || !targetModules.includes(MODULE_KEY)) {
       return res.status(403).json({ error: "Destinatário inativo ou não habilitado para Emergenciais." });
     }
 

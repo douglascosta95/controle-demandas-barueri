@@ -10,6 +10,7 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
+    /* ==================== IDENTIDADE VISUAL ALYA (ROXO CORPORATIVO) ==================== */
     :root {
       --bg-page: #f5f3ff;
       --bg-surface: #ffffff;
@@ -260,7 +261,6 @@
         <h2 class="text-sm font-bold text-slate-800">Painel de Atendimento de Máquinas</h2>
         <p class="text-xs text-slate-500 mt-0.5">Gerenciamento de OMs de Máquinas AG e PA com validação por PIN e etiquetas Zebra.</p>
       </div>
-      <!-- Tabela padrão de Máquinas aqui -->
     </section>
 
     <!-- ==================== TAB 2: INSUMOS & SIM CARDS ==================== -->
@@ -271,7 +271,7 @@
             <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-fuchsia-700 text-white">Insumos & SIM Cards</span>
             <h2 class="text-base font-bold text-slate-800">Fracionamento de SIM Cards & Pedidos de NF</h2>
           </div>
-          <p class="text-xs text-slate-500 mt-0.5">SIM Cards são enviados à parte das máquinas. Fracione pedidos de SIM Card por operadora (Vivo, Claro, Tim) e envie solicitação de NF direto pelo Outlook.</p>
+          <p class="text-xs text-slate-500 mt-0.5">SIM Cards à parte das máquinas. Fracione pedidos por operadora e envie solicitação de NF direto pelo Outlook com Volume = 1.</p>
         </div>
         <div class="flex items-center gap-2">
           <button id="btn-fracionar-lote" class="px-3.5 py-2 rounded-xl bg-fuchsia-700 hover:bg-fuchsia-600 text-white text-xs font-bold shadow-xs transition cursor-pointer">
@@ -280,7 +280,6 @@
         </div>
       </div>
 
-      <!-- Tabela de Insumos -->
       <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="overflow-x-auto scrollbar-thin">
           <table class="w-full text-left border-collapse">
@@ -288,7 +287,7 @@
               <tr class="bg-slate-100 text-slate-600 text-[11px] uppercase tracking-wider border-b border-slate-200">
                 <th class="py-2.5 px-3 font-bold">OM</th>
                 <th class="py-2.5 px-3 font-bold">Destino / Agência</th>
-                <th class="py-2.5 px-3 font-bold">Tipo de Insumo / Modelo</th>
+                <th class="py-2.5 px-3 font-bold">Insumo / Observação</th>
                 <th class="py-2.5 px-2.5 font-bold text-center">Quantidade</th>
                 <th class="py-2.5 px-2.5 font-bold text-center">Vol</th>
                 <th class="py-2.5 px-3 font-bold">Operadora / Divisão</th>
@@ -302,35 +301,26 @@
       </div>
     </section>
 
-    <!-- Outras abas (simcards, importar, emergenciais, canceladas, grade) mantidas -->
+    <!-- Demais abas -->
+    <section id="tab-simcards" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">Fila SIM Cards Geral</div></section>
+    <section id="tab-importar" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">Importar DRP</div></section>
+    <section id="tab-emergenciais" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">OMs Emergenciais</div></section>
+    <section id="tab-canceladas" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">OMs Canceladas</div></section>
+    <section id="tab-grade" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">Base GRADE</div></section>
   </main>
-
-  <!-- MODAL PIN -->
-  <div id="pin-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <h3 id="pin-modal-title" class="text-lg font-extrabold text-slate-800">Autenticar Operador</h3>
-      <p id="pin-modal-desc" class="text-xs text-slate-500">Digite seu PIN pessoal de 4 dígitos.</p>
-      <input type="password" id="pin-input-1" maxlength="4" placeholder="••••" class="w-full text-center tracking-[0.6em] mono text-xl font-bold py-2.5 border border-slate-300 rounded-xl" />
-      <div class="flex justify-end gap-2">
-        <button type="button" id="pin-modal-close" class="px-3 py-1.5 text-xs text-slate-600">Cancelar</button>
-        <button type="button" id="btn-pin-submit" class="px-4 py-1.5 bg-purple-700 text-white text-xs font-bold rounded-xl">Confirmar</button>
-      </div>
-    </div>
-  </div>
 
   <div id="toast" class="fixed bottom-5 right-5 bg-purple-950 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl hidden items-center gap-2.5 z-50">
     <span id="toast-msg">Ação concluída</span>
   </div>
 
   <script type="module">
-    // Sistema completo integrado com Fracionamento de SIM Cards e Outlook Mailto
     const state = {
       date: new Date().toISOString().slice(0, 10),
       currentOperator: sessionStorage.getItem("cd_barueri_op") || "",
       operators: ["BEATRIZ", "DOUGLAS", "GABI", "GISELE", "ITALO", "LEO", "LUANA", "NEUSA", "ORLANDA"],
-      oms: [],
-      pins: {},
-      auditLog: []
+      oms: [
+        { om: "1193092", destino: "MG - DOMINGOS TRANSPORTES E SERVICOS", modelo: "SIM CARD", qtd: 30, vl: 1, observacao: "SIM CARD - 75% VIVO - 25% CLARO", fracionado: false }
+      ]
     };
 
     function toggleSidebar(forceOpen = null) {
@@ -364,12 +354,58 @@
       toggleSidebar(false);
     }
 
-    // Função para Abrir Outlook com Mensagem Pronta de Fracionamento de SIM Cards
     window.enviarEmailNF = function(omNum, operadora, qtd) {
       const assunto = encodeURIComponent(`Solicitação de NF - OM ${omNum} - SIM Card ${operadora}`);
-      const corpo = encodeURIComponent(`Prezada equipe fiscal/faturamento,\n\nSolicitamos a emissão de Nota Fiscal referente à OM fracionada abaixo:\n\n- OM: ${omNum}\n- Insumo: SIM CARD / Fracionamento\n- Operadora: ${operadora}\n- Quantidade Ajustada: ${qtd} unidades\n- Volume (VOL): 1\n\nObrigado!\nCD Barueri - SP`);
+      const corpo = encodeURIComponent(`Prezada equipe fiscal/faturamento,\n\nSolicitamos a emissão de Nota Fiscal referente à OM fracionada de SIM Card:\n\n- OM: ${omNum}\n- Operadora: ${operadora}\n- Quantidade Ajustada: ${qtd} un\n- Volume (VOL): 1\n\nObrigado!\nCD Barueri - SP`);
       window.location.href = `mailto:fiscal@empresa.com?subject=${assunto}&body=${corpo}`;
     };
+
+    window.fracionarOmInsumo = function(omNum) {
+      const idx = state.oms.findIndex(o => o.om === omNum);
+      if (idx === -1) return;
+      const item = state.oms[idx];
+      if (item.fracionado) {
+        alert("Esta OM já foi fracionada.");
+        return;
+      }
+      
+      // Simula fracionamento 75% VIVO / 25% CLARO baseado na observação ou padrão
+      const q = item.qtd;
+      const vivoQtd = Math.round(q * 0.75);
+      const claroQtd = q - vivoQtd;
+
+      // Substitui a original por duas linhas fracionadas com VOL = 1
+      const fracionadas = [
+        { om: item.om, destino: item.destino, modelo: "SIM CARD - VIVO", qtd: vivoQtd, vl: 1, observacao: "75% VIVO", fracionado: true, operadora: "VIVO" },
+        { om: item.om, destino: item.destino, modelo: "SIM CARD - CLARO", qtd: claroQtd, vl: 1, observacao: "25% CLARO", fracionado: true, operadora: "CLARO" }
+      ];
+
+      state.oms.splice(idx, 1, ...fracionadas);
+      renderInsumos();
+      alert(`OM ${omNum} fracionada com sucesso em VIVO (${vivoQtd} un) e CLARO (${claroQtd} un) com VOL = 1!`);
+    };
+
+    function renderInsumos() {
+      const tbody = document.getElementById("insumos-tbody");
+      if (!tbody) return;
+      tbody.innerHTML = state.oms.map(o => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-2.5 px-3 mono font-bold">${o.om}</td>
+          <td class="py-2.5 px-3 font-semibold text-slate-800">${o.destino}</td>
+          <td class="py-2.5 px-3 text-slate-700">${o.modelo} <br/><span class="text-[10px] text-purple-600">${o.observacao || ""}</span></td>
+          <td class="py-2.5 px-2.5 text-center mono font-bold">${o.qtd}</td>
+          <td class="py-2.5 px-2.5 text-center mono font-bold bg-slate-100">${o.vl}</td>
+          <td class="py-2.5 px-3 font-bold text-purple-900">${o.operadora || "Misto"}</td>
+          <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.fracionado ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}">${o.fracionado ? "FRACIONADO" : "PENDENTE"}</span></td>
+          <td class="py-2.5 px-3 text-right space-x-1">
+            ${!o.fracionado ? `<button onclick="fracionarOmInsumo('${o.om}')" class="px-2.5 py-1 rounded bg-fuchsia-700 text-white font-bold cursor-pointer hover:bg-fuchsia-600">Fracionar</button>` : `
+              <button onclick="enviarEmailNF('${o.om}', '${o.operadora}', ${o.qtd})" class="px-2.5 py-1 rounded bg-blue-600 text-white font-bold cursor-pointer hover:bg-blue-500">📧 E-mail NF</button>
+            `}
+          </td>
+        </tr>
+      `).join("");
+      document.getElementById("badge-insumos").textContent = state.oms.length;
+    }
 
     function init() {
       document.getElementById("btn-open-sidebar").addEventListener("click", () => toggleSidebar(true));
@@ -379,7 +415,7 @@
         btn.addEventListener("click", () => switchTab(btn.dataset.tab));
       });
       document.getElementById("op-date").value = state.date;
-      console.log("Sistema de Demandas & Insumos inicializado.");
+      renderInsumos();
     }
 
     init();

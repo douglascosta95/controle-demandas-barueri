@@ -11,9 +11,12 @@ A aplicação não substitui os sistemas corporativos oficiais nem autoriza, por
 ### Supervisor
 Perfil de acompanhamento da operação, sem privilégios de administração de contas:
 - Consultar indicadores e acompanhar demandas dos módulos autorizados.
+- Delegar OMs emergenciais a operadores habilitados e atribuir responsáveis conforme a escala e as regras operacionais.
+- Reatribuir uma OM quando necessário, registrando motivo e preservando o histórico da atribuição anterior.
+- Definir prioridade operacional e acompanhar o aceite/execução da demanda, conforme regras aprovadas.
 - Acompanhar atividades recentes e consultar auditoria operacional, conforme política aprovada.
 - Consultar pendências, divergências e resultados da equipe.
-- Solicitar correções ou ajustes ao ADM, sem alterar permissões ou credenciais.
+- Solicitar correções ou ajustes administrativos ao ADM, sem alterar permissões ou credenciais.
 - Não criar, bloquear ou redefinir usuários.
 - Não alterar configurações de segurança nem apagar trilhas de auditoria.
 
@@ -36,7 +39,7 @@ Perfil destinado à execução das rotinas operacionais autorizadas:
 - Consultar histórico e atividades disponíveis ao seu perfil.
 - Comunicar divergências e solicitar correções quando não tiver permissão para executá-las.
 
-O operador não administra usuários, não altera configurações de segurança e não deve tentar contornar bloqueios ou validações.
+O operador não administra usuários, não altera configurações de segurança e não deve tentar contornar bloqueios ou validações. A delegação e a reatribuição de OMs são realizadas por Supervisor ou perfil expressamente autorizado.
 
 ## 3. Módulos e processos
 

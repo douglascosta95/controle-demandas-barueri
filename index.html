@@ -290,6 +290,9 @@
           <span id="badge-maquinas" class="px-2 py-0.5 text-[11px] rounded-full bg-purple-100 text-purple-900 dark:bg-purple-900/70 dark:text-purple-200 font-bold">0</span>
         </button>
         <button data-tab="simcards" class="nav-tab px-4 py-3 text-xs sm:text-sm font-medium flex items-center gap-2 whitespace-nowrap transition cursor-pointer">
+          <button data-tab="performance" class="nav-tab px-4 py-3 text-xs sm:text-sm font-medium flex items-center gap-2 whitespace-nowrap transition cursor-pointer">
+  <span>📊 Performance</span>
+</button>
           <span>2. Atendimento SIM Cards</span>
           <span id="badge-simcards" class="px-2 py-0.5 text-[11px] rounded-full bg-fuchsia-100 text-fuchsia-900 dark:bg-fuchsia-900/60 dark:text-fuchsia-200 font-bold">0</span>
         </button>
@@ -574,6 +577,53 @@
         </div>
       </div>
     </section>
+
+    <!-- ==================== TAB PERFORMANCE ==================== -->
+
+<section id="tab-performance" class="tab-panel hidden space-y-4">
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+    <!-- Produção Hora a Hora -->
+
+    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+      <h2 class="text-lg font-bold text-slate-800">
+        📈 Produção Hora a Hora
+      </h2>
+
+      <div id="performance-hourly"
+           class="mt-4 text-sm text-slate-500">
+        Aguardando dados...
+      </div>
+    </div>
+
+    <!-- Backlog -->
+
+    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+      <h2 class="text-lg font-bold text-slate-800">
+        📦 Backlog Operacional
+      </h2>
+
+      <div id="performance-backlog"
+           class="mt-4 text-sm text-slate-500">
+        Aguardando dados...
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+    <h2 class="text-lg font-bold text-slate-800">
+      🏆 Ranking Operadores
+    </h2>
+
+    <div id="performance-ranking"
+         class="mt-4 text-sm text-slate-500">
+      Aguardando dados...
+    </div>
+  </div>
+
+</section>
 
     <!-- ==================== TAB 3: IMPORTAR DRP & SORTEIOS ==================== -->
     <section id="tab-importar" class="tab-panel hidden space-y-5">
@@ -2715,6 +2765,7 @@
         "emergenciais": "4. OMs Emergenciais",
         "canceladas": "5. OMs Canceladas",
         "grade": "6. Base GRADE (Transportadoras)"
+        "performance": "📊 Performance",
       };
       const indicator = document.getElementById("active-tab-title-indicator");
       if (indicator) {
@@ -2722,6 +2773,92 @@
       }
     }
 
+function renderPerformance() {
+
+  const hourlyEl = document.getElementById("performance-hourly");
+  const backlogEl = document.getElementById("performance-backlog");
+  const rankingEl = document.getElementById("performance-ranking");
+
+  if (!hourlyEl || !backlogEl || !rankingEl) return;
+
+  const ranking = {};
+
+  state.oms.forEach(o => {
+
+    const operador = o.colaborador || "SEM RESPONSÁVEL";
+
+    if (!ranking[operador]) {
+      ranking[operador] = {
+        oms: 0,
+        maquinas: 0
+      };
+    }
+
+    ranking[operador].oms++;
+    ranking[operador].maquinas += Number(o.qtd || 0);
+
+  });
+
+  const ordered = Object.entries(ranking)
+    .sort((a,b)=>b[1].maquinas-a[1].maquinas);
+
+  rankingEl.innerHTML = ordered.map((r,i)=>`
+
+    <div class="flex justify-between border-b py-2">
+
+      <span>
+        ${i+1}º ${r[0]}
+      </span>
+
+      <span class="font-bold">
+        ${r[1].maquinas} Máq.
+      </span>
+
+    </div>
+
+  `).join("");
+
+  const nova =
+    state.oms.filter(x=>x.status==="NOVA").length;
+
+  const agChip =
+    state.oms.filter(x=>x.status==="AG. CHIP").length;
+
+  const agVal =
+    state.oms.filter(x=>x.status==="AG. VALIDAÇÃO").length;
+
+  const validada =
+    state.oms.filter(x=>x.status==="VALIDADA").length;
+
+  const sap =
+    state.oms.filter(x=>x.status==="SAPB1").length;
+
+  backlogEl.innerHTML = `
+
+    <div class="space-y-2">
+
+      <div>NOVA: <strong>${nova}</strong></div>
+
+      <div>AG CHIP: <strong>${agChip}</strong></div>
+
+      <div>AG VALIDAÇÃO: <strong>${agVal}</strong></div>
+
+      <div>VALIDADA: <strong>${validada}</strong></div>
+
+      <div>SAPB1: <strong>${sap}</strong></div>
+
+    </div>
+
+  `;
+
+  hourlyEl.innerHTML = `
+    <div class="text-slate-400">
+      Dashboard horário será ativado na próxima etapa.
+    </div>
+  `;
+
+}
+    
     function renderAll() {
       renderOperatorSelectors();
       renderMaquinas();
@@ -2729,6 +2866,7 @@
       renderRafflePanels();
       renderGrade();
       renderSpecialTabs();
+      renderPerformance();
       renderAuditFeed();
     }
 

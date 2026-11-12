@@ -200,6 +200,7 @@
     .status-AG_VALIDACAO { background-color: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
     .status-SAPB1 { background-color: #dbeafe; color: #1e40af; border-color: #93c5fd; }
     .status-DIVERGENTE { background-color: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .status-EMERGENCIAL { background-color: #ffedd5; color: #9a3412; border-color: #fb923c; }
     .status-CANCELADA { background-color: #e2e8f0; color: #475569; border-color: #94a3b8; text-decoration: line-through; }
 
     html.dark .status-NOVA { background-color: #241842 !important; color: #ede9fe !important; border-color: #4c367a !important; }
@@ -208,6 +209,7 @@
     html.dark .status-AG_VALIDACAO { background-color: #4c1d95 !important; color: #ddd6fe !important; border-color: #7c3aed !important; }
     html.dark .status-SAPB1 { background-color: #1e3a8a !important; color: #93c5fd !important; border-color: #2563eb !important; }
     html.dark .status-DIVERGENTE { background-color: #7f1d1d !important; color: #fca5a5 !important; border-color: #dc2626 !important; }
+    html.dark .status-EMERGENCIAL { background-color: #7c2d12 !important; color: #fed7aa !important; border-color: #ea580c !important; }
     html.dark .status-CANCELADA { background-color: #334155 !important; color: #94a3b8 !important; border-color: #475569 !important; }
   </style>
 </head>
@@ -294,8 +296,16 @@
         <button data-tab="importar" class="nav-tab px-4 py-3 text-xs sm:text-sm font-medium flex items-center gap-2 whitespace-nowrap transition cursor-pointer">
           <span>3. Importar DRP & Sorteios (AG / PA)</span>
         </button>
+        <button data-tab="emergenciais" class="nav-tab px-4 py-3 text-xs sm:text-sm font-medium flex items-center gap-2 whitespace-nowrap transition cursor-pointer">
+          <span>4. OMs Emergenciais</span>
+          <span id="badge-emergenciais" class="px-2 py-0.5 text-[11px] rounded-full bg-orange-100 text-orange-900 dark:bg-orange-900/60 dark:text-orange-200 font-bold">0</span>
+        </button>
+        <button data-tab="canceladas" class="nav-tab px-4 py-3 text-xs sm:text-sm font-medium flex items-center gap-2 whitespace-nowrap transition cursor-pointer">
+          <span>5. OMs Canceladas</span>
+          <span id="badge-canceladas" class="px-2 py-0.5 text-[11px] rounded-full bg-rose-100 text-rose-900 dark:bg-rose-900/60 dark:text-rose-200 font-bold">0</span>
+        </button>
         <button data-tab="grade" class="nav-tab px-4 py-3 text-xs sm:text-sm font-medium flex items-center gap-2 whitespace-nowrap transition cursor-pointer">
-          <span>4. Base GRADE (Transportadoras)</span>
+          <span>6. Base GRADE (Transportadoras)</span>
           <span id="badge-grade" class="px-2 py-0.5 text-[11px] rounded-full bg-purple-100/70 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-semibold">0</span>
         </button>
       </div>
@@ -634,6 +644,84 @@
       </div>
     </section>
 
+    <!-- ==================== TAB 4: OMs EMERGENCIAIS ==================== -->
+    <section id="tab-emergenciais" class="tab-panel hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl border border-orange-300 dark:border-orange-700/60 bg-orange-50/30 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-orange-600 text-white">Prioridade Máxima</span>
+            <h2 class="text-base font-bold text-slate-800">OMs Emergenciais (Atendimento Prioritário)</h2>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5">Todas as OMs marcadas com status <strong>EMERGENCIAL</strong> ficam destacadas nesta aba dedicada (e também visíveis no painel principal).</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-copy-emergenciais-zebra" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-orange-600 hover:bg-orange-500 text-white shadow-xs flex items-center gap-1.5 transition cursor-pointer">
+            Copiar Emergenciais (Zebra)
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto scrollbar-thin">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-100 text-slate-600 text-[11px] uppercase tracking-wider border-b border-slate-200">
+                <th class="py-2.5 px-3 font-bold">OM</th>
+                <th class="py-2.5 px-3 font-bold">Destino (GRADE)</th>
+                <th class="py-2.5 px-3 font-bold">Modelo</th>
+                <th class="py-2.5 px-2.5 font-bold text-center">QTD</th>
+                <th class="py-2.5 px-2.5 font-bold text-center">VL / Volume</th>
+                <th class="py-2.5 px-3 font-bold">Transporte</th>
+                <th class="py-2.5 px-3 font-bold">Colaborador</th>
+                <th class="py-2.5 px-3 font-bold">Status & Auditoria</th>
+                <th class="py-2.5 px-3 font-bold text-right">Etiqueta Zebra</th>
+              </tr>
+            </thead>
+            <tbody id="emergenciais-tbody" class="divide-y divide-slate-100 text-xs"></tbody>
+          </table>
+        </div>
+        <div id="emergenciais-empty" class="p-8 text-center text-slate-500 text-sm">
+          Nenhuma OM marcada como EMERGENCIAL no momento.
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: OMs CANCELADAS ==================== -->
+    <section id="tab-canceladas" class="tab-panel hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl border border-rose-300 dark:border-rose-700/60 bg-rose-50/30 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-rose-600 text-white">Arquivo de Cancelamentos</span>
+            <h2 class="text-base font-bold text-slate-800">OMs Canceladas</h2>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5">OMs canceladas são removidas automaticamente das filas ativas de Máquinas e SIM Cards e ficam armazenadas aqui. Para reativar, basta alterar o status.</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto scrollbar-thin">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-100 text-slate-600 text-[11px] uppercase tracking-wider border-b border-slate-200">
+                <th class="py-2.5 px-3 font-bold">OM</th>
+                <th class="py-2.5 px-3 font-bold">Destino (GRADE)</th>
+                <th class="py-2.5 px-3 font-bold">Modelo</th>
+                <th class="py-2.5 px-2.5 font-bold text-center">QTD</th>
+                <th class="py-2.5 px-2.5 font-bold text-center">VL / Volume</th>
+                <th class="py-2.5 px-3 font-bold">Transporte</th>
+                <th class="py-2.5 px-3 font-bold">Colaborador</th>
+                <th class="py-2.5 px-3 font-bold">Status (Reativar)</th>
+              </tr>
+            </thead>
+            <tbody id="canceladas-tbody" class="divide-y divide-slate-100 text-xs"></tbody>
+          </table>
+        </div>
+        <div id="canceladas-empty" class="p-8 text-center text-slate-500 text-sm">
+          Nenhuma OM cancelada registrada nesta data.
+        </div>
+      </div>
+    </section>
+
     <!-- ==================== TAB 4: BASE GRADE ==================== -->
     <section id="tab-grade" class="tab-panel hidden space-y-4">
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
@@ -770,6 +858,28 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: ALERTA / CONFIRMAÇÃO DE STATUS ==================== -->
+  <div id="status-notice-modal" class="fixed inset-0 bg-purple-950/75 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between">
+        <span id="status-notice-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-900">Aviso Operacional</span>
+        <button id="status-notice-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
+      </div>
+      <div class="flex items-start gap-3">
+        <div id="status-notice-icon" class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-amber-100 text-amber-700">⚠️</div>
+        <div>
+          <h3 id="status-notice-title" class="text-base font-extrabold text-slate-800">Atenção</h3>
+          <p id="status-notice-msg" class="text-sm font-bold text-slate-700 mt-1"></p>
+          <p id="status-notice-sub" class="text-xs text-slate-500 mt-1"></p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" id="btn-status-notice-cancel" class="hidden px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold cursor-pointer">Não, manter na fila</button>
+        <button type="button" id="btn-status-notice-confirm" class="px-5 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold shadow-xs cursor-pointer">Entendi</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="fixed bottom-5 right-5 bg-purple-950 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-purple-700 hidden items-center gap-2.5 z-50">
     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
@@ -828,7 +938,7 @@
     };
 
     const DEFAULT_OPERATORS = ["BEATRIZ", "DOUGLAS", "GABI", "GISELE", "ITALO", "LEO", "LUANA", "NEUSA", "ORLANDA"];
-    const STATUS_LIST = ["NOVA", "VALIDADA", "AG. CHIP", "AG. VALIDAÇÃO", "SAPB1", "DIVERGENTE", "CANCELADA"];
+    const STATUS_LIST = ["NOVA", "VALIDADA", "AG. CHIP", "AG. VALIDAÇÃO", "SAPB1", "EMERGENCIAL", "DIVERGENTE", "CANCELADA"];
     const MASTER_RESET_PIN = "0000";
 
     const GRADE_DATA = [["AC-CHR", "CT002589", "AC", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG 1556 RIO BRANCO AC CORNER", "-", "AC", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG 1695 ALTAMIRA PA", "CT000225", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG 1922 MARABA PA", "CT001323", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG 1941 JIPARANÁ RO CORNER", "CT001334", "RO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG 3253 PORTO VELHO RO CORNER", "CT000236", "RO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG 3273 MANAUS AM CORNER", "CT000303", "AM", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG 3436 BOA VISTA RR CORNER", "CT000238", "RR", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG 3524 BELEM PA", "-", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG 3932 PALMAS TO CORNER", "CT000262", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG 4343 BELEM PA", "CT002211", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG 4375 SANTAREM PA CORNER", "CT000229", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG 4583 BELEM PA CORNER", "CT001296", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG.3270_RIO BRANCO_AC", "CT571619", "AC", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AG.3524_BELEM_PA_CORNER", "CT571774", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AM-CAVALCANTE", "CT002590", "AM", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AM-RORAIMA RR", "CT002591", "RR", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["AP-ULTRA SERVICE - MACAPA", "CT571272", "AP", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["PA - BLP BELEM", "-", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["PA - PRISMA BELEM", "-", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["PA-ULTRA SERVICE - ALTAMIRA", "CT571286", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["PA-ULTRA SERVICE - BELEM", "CT571271", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["PA-ULTRA SERVICE - MARABA", "CT571274", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["PA-ULTRA SERVICE - PARAGOMINAS", "CT571285", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["PA-ULTRA SERVICE - SANTAREM", "CT571273", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["PRISMA BELEM", "CT571753", "PA", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["RLB NET ARAGUAINA", "CT571872", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["RLB NET PALMAS", "CT571871", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["RO CHR JI PARANA", "-", "RO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["RO-CHR", "CT002594", "RO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["RO-CHR - JI PARANA", "CT571283", "RO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["RR - VAI E VEM LOG", "CT571652", "RR", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["TO - BLP PALMAS", "-", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["TO - PRISMA PALMAS", "-", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["TO - RLB NET ARAGUAINA", "-", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["TO - RLB NET ARRAIAS", "-", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["TO - RLB NET GUARAI", "-", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["TO - RLB NET GURUPI", "-", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["TO - RLB NET PALMAS", "-", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["TO - RLB SERVICOS ARAGUAINA", "CT571872", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["TO - RLB SERVICOS PALMAS", "CT571871", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["TO - UP LOGISTICA ARAGUAÍNA", "CT571914", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["TO - UP LOGISTICA PALMAS", "CT571880", "TO", "NORTE", "AEROSOFT", "16:00 às 17:00"], ["47327- NUCLEO PROSPERA TUTOIA - MA", "CT571508", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["AG 0001 CENTRAL SP CORNER", "CT000324", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0004 BAURU SP CORNER", "CT571869", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0005 BRAS SP CORNER", "CT000643", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0008 ARAÇATUBA SP CORNER", "CT000965", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0010 CAMPINAS SP CORNER", "CT000899", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0013 LIMEIRA SP CORNER", "CT000901", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0019 RIBEIRAO PRETO SP CORNER", "CT000886", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0033 PRESIDENTE PRUDENTE SP CORNER", "CT571885", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0037 SJ RIO PRETO SP CORNER", "CT000880", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0040 JUNDIAI SP CORNER", "CT000974", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0041 PIRACICABA SP CORNER", "CT000975", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0044 ARARAQUARA SP CORNER", "CT000976", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0087 MOGI DAS CRUZES SP CORNER", "CT000425", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0090 AMERICANA SP CORNER", "CT000982", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0100 TERESINA PI CORNER", "CT000279", "PI", "NORDESTE", "ALYA", "11:00 às 13:00"], ["AG 0110 SANTO ANDRE SP CORNER", "CT571887", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0135 SAO VICENTE SP CORNER", "CT002283", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0140 GUARULHOS SP CORNER", "CT000394", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0142 DIADEMA SP CORNER", "CT000374", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0157 INDAIATUBA SP CORNER", "CT001360", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0162 LONDRINA PR CORNER", "CT000891", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["AG 0179 JUIZ DE FORA MG CORNER", "CT001116", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0189 CAXIAS DO SUL RS CORNER", "CT000938", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["AG 0202 TIJUCA RJ", "CT001351", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0221 MONTE ALTO SP", "CT001459", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0277 COTIA SP", "CT000364", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0336 TABOAO DA SERRA SP CORNER", "CT571655", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0341 BARUERI SP", "CT000348", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0342 CARAGUATATUBA SP CORNER", "CT000361", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0390 SAO PAULO_SP CORNER", "CT571894", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0528 IBATE SP", "CT001603", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0805 CABO FRIO RJ CORNER", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 0942 RIO DE JANEIRO RJ", "CT001697", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 1249  BARRA DO GARÇAS", "CT571305", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG 1290 PONTA GROSSA PR CORNER", "CT001256", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["AG 1471 CAMPOS DOS GOYTACAZES RJ CORNER", "CT001802", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 1522 SAO JOAO DE MERITI RJ", "CT001280", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 1568 GOIANIA GO CORNER", "CT571931", "GO", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG 1576 PORTO ALEGRE RS CORNER", "-", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["AG 1658 BELO HORIZONTE MG CORNER", "CT000992", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 1917 CALDAS NOVAS GO CORNER", "CT001941", "GO", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG 2093 RIO DE JANEIRO RJ CORNER", "CT001361", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 2140 CAMPO GRANDE MS CORNER", "CT001037", "MS", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG 2179 SHOP IBIRAPUERA SP CORNER", "CT570183", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 2185 RONDONOPOLIS MT CORNER", "CT000250", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG 22475 SAO PAULO SP CORNER", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 23008 CURITIBA PR CORNER", "CT001151", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["AG 2307 CALHAU SÃO LUIS", "CT571708", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["AG 23088 IPANEMA RJ CORNER", "CT001635", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3003 RIO DE JANEIRO RJ CORNER", "CT001038", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3007_BELO_HORIZONTE_MG_CORNER", "CT571896", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3058 BETIM MG", "CT001987", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3071 CABO FRIO RJ CORNER", "CT001111", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3087 CAMPOS DO JORDAO SP CORNER", "CT571834", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 3108 CORONEL FABRICIANO MG CORNER", "CT001043", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3121 DOURADOS MT CORNER", "CT000248", "MS", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG 3122 DUQUE DE CAXIAS RJ CORNER", "CT001044", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3154 IPATINGA MG CORNER", "CT002012", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3190 MACAE RJ CORNER", "CT100234", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3216 NOVA FRIBURGO RJ CORNER", "CT001048", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3240 PELOTAS RS CORNER", "CT571457", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["AG 3248 POÇOS DE CALDAS MG CORNER", "CT000870", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3255 POUSO ALEGRE MG CORNER", "CT000872", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3310 SAO JOSE DOS CAMPOS SP CORNER", "CT000520", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 3311 SJ RIO PRETO SP CORNER", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3313 SAO LUIS MA CORNER", "CT000310", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["AG 3328 TAGUATINGA DF CORNER", "CT000232", "DF", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG 3342 UBERLANDIA MG CORNER", "CT001129", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3344 VARGINHA MG CORNER", "CT000868", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3345 VITÓRIA ES CORNER", "CT000881", "ES", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3346 VILA VELHA ES", "CT571541", "ES", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3348 GOIANIA GO CORNER", "CT001132", "GO", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG 3350 RIO DE JANEIRO RJ CORNER", "CT001052", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3352 VOLTA REDONDA RJ CORNER", "CT001053", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3381 RIO DE JANEIRO RJ CORNER", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3391 SAO GONCALO RJ", "CT001055", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3396 NITEROI RJ CORNER", "CT001056", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3412 SAO PAULO SP CORNER", "CT000617", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 3457 RIO DE JANEIRO RJ CORNER", "CT571886", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3466 CUIABA MT CORNER", "CT001135", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG 3477 BELO HORIZONTE MG CORNER", "CT001063", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3488 CONTAGEM MG CORNER", "CT001064", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3490 DIVINOPOLIS MG CORNER", "CT001065", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3504 MONTES CLAROS MG CORNER", "CT001067", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3520 UBERABA MG CORNER", "CT001123", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3547 OSASCO SP CORNER", "CT000437", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 3554 SAO BERNARDO DO CAMPO SP CORNER", "CT000505", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 3587 CASCAVEL PR", "CT002094", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["AG 3601 FOZ DO IGUACU PR", "CT002098", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["AG 3650 SANTOS SP", "CT000486", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 3893_BELO HORIZONTE_MG_CORNER", "CT571902", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 4168 SINOP MT", "CT000247", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG 4254 SAO PAULO SP CORNER", "CT000690", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 4281 SAO PAULO SP CORNER", "CT000597", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 4338 BARUERI SP", "CT571954", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 4416 SANTA LUZIA MG", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 4425 TAUBATE SP", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 4541 MARINGA PR CORNER", "CT000892", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["AG 4635 NOVA PAULISTA SP", "CT000707", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 4742 TABOAO DA SERRA SP CORNER", "CT000832", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG.0004_BAURU_SP_CORNER", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.0084 CURITIBA PR", "CT571468", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["AG.0110_SANTO ANDRE_SP_CORNER", "CT571887", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG.0201_SAO PAULO_SP", "CT571628", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG.0215_PETROPOLIS RJ_CORNER", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.0215_PETROPOLIS_RJ_CORNER", "CT571836", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.0336_TABOAO DA SERRA_CORNER", "CT571655", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG.0390_SAO PAULO_SP_CORNER", "CT571894", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG.0565_CAMPINAS_SP", "CT001616", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG.0734_TAUBATE_SP_CORNER", "CT571440", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.0787_RIO DE JANEIRO_RJ_CORNER", "CT571720", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.0788_VILA VELHA_ES_CORNER", "-", "ES", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.0805_CABO FRIO_RJ_CORNER", "CT571721", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.0963_SOROCABA_SP_CORNER", "CT001705", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG.0966_ANAPOLIS_GO_CORNER", "CT571991", "GO", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG.1002_PORTO ALEGRE_RS_CORNER", "CT571847", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["AG.1002_PORTO ALEGRE_RS_CORNER", "-", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["AG.1064_CANOAS_RS_CORNER", "-", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["AG.1320_TAUBATE_SP_CORNER", "CT000836", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.1320_TAUBATE_SP_CORNER", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.1615_GRAVATAI_RS_CORNER", "CT571447", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["AG.1634_ CAPAO REDONDO_SP_CORNER", "CT571439", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG.2132_TAGUATINGANORTE_CORNER", "CT571517", "DF", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG.23008_CURITIBA_PR_CORNER", "CT001151", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["AG.3015_ANAPOLIS_GO_CORNER", "CT571437", "GO", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG.3020_ANGRA DOS REIS_RJ_CORNER", "CT571444", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3055_BELFORD ROXO_RJ_CORNER", "CT571470", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3067_BRASILIA_DF_CORNER", "CT571506", "DF", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["AG.3086_CAMPOS DOS GOYTACAZES_RJ_CORNER", "CT571520", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3087_CAMPOS DO JORDAO CORNER", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3153_GENERAL OSORIO_RJ_CORNER", "CT571478", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3240_PELOTAS_RS_CORNER", "CT571457", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["AG.3243_PINDAMONHANGABA_SP_CORNER", "CT571901", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3246_PIRACICABA_SP_CORNER", "CT571501", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3272_RIO GRANDE_RS_CORNER", "CT571471", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["AG.3294_SANTO ANDRE_SP_CORNER", "CT571438", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG.3311_SAO JOSE DO RIO PRETO_SP_CORNER", "CT571766", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3381_RIO _DE_JANEIRO_RJ_CORNER", "CT001157", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3448_RIO DE JANEIRO_RJ_CORNER", "CT571956", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3527 PORTO ALEGRE_RS_CORNER", "-", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["AG.3533_PETROPOLIS_RJ_CORNER", "CT571825", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3815_SAO JOSE DO RIO PRETO_SP_CORNER", "CT571895", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3829_SAO PAULO_SP_CORNER", "CT571469", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG.3853_SAO PAULO_SP_CORNER", "CT571846", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG.4416_SANTA LUZIA_MG_CORNER", "CT571472", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.4425_TAUBATE_SP", "CT571620", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.4619_NOVA IGUACU_RJ_CORNER", "CT571442", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG_0566_SOROCABA_SP", "CT571709", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG0060 SAO BERNARDO DO CAMPO SP CORNER", "CT571888", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["CONECTA PACAEMBU", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["CONECTA SP", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["DF-WORD SERVICE", "CT002596", "DF", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["ES-ULTRA SERVICE", "CT571255", "ES", "SUDESTE", "ALYA", "11:00 às 13:00"], ["ES-ULTRA SERVICE PA CACHOEIRO DE ITAPEMIRIM", "CT571965", "ES", "SUDESTE", "ALYA", "11:00 às 13:00"], ["ES-ULTRA SERVICE PA COLATINA", "CT571966", "ES", "SUDESTE", "ALYA", "11:00 às 13:00"], ["ES-ULTRA SERVICE- PA COLATINA", "CT571966", "ES", "SUDESTE", "ALYA", "11:00 às 13:00"], ["ES-ULTRA SERVICE PA GUARAPARI", "CT571967", "ES", "SUDESTE", "ALYA", "11:00 às 13:00"], ["ES-ULTRA SERVICE- PA GUARAPARI", "CT571967", "ES", "SUDESTE", "ALYA", "11:00 às 13:00"], ["GO - WORD SERVICE", "CT002596", "GO", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["GO UP LOGISTICA ANAPOLIS", "CT571730", "GO", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["GO-CLICK LOGISTICA", "CT571340", "GO", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["GO-CLICK LOGISTICA ANAPOLIS", "CT571385", "GO", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["GO-CLICK LOGISTICA BRASILIA", "CT571386", "DF", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["GO-CLICK LOGISTICA CALDAS NOVAS", "CT571384", "GO", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["GO-CLICK LOGISTICA RIO VERDE", "CT571383", "GO", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MA - BLP SAO LUIS", "-", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["MA - CLICK SAO LUIS", "CT571415", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["MA - PRISMA SAO LUIS", "-", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["MA - RLB IMPERATRIZ", "CT571683", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["MA - UP LOGISTICA", "-", "MA", "NORDESTE", "ALYA", ""], ["MA - UP LOGISTICA IMPERATRIZ", "CT571868", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["MA - UP LOGISTICA SAO LUIS", "CT571840", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["MA - UP LOGISTICA SÃO LUIS", "-", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["MA-UP LOGISTICA IMPERATRIZ", "-", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["MF BAURU", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MF BOTUCATU", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MF MARILIA", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - ATUAL EXPRESS BH", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - ATUAL EXPRESS DIVINOPOLIS", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - ATUAL EXPRESS GOV VALADARES", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - ATUAL EXPRESS IPATINGA", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - ATUAL EXPRESS JOAO MONLEVADE", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - ATUAL EXPRESS JUIZ DE FORA", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - ATUAL EXPRESS MONTES CLAROS", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - ATUAL EXPRESS OURO BRANCO", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - ATUAL EXPRESS POUSO ALEGRE", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - ATUAL EXPRESS TEOFILO OTONI", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - ATUAL EXPRESS UBERLANDIA", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - ATUAL EXPRESS VARGINHA", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - C2 LOGISTICA", "CT571672", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - C2 LOGISTICA - DIVINOPOLIS", "CT571750", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - CD PAYLOG BH", "CT571413", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - CONCEITO SOLUCOES", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG – CONCEITO SOLUCOES", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - DOMINGOS TRANSPORTES E SERVICOS", "CT571673", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - EXPRESSO ROSARIO - IPATINGA", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - INTERLOG", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - MF CARATINGA 02", "CT571878", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - MF IPATINGA", "CT571877", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - MF JOAO MONLEVADE", "CT571736", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - MF POÇOS DE CALDAS", "CT571928", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - MF POUSO ALEGRE 01", "CT571738", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - MF POUSO ALEGRE 02", "CT571735", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - MF SAO LOURENCO", "CT571739", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - MF TARUMIRIM", "CT571770", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - MF VARGINHA 01", "CT571740", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - MF VARGINHA 02", "CT571741", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - PAYTEC FILIAL BH", "CT571414", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - PH EXPRESS - MURIAE", "CT571737", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - PRO ATIVA GOVERNADOR VALADARES", "CT571823", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG – PRO ATIVA GOVERNADOR VALADARES", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - PRO ATIVA TEOFILO OTONI", "CT571824", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG – PRO ATIVA TEÓFILO OTONI", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RIBEIROS EXPRESS - PA  ARAGUARI", "CT571889", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RIBEIROS EXPRESS - PA  ARAXA", "CT571891", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RIBEIROS EXPRESS - PA  CENTRALINA", "CT571892", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RIBEIROS EXPRESS - PA  PATOS DE MINAS", "CT571893", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RIBEIROS EXPRESS - PA  SÃO GOTARDO", "CT571890", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RIBEIROS EXPRESS - UBERLANDIA", "CT571649", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RIBEIRO'S EXPRESS - UBERLANDIA", "CT571649", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RIBEIROS EXPRESS - UNAI", "CT571648", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RIBEIRO'S EXPRESS - UNAI", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RIBEIROS EXPRESS-UBERABA", "CT571650", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RLOGBARBACENA", "CT571535", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RLOGBELO HORIZONTE", "CT571536", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RLOGIPATINGA", "CT571540", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RLOGMONTES CLAROS", "CT571537", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RLOGPOUSO ALEGRE", "CT571538", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - RLOGUBERLANDIA", "CT571539", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG - SPEED LOG EXPRESS - GOV VALADARES", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG  CONCEITO SOLUCOES", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG  PRO ATIVA GOVERNADOR VALADARES", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG- MF CARATINGA", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MG- MF IPATINGA", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["MS - MIDWEST", "CT571436", "MS", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MS - SICREDI CAMPO GRANDE", "CT572002", "MS", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MS-ASSISTE", "-", "MS", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT - FLEX MOTO EXPRESS", "CT002599", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT - FLEX MOTO EXPRESS - RONDONOPOLIS", "CT571277", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT - FLEX MOTO EXPRESS - SINOP", "CT571276", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT - OIRES BARRA DO  GARÇAS", "CT571922", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT - OIRES CUIABA", "CT571883", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT - OIRES RONDONOPOLIS", "CT571920", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT - OIRES SINOP", "CT571921", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT - SICREDI CANARANA", "CT571996", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT - SICREDI TANGARA", "CT572024", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT- CHR - CÁCERES", "-", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT- RM SANTOS - BARRA DO GARCA", "-", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT- RM SANTOS - CACERES", "CT571711", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT- RM SANTOS - CUIABA", "CT571712", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT- RM SANTOS - RONDONOPOLIS", "CT571714", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT- RM SANTOS - SINOP", "CT571713", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["NUCLEO PROSPERA PINHEIRO - MA", "CT571434", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["PA RIO-VIA PARQUE CORNER", "CT570318", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["PARCEIRO MF - MG 01", "CT571679", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["PARCEIRO MF - SP LITORAL 01", "CT571661", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["PERFORMA JUIZ DE FORA", "-", "MG", "SUDESTE", "ALYA", "11:00 às 13:00"], ["PERFORMA NITEROI", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["PI - UP LOGISTICA FLORIANO", "CT571728", "PI", "NORDESTE", "ALYA", "11:00 às 13:00"], ["PI - UP LOGISTICA PICOS", "CT571727", "PI", "NORDESTE", "ALYA", "11:00 às 13:00"], ["PI - UP LOGISTICA TERESINA", "CT571841", "PI", "NORDESTE", "ALYA", "11:00 às 13:00"], ["PI- UP LOGISTICA", "-", "PI", "NORDESTE", "ALYA", "11:00 às 13:00"], ["PI-CLICK LOGISTICA TERESINA", "CT571429", "PI", "NORDESTE", "ALYA", "11:00 às 13:00"], ["PI-LAG LOGISTICA", "CT571394", "PI", "NORDESTE", "ALYA", "11:00 às 13:00"], ["POLO CARRAO", "CT571495", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["POLO GRAJAU", "CT571411", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["POLO ITAQUERA", "CT571494", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["POLO MAUA", "CT571498", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["POLO SANTANA", "CT571497", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["POLO SANTO ANDRE", "CT571500", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["POLO SAO BERNARDO DO CAMPO", "CT571499", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["POLO SAO MATHEUS", "CT571496", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["POLO SAO MIGUEL", "CT571493", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["POLO TABOAO DA SERRA", "CT571412", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["PR - SICREDI PONTA GROSSA", "CT571999", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-AMPRERE", "CT571424", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-ARAPOTI", "CT571342", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-BELTRÃO", "CT100031", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-CAMPO MOURAO", "CT100032", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-CASCAVEL", "CT100033", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-CURITIBA", "CT100034", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-FOZ DO IGUAÇU", "CT100035", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-GUARAPUAVA", "CT100036", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-GUARAPUAVA NEW", "CT571423", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PRISMA BARUERI", "CT571667", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["PRISMA BARUERI", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["PRISMA BAURU", "CT571703", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["PRISMA BAURU - SP", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["PRISMA CURITIBA", "CT571668", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PRISMA CURITIBA", "-", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PRISMA CURITIBA - PR", "-", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PRISMA PIRACICABA", "CT571706", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["PRISMA PIRACICABA - SP", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["PRISMA SÃO LUIS", "CT571752", "MA", "NORDESTE", "ALYA", "11:00 às 13:00"], ["PR-LITORAL", "CT100037", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-LONDRINA", "CT100038", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-MARINGÁ", "CT100039", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-PARANAVAI", "CT100040", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-PHOILOG", "CT571876", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-PONTA GROSSA", "CT100041", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-UMUARAMA", "CT100042", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["PR-UNIAO DA VITORIA", "-", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["RJ - CONCEITO SOLUCOES", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ – CONCEITO SOLUCOES", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - DELIVERY DAS FAVELAS", "CT571769", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ – DELIVERY DAS FAVELAS", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - DELUNA TRANSPORTES", "CT571748", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - DELUNA TRANSPORTES - ITABORAI", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - KG LOG", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - WC LOGISTICA", "CT571782", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - WC LOGISTICA ANGRA DOS REIS", "CT571784", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - WC LOGISTICA BARRA MANSA", "CT571785", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - WC LOGISTICA CAMPOS DOS GOYTACAZES", "CT571786", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - WC LOGISTICA ITAPERUNA", "CT571787", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - WC LOGISTICA NOVA FRIBURGO", "CT571795", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - WC LOGISTICA SÃO GONÇALO", "CT571788", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - WC LOGISTICA SÃO PEDRO DA ALDEIA", "CT571789", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - WC LOGISTICA TERESOPOLIS", "CT571790", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ - WC LOGISTICA TRÊS RIOS", "CT571797", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-ML DA SILVA", "CT571826", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-ML DA SILVA ANGRA DOS REIS", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-ML DA SILVA CAMPOS DOS GOYTACAZES", "CT571830", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-ML DA SILVA SAO GONCALO", "CT571831", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-ML DA SILVA SAO PEDRO", "CT571832", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-ML VOLTA REDONDA", "CT571915", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-NET ANGRA DOS REIS", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-NETBARRA MANSA", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-NETCAMPO GRANDE", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-NETCAMPOS DOS GOYTACAZES", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-NETNOVA IGUACU", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-NETSAO GONCALO", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-NETSAO PEDRO", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RJ-NETSERVICE", "-", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["RS - SICREDI CARLOS BARBOSA", "CT571997", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS - SICREDI  SERRANA", "CT572001", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS – SMART PASSO FUNDO", "-", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART", "CT100153", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - BAGE", "-", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - CAPAO DA CANOA", "CT100149", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - CAXIAS DO SUL", "CT100150", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - PASSO FUNDO", "CT571818", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - PASSO FUNDO (2)", "-", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - PELOTAS", "CT100152", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - SANTA CRUZ DO SUL", "CT100154", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - SANTA MARIA", "CT100155", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - SANTA VITORIA DO PALMAR", "CT100156", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - SANTANA DO LIVRAMENTO", "CT100202", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - SANTO ANGELO", "CT100157", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - SÃO LEOPOLDO", "CT100204", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - URUGUAIANA", "CT100158", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART - VALE DOS SINOS", "CT571427", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["RS-SMART TAPES", "CT571341", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["SC - MF EVANDRO CHAPECO", "CT572020", "SC", "SUL", "ALYA", "11:00 às 13:00"], ["SC-CJB TRANSPORTES CHAPECO", "CT571985", "SC", "SUL", "ALYA", "11:00 às 13:00"], ["SC-MF AURORA", "CT571983", "SC", "SUL", "ALYA", "11:00 às 13:00"], ["SC-MF LAGES", "CT571984", "SC", "SUL", "ALYA", "11:00 às 13:00"], ["SC-SOLUTECH", "CT100054", "SC", "SUL", "ALYA", "11:00 às 13:00"], ["SC-SOLUTECH CHAPECO", "CT571191", "SC", "SUL", "ALYA", "11:00 às 13:00"], ["SC-SOLUTECH JOINVILLE", "CT571192", "SC", "SUL", "ALYA", "11:00 às 13:00"], ["SC-SOLUTECH LAGES", "CT571190", "SC", "SUL", "ALYA", "11:00 às 13:00"], ["SC-WL LOGISTICA ICARA", "CT571981", "SC", "SUL", "ALYA", "11:00 às 13:00"], ["SC-WL LOGISTICA SAO JOSE", "CT571989", "SC", "SUL", "ALYA", "11:00 às 13:00"], ["SICREDI SÃO LEOPOLDO", "CT571799", "RS", "SUL", "ALYA", "11:00 às 13:00"], ["SP - ATTITUDE", "CT571781", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - BLINK PRESIDENTE PRUDENTE", "CT571689", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - BLINK SAO JOSE DO RIO PRETO", "CT571680", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - COURRIER EXPRESS", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - DDEXPRESS", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - DDP SOLUTIONS VITAL", "CT571631", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - DELIVERY DAS FAVELAS", "CT571828", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - DU EXPRESS", "CT571777", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - EL FLEX", "CT571898", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - FLARSET", "CT571776", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - INTERLOG", "CT571723", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - LOCKER", "CT571514", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - MF ARAÇATUBA", "CT572018", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - MF EDIVANDO DE LIMA", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - MF EVERTON SANTA FE", "CT572012", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - MF FABIO PRESIDENTE PRUDENTE", "CT571949", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - MF HELEN SÃO JOSE DO RIO PRETO", "CT571976", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - MF HIAGO SÃO JOSÉ DO RIO PRETO", "CT571975", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - MF THIAGO PRESIDENTE PRUDENTE", "CT571957", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - MOBYPOINT - ZONA LESTE", "CT571722", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - NETWALE", "CT100250", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - OPEN BAURU", "CT571417", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - OPEN PRES PRUDENTE", "CT571290", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - OPEN SAO JOSE DO RIO PRETO", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - PAYTEC BASE", "CT571171", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - PAYTEC FILIAL", "CT002550", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - PL LOG", "CT571245", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - PL LOG VOTORANTIM", "CT571707", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - POSCAMP", "CT571808", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - REALTY", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - SICREDI BARRETOS", "CT572000", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - SPO REGISTRO", "CT002535", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - SR EXPRESS", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - TC EXPRESS", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP - TC EXPRESS ARACATUBA", "CT571761", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - TC EXPRESS BAURU", "CT571731", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - TC EXPRESS MARILIA", "CT571762", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - TC EXPRESS PRESIDENTE PRUDENTE", "CT571763", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - TC EXPRESS SAO JOSE DO RIO PRETO", "CT571764", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - TSL ARACATUBA", "CT571806", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - TSL SAO JOSE DO RIO PRETO", "CT571807", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP - VIG CAMPINAS", "CT571532", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP  MF HELEN SÃO JOSÉ DO RIO PRETO", "CT571976", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP- VPR DISTRIBUICAO", "CT571528", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-AL ENTREGAS", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-AMETISTA", "CT002513", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-CARBONOZERO - NORTE", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-CARBONOZERO - PAZ", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-CARBONOZERO - PINHEIROS", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-CARBONOZERO - TATUAPE", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-CJM LOGISTICA", "CT571326", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP-CL BINAS", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-DELIVERY DAS FAVELAS", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-FLY EXPRESS", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-MARTIN EXPRESS", "-", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-MF BAURU", "CT571864", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP-MF BOTUCATU", "CT571866", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP-MF MARILIA", "CT571865", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP-MHO", "CT002518", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-OPEN ARACATUBA", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP-OPEN MARILIA", "-", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP-POS LOG - ARARAQUARA", "CT002530", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP-POS LOG - BARRETOS", "CT002532", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP-POS LOG - CASA BRANCA", "CT002531", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP-POS LOG - FRANCA", "CT002533", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP-POS LOG - RIBEIRAO PRETO", "CT002534", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP-SR EXPRESS", "CT571850", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-TECH SERVICE GUARA", "CT571408", "SP", "SUDESTE", "ALYA", "11:00 às 13:00"], ["SP-TRANSALLES", "CT570354", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["SP-TSA", "CT002566", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["AG 0787 RIO DE JANEIRO RJ CORNER", "CT571720", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG.3071_CABO FRIO_RJ_CORNER", "CT001111", "RJ", "SUDESTE", "ALYA", "11:00 às 13:00"], ["AG 3059 BLUMENAU SC CORNER", "CT001988", "SC", "SUL", "BUSLOG", "13:00 às 14:00"], ["AG 3131 FLORIANOPOLIS SC CORNER", "CT001362", "SC", "SUL", "BUSLOG", "13:00 às 14:00"], ["AG 3176 JOINVILLE SC CORNER", "CT001316", "SC", "SUL", "BUSLOG", "13:00 às 14:00"], ["AG 3872 BALNEARIO CAMBORIU SC", "CT002143", "SC", "SUL", "BUSLOG", "13:00 às 14:00"], ["AG.0155_FLORIANOPOLIS_SC_CORNER", "CT571473", "SC", "SUL", "BUSLOG", "13:00 às 14:00"], ["PRISMA BLUMENAU", "CT571704", "SC", "SUL", "BUSLOG", "13:00 às 14:00"], ["PRISMA BLUMENAU", "-", "SC", "SUL", "BUSLOG", "13:00 às 14:00"], ["SC - MF SOHE SERVIÇOS", "CT571982", "SC", "SUL", "BUSLOG", "13:00 às 14:00"], ["SC-MF JOACABA", "CT571988", "SC", "SUL", "BUSLOG", "13:00 às 14:00"], ["SC-SOHE SERVIÇOS JOINVILLE", "CT571982", "SC", "SUL", "BUSLOG", "13:00 às 14:00"], ["PE - MF FERNANDO DE NORONHA", "CT571993", "PE", "NORDESTE", "GOL LOG", "PROGRAMADA"], ["AG 0080 NATAL RN CORNER", "CT000981", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 0186 MACEIO AL CORNER", "CT000294", "AL", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 0213 JOAO PESSOA PB CORNER", "CT001229", "PB", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 1054 CRATO CE", "CT571980", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 1061 SALVADOR BA CORNER", "CT572017", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 1584 FORTALEZA CE CORNER", "CT571994", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 1674 FORTALEZA CE CORNER", "CT571843", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 2135 SALVADOR BA CORNER", "CT001965", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 3082 CAMPINA GRANDE PE CORNER", "CT000293", "PB", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 3090 CARUARU PE CORNER", "-", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 3132 FORTALEZA CE CORNER", "-", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 3593 CAMACARI BA", "CT571971", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 3686 RECIFE PE CORNER", "CT000855", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 3757 RECIFE PE CORNER", "CT001097", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4002 GARANHUNS PE CORNER", "CT000284", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4004 ARARIPINA PE CORNER", "CT000903", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4008  PETROLINA PE CORNER", "CT000288", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4017 CARUARU PE CORNER", "CT571725", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4017 CARUARU PE CORNER", "-", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4017_CARUARU_PE_CORNER", "-", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4036 JABOATAO GUARARAPES PE", "CT000299", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4039 PAULISTA PE", "CT000292", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4156 CABO DE SANTO AGOSTINHO PE CORNER", "CT571441", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4410 SOBRAL CE", "CT571979", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4505 ARACAJU SE CORNER", "-", "SE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4543 NATAL RN CORNER", "CT571845", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4543 NATAL RN CORNER", "-", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 4674 LAURO DE FREITAS BA", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.0954_BARREIRAS_BA", "CT571969", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.1136_VITORIA DA CONQUISTA_BA", "CT571970", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.1136_VITORIA DA CONQUISTA_BA_CORNER", "CT571970", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.1919_PORTO SEGURO_BA", "CT571973", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.1932_ALAGOINHAS_BA", "CT571972", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.3026_ARACAJU_SE", "CT571543", "SE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.3157_ITABUNA_BA", "CT571974", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.3704_LAURO DE FREITAS_BA", "CT571544", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.3747_SALVADOR_BA_CORNER", "CT571491", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.4182_CAMPINA GRANDE_PB_CORNER", "CT571518", "PB", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.4279_FORTALEZA_CE_CORNER", "CT571458", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.4470_MARACANAU_CE_CORNER", "CT571929", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.4543_NATAL _RN_CORNER", "CT571845", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.4591_FEIRA DE SANTANA_BA", "CT571522", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AL - BLINK LOGISTICA", "-", "AL", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AL - CRUZ SERVIÇOS", "CT571516", "AL", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AL  CRUZ SERVIÇOS", "CT571516", "AL", "NORDESTE", "VDC", "10:00 âs 11:00"], ["ALMAVIA FORTALEZA", "-", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AL-OPTMUS", "-", "AL", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AL-OPTMUS ARAPIRACA", "-", "AL", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA – BLP SALVADOR", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG", "CT571534", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - ALAGOINHAS", "CT571636", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - BARREIRAS", "CT571616", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - EUNAPOLIS", "CT571644", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - FEIRA DE SANTANA", "CT571611", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - GOVERNADOR MANGABEIRA", "CT571647", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - ITABUNA", "CT571614", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - ITAMARAJU", "CT571646", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - JEQUIE", "CT571612", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - PAULOAFONSO", "CT571634", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - PORTO SEGURO", "CT571615", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - TEIXEIRA DE FREITAS", "CT571645", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - VALENCA", "CT571635", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - IGLOG - VITORIA DA CONQUISTA", "CT571613", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF ALAGOINHAS", "CT571809", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF BARREIRAS", "CT571849", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF CRUZ DAS ALMAS", "CT571810", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF FEIRA DE SANTANA", "CT571811", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF GUSTAVO JUAZEIRO", "CT571945", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF ITABERABA", "CT571812", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF ITABUNA", "CT571813", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF JACOBINA", "CT571906", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF JUAZEIRO", "CT571908", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF JUAZEIRO 02", "CT571932", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF MATEUS CAMAÇARI", "CT571952", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF MOISES SALVADOR", "CT571951", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF PALOMA IRECE", "CT571995", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF PAULO AFONSO", "CT571904", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF PORTO SEGURO", "CT571814", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF RIBEIRA DO POMBAL", "CT571909", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF SENHOR DO BONFIM", "CT571905", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF TEIXEIRA DE FREITAS", "CT571815", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF VALENÇA", "CT571816", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF XIQUE XIQUE", "CT571903", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - MF IRECE", "CT571907", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - PIZANTE JUAZEIRO DA BAHIA", "CT571684", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - POLIEXPRESS - ALAGOINHAS", "CT571691", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - POLIEXPRESS – ALAGOINHAS", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - POLIEXPRESS - SALVADOR", "CT571693", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - POLIEXPRESS – SALVADOR", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - POLIEXPRESS - SANTO ANTONIO DE JESU", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - POLIEXPRESS - SANTO ANTONIO DE JESUS", "CT571690", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - POLIEXPRESS - VALENÇA", "CT571692", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - POLIEXPRESS – VALENÇA", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - POLIEXPRESS - VITORIA DA CONQUISTA", "CT571694", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - POLIEXPRESS ? ALAGOINHAS", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - POLIEXPRESS ? SALVADOR", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - ROTA D BARREIRAS", "CT571695", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - ROTA D ITABUNA", "CT571699", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - ROTA D LAURO DE FREITAS", "CT571698", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - ROTA D VITORIA DA CONQUISTA", "CT571696", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA - TAMLOG VITORIA DA CONQUISTA", "CT571817", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA –  PRISMA SALVADOR", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA ? BLINK PAULO AFONSO", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA -MF JD EXPRESS VALENÇA", "CT571968", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA- ROTA D ITABUNA", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA- ROTA D LAURO DE FREITAS", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA-EMPRASEL", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA-EMPRASEL BARREIRAS", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA-EMPRASEL FEIRA DE SANTANA", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA-EMPRASEL ITABUNA", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA-EMPRASEL VITORIA DA CONQUISTA", "-", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA-MF ADAILSON FEIRA DE SANTANA", "CT571987", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA-MF ARIELSON JUAZEIRO", "CT571986", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA-MF BARREIRAS", "CT571849", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["BA-SEREDE FEIRA DE SANTANA", "CT571503", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["CE - FORTALTEC", "CT571260", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["CE - FORTALTEC JUAZEIRO DO NORTE", "CT571259", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["CE - FORTALTEC SOBRAL", "CT571685", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["CE - GLOBAL TRACK", "CT571791", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["CE - GLOBAL TRACK JUAZEIRO", "CT571959", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["CE - GLOBAL TRACK SOBRAL", "CT571958", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["CE - PIZANTE FORTALEZA", "CT571621", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["CE - PIZANTE JUAZEIRO DO NORTE", "CT571622", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["GETCITY ALMAVIVA-FORTALEZA", "-", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["MC9 COMERCIO & SERVICOS  LTDA", "CT571923", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["MC9 COMERCIO & SERVICOS LTDA", "CT571923", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["MG - SICREDI DIVINOPOLIS", "CT572023", "AL", "NORDESTE", "VDC", "10:00 âs 11:00"], ["NUCLEO PROSPERA BATURITE - CE", "CT571511", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["NUCLEO PROSPERA FORTALEZA", "CT571179", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["NUCLEO PROSPERA LAGARTO - SE", "CT571507", "SE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["NUCLEO PROSPERA QUIXADÁ_CE", "CT002584", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PA 2352 FEIRA DE SANTANA BA CORNER", "CT570252", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PARCEIRO MF - CE 01", "CT571656", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PB - SICREDI JOAO PESSOA", "CT571998", "PB", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PB-DDC SERVICOS CAJAZEIRAS", "CT571370", "PB", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PB-DDC SERVICOS CAMPINA GRANDE", "CT100246", "PB", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PB-DDC SERVICOS JOAO PESSOA", "CT100209", "PB", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PB-DDC SERVICOS PATOS", "CT571371", "PB", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - CD PAYLOG REC", "-", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - DDC AFOGADOS DA INGAZEIRA", "CT571479", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - DDC ARARIPINA", "CT571480", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - DDC ARCOVERDE", "CT571486", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - DDC CABROBO", "CT571481", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - DDC CARUARU", "CT571485", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - DDC GARANHUNS", "CT571482", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - DDC JABOATAO DOS GUARARAPES", "CT571489", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - DDC OURICURI", "CT571483", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - DDC PETROLINA", "CT571488", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - DDC SALGUEIRO", "CT571484", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - DDC SERRA TALHADA", "CT571487", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - MF CARUARU 02", "CT571875", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - MF MATA SUL", "-", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE - MOBYAN FILIAL REC", "CT571643", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PE  MF MATA NORTE", "-", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PRISMA ARACAJU", "CT571702", "SE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PRISMA ARACAJU", "-", "SE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PRISMA JOAO PESSOA", "CT571705", "PB", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PRISMA JOAO PESSOA", "-", "PB", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PRISMA SALVADOR", "CT571759", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN - DDC GOIANINHA", "CT571504", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-DDC SERVICOS ACU", "CT571851", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-DDC SERVICOS AÇU", "-", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-DDC SERVICOS APODI", "CT571852", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-DDC SERVICOS CAICO", "CT571420", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-DDC SERVICOS CURRAIS NOVOS", "CT571853", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-DDC SERVICOS JOAO CAMARA", "CT571854", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-DDC SERVICOS MOSSORO", "CT571196", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-DDC SERVICOS NATAL", "CT571197", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-DDC SERVICOS PAU DOS FERROS", "CT571421", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-DDC SERVICOS SANTA CRUZ", "CT571855", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-DDC SERVICOS SÃO GONÇALO DO AMARANTE", "CT571856", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-MC9 JARDIM DO SERIDO", "CT571962", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-MC9 MOSSORO", "CT571961", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-MC9 NATAL", "CT571923", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["RN-MC9 PAU DOS FERROS", "CT571960", "RN", "NORDESTE", "VDC", "10:00 âs 11:00"], ["SE - FP LOGISTICA", "CT571515", "SE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["SE - MF ARACAJU", "CT571933", "SE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["SE - MF LAGARTO", "CT571935", "SE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["SE - MF NOSSA SENHORA DA GLORIA", "CT571934", "SE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["SE-AJUEXPRESS", "-", "SE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["TAHTO RECIFE", "CT571881", "PE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.1932_ALAGOINHAS_BA_CORNER", "CT571972", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.3026_ARACAJU_SE_CORNER", "CT571543", "SE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG.3704_LAURO DE FREITAS_BA_CORNER", "CT571544", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["CE- GLOBAL TRACK JUAZEIRO", "CT571959", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["CE- GLOBAL TRACK SOBRAL", "CT571958", "CE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["PB-DDC SERVICOS CAMPINA GRANDE", "CT100246", "PB", "NORDESTE", "VDC", "10:00 âs 11:00"], ["SE- MF LAGARTO", "CT571935", "SE", "NORDESTE", "VDC", "10:00 âs 11:00"], ["AG 3601 FOZ DO IGUAÇU PR CORNER", "CT002098", "PR", "SUL", "ALYA", "11:00 às 13:00"], ["AG.0060_SAO BERNARDO DO CAMPO_SP_CORNER", "CT571888", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"], ["MF JACOBINA", "CT571906", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["MF SALVADOR MOISÉS", "CT571951", "BA", "NORDESTE", "VDC", "10:00 âs 11:00"], ["MT - OIRES", "CT571922", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MT OIRES BARRA DO GARÇAS", "CT571922", "MT", "CENTRO OESTE", "ALYA", "11:00 às 13:00"], ["MOBYPOINT- ZL", "CT571722", "SP", "SUDESTE", "ALYA", "06:30 às 09:00"]];
@@ -1455,7 +1565,8 @@
       const maqCounts = {};
       const chipCounts = {};
       state.operators.forEach(op => { maqCounts[op] = 0; chipCounts[op] = 0; });
-      state.oms.forEach(o => {
+      const activeOmsForCounts = state.oms.filter(o => o.status !== "CANCELADA");
+      activeOmsForCounts.forEach(o => {
         if (o.colaborador) maqCounts[o.colaborador] = (maqCounts[o.colaborador] || 0) + 1;
         if (!o.chipExempt && o.colaboradorChip) chipCounts[o.colaboradorChip] = (chipCounts[o.colaboradorChip] || 0) + 1;
       });
@@ -1465,7 +1576,7 @@
 
       const fColab = document.getElementById("filter-colab");
       const curFColab = fColab.value;
-      fColab.innerHTML = `<option value="">Colaborador: Todos (${state.oms.length})</option>` +
+      fColab.innerHTML = `<option value="">Colaborador: Todos (${activeOmsForCounts.length})</option>` +
         `<option value="__NONE__" ${curFColab === "__NONE__" ? "selected" : ""}>Sem colaborador atribuído</option>` +
         (activeMaqOps.length ? activeMaqOps : state.operators).map(op =>
           `<option value="${op}" ${curFColab === op ? "selected" : ""}>${op} (${maqCounts[op] || 0})</option>`
@@ -1483,7 +1594,7 @@
       const allBtnActive = !fColab.value;
       pillsEl.innerHTML = `
         <button data-pill-op="" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${allBtnActive ? "bg-purple-700 text-white shadow-xs" : "bg-purple-100/70 dark:bg-purple-950/80 text-purple-900 dark:text-purple-200 hover:opacity-85"}">
-          Todos (${state.oms.length})
+          Todos (${activeOmsForCounts.length})
         </button>
       ` + activeMaqOps.map(op => {
         const isAct = fColab.value === op;
@@ -1520,6 +1631,7 @@
       const sortMode = document.getElementById("sort-maquinas").value;
 
       let list = state.oms.filter(o => {
+        if (o.status === "CANCELADA") return false;
         if (state.filterPinnedOnly && !o.pinned && !o.comment) return false;
         if (fTipo && o.tipo !== fTipo) return false;
         if (fColab === "__NONE__" && o.colaborador) return false;
@@ -1551,16 +1663,17 @@
       const emptyEl = document.getElementById("maquinas-empty");
       const list = getFilteredMaquinas();
 
-      const totalOms = state.oms.length;
-      const agCount = state.oms.filter(o => o.tipo === "AG").length;
-      const paCount = state.oms.filter(o => o.tipo === "PA").length;
-      const totalQtd = state.oms.reduce((s, o) => s + (o.qtd || 0), 0);
-      const totalVl = state.oms.reduce((s, o) => s + (parseInt(o.vl, 10) || 0), 0);
-      const validadas = state.oms.filter(o => o.status === "VALIDADA").length;
-      const agChip = state.oms.filter(o => o.status === "AG. CHIP" || o.status === "AG. VALIDAÇÃO").length;
-      const sapb1 = state.oms.filter(o => o.status === "SAPB1").length;
-      const semVl = state.oms.filter(o => !o.vl || parseInt(o.vl, 10) <= 0).length;
-      const pinnedCount = state.oms.filter(o => o.pinned || o.comment).length;
+      const activeOms = state.oms.filter(o => o.status !== "CANCELADA");
+      const totalOms = activeOms.length;
+      const agCount = activeOms.filter(o => o.tipo === "AG").length;
+      const paCount = activeOms.filter(o => o.tipo === "PA").length;
+      const totalQtd = activeOms.reduce((s, o) => s + (o.qtd || 0), 0);
+      const totalVl = activeOms.reduce((s, o) => s + (parseInt(o.vl, 10) || 0), 0);
+      const validadas = activeOms.filter(o => o.status === "VALIDADA").length;
+      const agChip = activeOms.filter(o => o.status === "AG. CHIP" || o.status === "AG. VALIDAÇÃO").length;
+      const sapb1 = activeOms.filter(o => o.status === "SAPB1").length;
+      const semVl = activeOms.filter(o => !o.vl || parseInt(o.vl, 10) <= 0).length;
+      const pinnedCount = activeOms.filter(o => o.pinned || o.comment).length;
 
       document.getElementById("badge-maquinas").textContent = totalOms;
       document.getElementById("kpi-total-oms").textContent = totalOms;
@@ -1702,8 +1815,9 @@
       const fTipoChip = document.getElementById("chip-filter-tipochip").value;
       const fStatus = document.getElementById("chip-filter-status").value;
 
-      const eligibleAll = state.oms.filter(o => !o.chipExempt);
-      const exemptCount = state.oms.length - eligibleAll.length;
+      const activeForChips = state.oms.filter(o => o.status !== "CANCELADA");
+      const eligibleAll = activeForChips.filter(o => !o.chipExempt);
+      const exemptCount = activeForChips.length - eligibleAll.length;
       const sumTim = eligibleAll.reduce((s, o) => s + (o.tim || 0), 0);
       const sumVivo = eligibleAll.reduce((s, o) => s + (o.vivo || 0), 0);
       const sumClaro = eligibleAll.reduce((s, o) => s + (o.claro || 0), 0);
@@ -1717,6 +1831,7 @@
       document.getElementById("chip-kpi-total").textContent = Math.round((sumTim + sumVivo + sumClaro) * 100) / 100;
 
       let list = state.oms.filter(o => {
+        if (o.status === "CANCELADA") return false;
         if (!state.showExemptChips && o.chipExempt) return false;
         if (fTipo && o.tipo !== fTipo) return false;
         if (fColab === "__NONE__" && o.colaboradorChip) return false;
@@ -1881,6 +1996,158 @@
           <td class="py-2 px-3 text-slate-600">${doca || "-"}</td>
         </tr>
       `).join("");
+    }
+
+    // ==================== RENDER ABAS EMERGENCIAIS & CANCELADAS ====================
+    function renderSpecialTabs() {
+      const emergList = state.oms.filter(o => o.status === "EMERGENCIAL");
+      const cancList = state.oms.filter(o => o.status === "CANCELADA");
+
+      document.getElementById("badge-emergenciais").textContent = emergList.length;
+      document.getElementById("badge-canceladas").textContent = cancList.length;
+
+      // Render Emergenciais
+      const emTbody = document.getElementById("emergenciais-tbody");
+      const emEmpty = document.getElementById("emergenciais-empty");
+      if (!emergList.length) {
+        emTbody.innerHTML = "";
+        emEmpty.classList.remove("hidden");
+      } else {
+        emEmpty.classList.add("hidden");
+        emTbody.innerHTML = emergList.map(o => {
+          const hasVl = Boolean(o.vl && parseInt(o.vl, 10) > 0);
+          const sug = suggestVolume(o.modelo, o.qtd);
+          const opChoices = state.operators.includes(o.colaborador) || !o.colaborador
+            ? state.operators
+            : [o.colaborador, ...state.operators];
+
+          return `
+            <tr class="row-pinned transition" data-om="${o.om}">
+              <td class="py-2.5 px-3 align-top">
+                <div class="flex items-center gap-1.5">
+                  <span>🚨</span>
+                  <span class="mono font-bold text-slate-900">${o.om}</span>
+                  <span class="px-1.5 py-0.2 rounded text-[10px] font-bold ${o.tipo === "AG" ? "bg-purple-100 text-purple-900 dark:bg-purple-900/70 dark:text-purple-200" : "bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200"}">${o.tipo}</span>
+                </div>
+              </td>
+              <td class="py-2.5 px-3 align-top max-w-[260px]">
+                <div class="font-semibold text-slate-800 leading-snug">${o.destino}</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">${o.uf || ""} ${o.regiao ? "• " + o.regiao : ""} ${o.doca && o.doca !== "-" ? "• Doca: " + o.doca : ""}</div>
+                ${o.comment ? `<div class="mt-1 text-[11px] text-purple-900 dark:text-purple-200">💬 ${o.comment}</div>` : ""}
+              </td>
+              <td class="py-2.5 px-3 align-top">
+                <div class="font-medium text-slate-800">${o.modelo}</div>
+                <div class="text-[10px] text-purple-700 dark:text-purple-400 font-semibold">${o.chipExempt ? "Sem SIM Card" : "Chip: " + o.tipoChip}</div>
+              </td>
+              <td class="py-2.5 px-2.5 align-top text-center">
+                <span class="mono font-bold text-slate-900 bg-slate-100 px-2 py-1 rounded-md">${o.qtd}</span>
+              </td>
+              <td class="py-2.5 px-2.5 align-top text-center">
+                <div class="inline-flex items-center gap-1">
+                  <input type="number" min="1" max="9999" data-field="vl" data-om="${o.om}" value="${o.vl ? parseInt(o.vl, 10) : ""}" placeholder="VL" class="mono w-16 text-center font-bold text-xs py-1 px-1.5 rounded-lg border ${hasVl ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-rose-300 bg-rose-50/70 text-rose-900"}" />
+                  ${!hasVl && sug ? `<button type="button" data-action="apply-sug" data-om="${o.om}" data-sug="${sug}" class="px-1.5 py-1 rounded bg-purple-100 hover:bg-purple-700 hover:text-white text-purple-900 mono text-[10px] font-bold cursor-pointer">${sug}?</button>` : ""}
+                </div>
+              </td>
+              <td class="py-2.5 px-3 align-top">
+                <span class="px-2 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-200">${o.transporte}</span>
+              </td>
+              <td class="py-2.5 px-3 align-top">
+                <select data-field="colaborador" data-om="${o.om}" class="px-2 py-1 text-xs font-semibold rounded-lg border border-slate-300 bg-white">
+                  <option value="">-- Atribuir --</option>
+                  ${opChoices.map(op => `<option value="${op}" ${o.colaborador === op ? "selected" : ""}>${op}</option>`).join("")}
+                </select>
+              </td>
+              <td class="py-2.5 px-3 align-top">
+                <select data-field="status" data-om="${o.om}" class="px-2 py-1 text-xs font-bold rounded-lg border status-EMERGENCIAL cursor-pointer">
+                  ${STATUS_LIST.map(st => `<option value="${st}" ${o.status === st ? "selected" : ""}>${st}</option>`).join("")}
+                </select>
+                ${o.updatedBy ? `<div class="text-[10px] text-slate-400 mt-0.5">${o.updatedBy} • ${o.updatedAt}</div>` : ""}
+              </td>
+              <td class="py-2.5 px-3 align-top text-right">
+                <button type="button" data-action="zebra" data-om="${o.om}" ${!hasVl ? "disabled" : ""} class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 transition ${hasVl ? "bg-orange-600 hover:bg-orange-500 text-white shadow-xs cursor-pointer" : "bg-slate-100 text-slate-400 cursor-not-allowed"}">
+                  Gerar Etiqueta
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      // Render Canceladas
+      const cancTbody = document.getElementById("canceladas-tbody");
+      const cancEmpty = document.getElementById("canceladas-empty");
+      if (!cancList.length) {
+        cancTbody.innerHTML = "";
+        cancEmpty.classList.remove("hidden");
+      } else {
+        cancEmpty.classList.add("hidden");
+        cancTbody.innerHTML = cancList.map(o => `
+          <tr class="row-normal opacity-85 transition" data-om="${o.om}">
+            <td class="py-2.5 px-3 align-top">
+              <div class="flex items-center gap-1.5">
+                <span class="mono font-bold text-slate-700 line-through">${o.om}</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-200 text-slate-700">${o.tipo}</span>
+              </div>
+            </td>
+            <td class="py-2.5 px-3 align-top">
+              <div class="font-semibold text-slate-700">${o.destino}</div>
+              <div class="text-[10px] text-slate-500">${o.uf || ""} ${o.regiao ? "• " + o.regiao : ""}</div>
+            </td>
+            <td class="py-2.5 px-3 align-top text-slate-700">${o.modelo}</td>
+            <td class="py-2.5 px-2.5 align-top text-center mono font-bold">${o.qtd}</td>
+            <td class="py-2.5 px-2.5 align-top text-center mono font-bold">${formatVL(o.vl) || "-"}</td>
+            <td class="py-2.5 px-3 align-top">
+              <span class="px-2 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">${o.transporte}</span>
+            </td>
+            <td class="py-2.5 px-3 align-top font-semibold text-slate-600">${o.colaborador || "-"}</td>
+            <td class="py-2.5 px-3 align-top">
+              <select data-field="status" data-om="${o.om}" class="px-2 py-1 text-xs font-bold rounded-lg border status-CANCELADA cursor-pointer">
+                ${STATUS_LIST.map(st => `<option value="${st}" ${o.status === st ? "selected" : ""}>${st}</option>`).join("")}
+              </select>
+              ${o.updatedBy ? `<div class="text-[10px] text-slate-400 mt-0.5">Cancelada por ${o.updatedBy} • ${o.updatedAt}</div>` : ""}
+            </td>
+          </tr>
+        `).join("");
+      }
+    }
+
+    // Modal de Aviso / Confirmação de Mudança de Status
+    let pendingCancelCallback = null;
+
+    function openStatusNoticeModal({ badge, icon, title, msg, sub, isConfirm = false, onConfirm = null, onCancel = null }) {
+      const modal = document.getElementById("status-notice-modal");
+      document.getElementById("status-notice-badge").textContent = badge;
+      document.getElementById("status-notice-icon").textContent = icon;
+      document.getElementById("status-notice-title").textContent = title;
+      document.getElementById("status-notice-msg").textContent = msg;
+      document.getElementById("status-notice-sub").textContent = sub || "";
+
+      const btnCancel = document.getElementById("btn-status-notice-cancel");
+      const btnConfirm = document.getElementById("btn-status-notice-confirm");
+
+      if (isConfirm) {
+        btnCancel.classList.remove("hidden");
+        btnConfirm.textContent = "Sim, cancelar OM";
+        btnConfirm.className = "px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-xs cursor-pointer";
+      } else {
+        btnCancel.classList.add("hidden");
+        btnConfirm.textContent = "OK, Ciente";
+        btnConfirm.className = "px-5 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold shadow-xs cursor-pointer";
+      }
+
+      pendingCancelCallback = { onConfirm, onCancel };
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeStatusNoticeModal(confirmed = false) {
+      const modal = document.getElementById("status-notice-modal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      const cb = pendingCancelCallback;
+      pendingCancelCallback = null;
+      if (confirmed && cb && cb.onConfirm) cb.onConfirm();
+      if (!confirmed && cb && cb.onCancel) cb.onCancel();
     }
 
     // ==================== SORTEIO IGUALITÁRIO (AG & PA SEPARADOS) ====================
@@ -2185,12 +2452,15 @@
         });
       };
 
-      const agRows = state.oms.filter(o => o.tipo === "AG").map(mapRow);
-      const paRows = state.oms.filter(o => o.tipo === "PA").map(mapRow);
+      const activeExcelOms = state.oms.filter(o => o.status !== "CANCELADA");
+      const cancelledExcelOms = state.oms.filter(o => o.status === "CANCELADA");
+      const agRows = activeExcelOms.filter(o => o.tipo === "AG").map(mapRow);
+      const paRows = activeExcelOms.filter(o => o.tipo === "PA").map(mapRow);
+      const cancRows = cancelledExcelOms.map(mapRow);
 
       // Aba Resumo / Produtividade por Colaborador
       const resumoMap = new Map();
-      state.oms.forEach(o => {
+      activeExcelOms.forEach(o => {
         const colab = o.colaborador || "NÃO ATRIBUÍDO";
         if (!resumoMap.has(colab)) {
           resumoMap.set(colab, {
@@ -2215,7 +2485,7 @@
       });
       const resumoRows = Array.from(resumoMap.values()).sort((a, b) => b["TOTAL OMs"] - a["TOTAL OMs"]);
 
-      const chipRows = state.oms.filter(o => !o.chipExempt).map(o => ({
+      const chipRows = activeExcelOms.filter(o => !o.chipExempt).map(o => ({
         "OM": o.om,
         "TIPO": o.tipo,
         "DESTINO": o.destino,
@@ -2245,6 +2515,11 @@
       XLSX.utils.book_append_sheet(wb, wsPa, `DEMANDA ${dateTag} PA`);
       XLSX.utils.book_append_sheet(wb, wsResumo, `RESUMO EQUIPE ${dateTag}`);
       XLSX.utils.book_append_sheet(wb, wsChip, `SIM CARDS ${dateTag}`);
+      if (cancRows.length) {
+        const wsCanc = XLSX.utils.json_to_sheet(cancRows);
+        autoFitCols(wsCanc, cancRows);
+        XLSX.utils.book_append_sheet(wb, wsCanc, `CANCELADAS ${dateTag}`);
+      }
 
       XLSX.writeFile(wb, `Demanda_CD_Barueri_${dateTag}_${yyyy}.xlsx`);
       showToast("Planilha Excel exportada com sucesso!");
@@ -2286,6 +2561,7 @@
       renderSimCards();
       renderRafflePanels();
       renderGrade();
+      renderSpecialTabs();
       renderAuditFeed();
     }
 
@@ -2405,16 +2681,29 @@
         copyToClipboard(lines, `${list.length} etiquetas copiadas! Cole no software Zebra (Ctrl + V).`);
       });
 
-      // Tabela Máquinas
-      const maqTbody = document.getElementById("maquinas-tbody");
-      maqTbody.addEventListener("change", (e) => {
+      // Modal Status Notice buttons
+      document.getElementById("status-notice-close").addEventListener("click", () => closeStatusNoticeModal(false));
+      document.getElementById("btn-status-notice-cancel").addEventListener("click", () => closeStatusNoticeModal(false));
+      document.getElementById("btn-status-notice-confirm").addEventListener("click", () => closeStatusNoticeModal(true));
+
+      document.getElementById("btn-copy-emergenciais-zebra").addEventListener("click", () => {
+        const list = state.oms.filter(o => o.status === "EMERGENCIAL" && o.vl && parseInt(o.vl, 10) > 0);
+        if (!list.length) {
+          showToast("Nenhuma OM emergencial possui Volume (VL) preenchido.");
+          return;
+        }
+        copyToClipboard(list.map(formatZebraLine).join("\n"), `${list.length} etiquetas emergenciais copiadas!`);
+      });
+
+      // Handler unificado para Tabela Máquinas, Emergenciais e Canceladas
+      const handleOperationalTableChange = (e) => {
         const el = e.target;
         const om = el.dataset.om;
         const field = el.dataset.field;
         if (!om || !field) return;
 
         if (!requireOperator()) {
-          renderMaquinas();
+          renderAll();
           return;
         }
         const item = state.oms.find(x => x.om === om);
@@ -2427,19 +2716,82 @@
           item.vl = formatted;
           el.value = formatted ? parseInt(formatted, 10) : "";
           pushAudit(om, `Volume (VL) definido para ${formatted || "vazio"}`);
+          item.updatedBy = state.currentOperator;
+          item.updatedAt = nowTime;
+          syncToCloud();
+          renderAll();
         } else if (field === "colaborador") {
           item.colaborador = el.value;
           pushAudit(om, `Atribuída a ${el.value || "ninguém"}`);
+          item.updatedBy = state.currentOperator;
+          item.updatedAt = nowTime;
+          syncToCloud();
+          renderAll();
         } else if (field === "status") {
-          item.status = el.value;
-          pushAudit(om, `Status → ${el.value}`);
-        }
+          const nextStatus = el.value;
+          const prevStatus = item.status;
 
-        item.updatedBy = state.currentOperator;
-        item.updatedAt = nowTime;
-        syncToCloud();
-        renderAll();
-      });
+          if (nextStatus === "CANCELADA") {
+            openStatusNoticeModal({
+              badge: "Confirmação de Cancelamento",
+              icon: "🛑",
+              title: `Cancelar OM ${item.om}?`,
+              msg: "Tem certeza que deseja cancelar a OM?",
+              sub: "Ela sairá da lista principal e será movida para a aba '5. OMs Canceladas'.",
+              isConfirm: true,
+              onConfirm: () => {
+                item.status = "CANCELADA";
+                item.updatedBy = state.currentOperator;
+                item.updatedAt = nowTime;
+                pushAudit(om, "Status → CANCELADA (movida para aba OMs Canceladas)");
+                syncToCloud();
+                renderAll();
+                showToast(`OM ${om} cancelada e movida para a aba 'OMs Canceladas'.`);
+              },
+              onCancel: () => {
+                el.value = prevStatus;
+                renderAll();
+              }
+            });
+            return;
+          }
+
+          item.status = nextStatus;
+          item.updatedBy = state.currentOperator;
+          item.updatedAt = nowTime;
+          pushAudit(om, `Status → ${nextStatus}`);
+          syncToCloud();
+          renderAll();
+
+          if (nextStatus === "VALIDADA") {
+            openStatusNoticeModal({
+              badge: "OM Validada",
+              icon: "✅",
+              title: `OM ${item.om} Validada`,
+              msg: "CONFIRMAR VOLUME NO OPPAY",
+              sub: `Destino: ${item.destino} • Volume lançado: ${formatVL(item.vl) || "Não informado"}`
+            });
+          } else if (nextStatus === "SAPB1") {
+            openStatusNoticeModal({
+              badge: "Lançamento SAPB1",
+              icon: "📋",
+              title: `OM ${item.om} — SAPB1`,
+              msg: "Solicitar ajuste ao Fiscal",
+              sub: `Destino: ${item.destino} • Modelo: ${item.modelo} (${item.qtd} un)`
+            });
+          } else if (nextStatus === "EMERGENCIAL") {
+            showToast(`OM ${om} marcada como EMERGENCIAL e adicionada à aba '4. OMs Emergenciais'!`);
+          }
+        }
+      };
+
+      const maqTbody = document.getElementById("maquinas-tbody");
+      const emergTbody = document.getElementById("emergenciais-tbody");
+      const cancTbody = document.getElementById("canceladas-tbody");
+
+      maqTbody.addEventListener("change", handleOperationalTableChange);
+      emergTbody.addEventListener("change", handleOperationalTableChange);
+      cancTbody.addEventListener("change", handleOperationalTableChange);
 
       maqTbody.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && e.target.dataset.field === "vl") {
@@ -2447,7 +2799,7 @@
         }
       });
 
-      maqTbody.addEventListener("click", (e) => {
+      const handleOperationalTableClick = (e) => {
         const btn = e.target.closest("[data-action]");
         if (!btn) return;
         const om = btn.dataset.om;
@@ -2511,6 +2863,8 @@
         closeCommentModal();
         showToast(`Destaque removido da OM ${item.om}.`);
       });
+      maqTbody.addEventListener("click", handleOperationalTableClick);
+      emergTbody.addEventListener("click", handleOperationalTableClick);
 
       // Tabela SIM Cards
       ["chip-filter-search", "chip-filter-tipo", "chip-filter-colab", "chip-filter-tipochip", "chip-filter-status"].forEach(id => {

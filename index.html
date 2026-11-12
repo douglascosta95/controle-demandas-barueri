@@ -1464,6 +1464,16 @@
     // ==================== AUTH / PIN SYSTEM ====================
     let pendingOperator = "";
     let pinModalMode = "verify";
+    let pendingUnlockOm = null;
+    let pendingUnlockCallback = null;
+
+    function openPinModalForUnlock(om, callback) {
+      pendingUnlockOm = om;
+      pendingUnlockCallback = callback;
+      openPinModal(state.currentOperator, "verify");
+      document.getElementById("pin-modal-title").textContent = `Destravar OM ${om} — ${state.currentOperator}`;
+      document.getElementById("pin-modal-desc").textContent = "Esta OM já foi validada/lançada. Digite seu PIN de 4 dígitos para confirmar a edição.";
+    }
 
     function requireOperator() {
       if (!state.currentOperator) {
@@ -2792,6 +2802,15 @@
       document.getElementById("pin-input-2").addEventListener("keydown", (e) => {
         if (e.key === "Enter") handlePinSubmit();
       });
+
+      // Gaveta de Filtros Avançados (abre/fecha)
+      const btnToggleFilters = document.getElementById("btn-toggle-filters-drawer");
+      if (btnToggleFilters) {
+        btnToggleFilters.addEventListener("click", () => {
+          const drawer = document.getElementById("filters-drawer");
+          if (drawer) drawer.classList.toggle("hidden");
+        });
+      }
 
       // Filtros Máquinas
       ["filter-search", "filter-tipo", "filter-colab", "filter-status", "filter-transporte", "sort-maquinas"].forEach(id => {

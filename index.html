@@ -3787,10 +3787,10 @@
         const username = document.getElementById("account-username").value.trim().toUpperCase();
         document.getElementById("account-username").value = username;
         const user = state.users[username];
-        const bootstrap = Boolean(user && !user.pinConfigured && username === "ADM");
+        const bootstrap = Boolean(user && !user.pinConfigured);
         document.getElementById("account-pin-confirm-wrap").classList.toggle("hidden", !bootstrap);
         document.getElementById("account-auth-description").textContent = bootstrap
-          ? "Primeiro acesso: informe a senha provisória 0000 e crie um PIN pessoal."
+          ? "Primeiro acesso: informe o PIN provisório 0000 e crie seu PIN pessoal."
           : "Entre com sua conta e PIN individual.";
         document.getElementById("btn-account-auth").textContent = bootstrap ? "Criar PIN e entrar" : "Entrar";
         accountAuthMode = bootstrap ? "bootstrap" : "login";

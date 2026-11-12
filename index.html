@@ -1798,6 +1798,7 @@
       }
       document.getElementById("account-pin-1").value = "";
       document.getElementById("account-pin-2").value = "";
+      document.getElementById("account-pin-3").value = "";
       document.getElementById("account-auth-error").classList.add("hidden");
     }
 
@@ -1817,7 +1818,8 @@
       try {
         if (!user.pinConfigured || !user.pinHash || !user.pinSalt) {
           if (username !== "ADM" || pin !== TEMP_INITIAL_PIN) return setAccountAuthError("Conta ainda não configurada. Verifique o usuário e a senha provisória.");
-          if (!/^\d{4}$/.test(pin2) || pin2 === TEMP_INITIAL_PIN) return setAccountAuthError("Crie um PIN pessoal de 4 dígitos diferente de 0000.");
+          if (!/^\d{4}$/.test(pin2) || pin2 === TEMP_INITIAL_PIN) return setAccountAuthError("O novo PIN deve ter 4 números e ser diferente de 0000.");
+          if (!/^\d{4}$/.test(pin3) || pin2 !== pin3) return setAccountAuthError("Os dois campos do novo PIN devem ser iguais e conter 4 números.");
           const result = await hashAccountPin(pin2);
           state.users[username] = { ...user, pinSalt: result.salt, pinHash: result.hash, pinConfigured: true, mustChangePin: false, updatedAt: new Date().toISOString() };
           await syncConfigToCloud();

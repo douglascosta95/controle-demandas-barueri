@@ -59,7 +59,7 @@ Como o Firebase Authentication não oferece autenticação nativa por nome de us
 
 ## 6. Matriz inicial de permissões
 
-Esta matriz é uma proposta inicial e precisa de aprovação da liderança antes da implementação definitiva. O perfil Supervisor terá acesso de acompanhamento, sem poderes de administração de identidade.
+Esta matriz é uma proposta inicial e precisa de aprovação da liderança antes da implementação definitiva. O perfil Supervisor terá poderes de coordenação operacional delimitados (como delegar OMs emergenciais), sem poderes de administração de identidade.
 
 | Ação | Operador | Supervisor | Administrador |
 |---|---:|---:|
@@ -68,6 +68,7 @@ Esta matriz é uma proposta inicial e precisa de aprovação da liderança antes
 | Criar/editar demanda operacional | Conforme módulo | Sim, quando necessário |
 | Alterar status operacional | Conforme regra | Sim, com justificativa quando aplicável |
 | Consultar Ao Vivo | Conforme política | Sim | Sim |
+| Delegar/atribuir OM emergencial | Não, salvo autorização específica | Sim | Sim, quando necessário |
 | Consultar auditoria operacional | Não, salvo liberação | Sim, conforme escopo | Sim |
 | Gerenciar usuários | Não | Não | Sim |
 | Redefinir senha de usuário | Não | Não | Sim |

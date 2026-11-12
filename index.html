@@ -379,6 +379,7 @@
       <div class="sidebar-caption">CONFIGURAÇÕES</div>
       <button data-tab="config-sap" class="nav-tab sidebar-link"><span class="sidebar-icon">⌘</span><span>Códigos SAP</span></button>
       <button type="button" id="btn-open-team-sidebar" class="sidebar-link"><span class="sidebar-icon">👥</span><span>Equipe e operadores</span></button>
+      <button data-tab="ajuda" class="nav-tab sidebar-link"><span class="sidebar-icon">ⓘ</span><span>Central de Ajuda</span></button>
 
       <div class="sidebar-footer">
         <div class="sidebar-footer-title">CD BARUERI · SP</div>
@@ -1017,6 +1018,50 @@
       </div>
     </div>
   </div>
+
+  <!-- ==================== CENTRAL DE AJUDA ==================== -->
+  <section id="tab-ajuda" class="tab-panel hidden space-y-5">
+    <div class="rounded-2xl bg-gradient-to-r from-slate-950 via-purple-950 to-violet-900 text-white p-6 sm:p-8 shadow-lg">
+      <div class="text-xs font-bold tracking-[0.18em] uppercase text-violet-200">CD Barueri · Controle Operacional</div>
+      <h2 class="text-2xl sm:text-3xl font-extrabold mt-2">Central de Ajuda</h2>
+      <p class="text-sm text-violet-100 mt-2 max-w-2xl">Encontre orientações para as rotinas do sistema, consulte os manuais e saiba como agir quando algo não sair como esperado.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <a href="https://github.com/douglascosta95/controle-demandas-barueri/blob/refactor/dashboard-navigation/docs/MANUAL-OPERADOR.md" target="_blank" rel="noopener noreferrer" class="block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-400 hover:shadow-md transition">
+        <div class="text-2xl mb-3">👤</div><h3 class="font-extrabold text-slate-900 dark:text-white">Manual do Operador</h3><p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Acesso, navegação, demandas, insumos, fracionamento e boas práticas.</p><span class="inline-block mt-4 text-xs font-bold text-violet-700 dark:text-violet-300">Abrir manual ↗</span>
+      </a>
+      <a href="https://github.com/douglascosta95/controle-demandas-barueri/blob/refactor/dashboard-navigation/docs/MANUAL-ADMINISTRADOR.md" target="_blank" rel="noopener noreferrer" class="block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-400 hover:shadow-md transition">
+        <div class="text-2xl mb-3">🛡️</div><h3 class="font-extrabold text-slate-900 dark:text-white">Manual do Administrador</h3><p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Gestão de usuários, redefinição de acesso, permissões e auditoria.</p><span class="inline-block mt-4 text-xs font-bold text-violet-700 dark:text-violet-300">Abrir manual ↗</span>
+      </a>
+      <a href="https://github.com/douglascosta95/controle-demandas-barueri/blob/refactor/dashboard-navigation/docs/PLANO-DE-TREINAMENTO.md" target="_blank" rel="noopener noreferrer" class="block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-400 hover:shadow-md transition">
+        <div class="text-2xl mb-3">🎓</div><h3 class="font-extrabold text-slate-900 dark:text-white">Treinamento</h3><p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Trilhas de capacitação, exercícios práticos e critérios de liberação.</p><span class="inline-block mt-4 text-xs font-bold text-violet-700 dark:text-violet-300">Ver plano ↗</span>
+      </a>
+      <a href="https://github.com/douglascosta95/controle-demandas-barueri/blob/refactor/dashboard-navigation/docs/SEGURANCA-ARQUITETURA-LGPD.md" target="_blank" rel="noopener noreferrer" class="block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-400 hover:shadow-md transition">
+        <div class="text-2xl mb-3">🔐</div><h3 class="font-extrabold text-slate-900 dark:text-white">Segurança e privacidade</h3><p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Diretrizes de acesso, proteção de dados, auditoria e LGPD.</p><span class="inline-block mt-4 text-xs font-bold text-violet-700 dark:text-violet-300">Consultar diretrizes ↗</span>
+      </a>
+      <a href="https://github.com/douglascosta95/controle-demandas-barueri/blob/refactor/dashboard-navigation/docs/VISAO-GERAL-E-ESCOPO.md" target="_blank" rel="noopener noreferrer" class="block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-400 hover:shadow-md transition">
+        <div class="text-2xl mb-3">🧭</div><h3 class="font-extrabold text-slate-900 dark:text-white">Visão geral do sistema</h3><p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Conheça os módulos, os perfis e os principais processos operacionais.</p><span class="inline-block mt-4 text-xs font-bold text-violet-700 dark:text-violet-300">Ver escopo ↗</span>
+      </a>
+      <a href="https://github.com/douglascosta95/controle-demandas-barueri/tree/refactor/dashboard-navigation/docs" target="_blank" rel="noopener noreferrer" class="block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-400 hover:shadow-md transition">
+        <div class="text-2xl mb-3">📚</div><h3 class="font-extrabold text-slate-900 dark:text-white">Biblioteca de documentos</h3><p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Acesse todos os documentos e consulte a versão mais recente.</p><span class="inline-block mt-4 text-xs font-bold text-violet-700 dark:text-violet-300">Abrir biblioteca ↗</span>
+      </a>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 space-y-3">
+      <div><h3 class="font-extrabold text-slate-900 dark:text-white">Dúvidas rápidas</h3><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Orientações iniciais para situações comuns.</p></div>
+      <details class="border-t border-slate-100 dark:border-slate-800 pt-3"><summary class="text-sm font-bold cursor-pointer text-slate-800 dark:text-slate-200">Não consigo acessar o sistema. O que faço?</summary><p class="text-xs text-slate-600 dark:text-slate-400 mt-2">Confira se está usando o endereço oficial e se digitou seu usuário corretamente. Não utilize a conta de outra pessoa. Solicite apoio ao responsável pelo acesso.</p></details>
+      <details class="border-t border-slate-100 dark:border-slate-800 pt-3"><summary class="text-sm font-bold cursor-pointer text-slate-800 dark:text-slate-200">Uma OM ou informação está incorreta. Posso apagar?</summary><p class="text-xs text-slate-600 dark:text-slate-400 mt-2">Não apague registros por conta própria. Preserve o histórico e procure o responsável pelo fluxo de correção autorizado.</p></details>
+      <details class="border-t border-slate-100 dark:border-slate-800 pt-3"><summary class="text-sm font-bold cursor-pointer text-slate-800 dark:text-slate-200">A planilha de Insumos apresentou erro.</summary><p class="text-xs text-slate-600 dark:text-slate-400 mt-2">Interrompa a importação, confira data, cabeçalhos, OMs e quantidades. Se o erro persistir, solicite apoio antes de repetir o processamento.</p></details>
+      <details class="border-t border-slate-100 dark:border-slate-800 pt-3"><summary class="text-sm font-bold cursor-pointer text-slate-800 dark:text-slate-200">Qual é a regra de NF para Agência e PA/Corner?</summary><p class="text-xs text-slate-600 dark:text-slate-400 mt-2">No processo documentado, demandas de Agência identificadas pelo prefixo AG exigem solicitação de NF. PA/Corner não exige essa solicitação. Em caso de divergência, confirme com a liderança.</p></details>
+      <details class="border-t border-slate-100 dark:border-slate-800 pt-3"><summary class="text-sm font-bold cursor-pointer text-slate-800 dark:text-slate-200">O sistema parece não atualizar os dados.</summary><p class="text-xs text-slate-600 dark:text-slate-400 mt-2">Confira sua conexão e a data selecionada. Aguarde a sincronização e evite repetir uma operação sem verificar se ela já foi registrada. Se persistir, comunique o responsável.</p></details>
+      <details class="border-t border-slate-100 dark:border-slate-800 pt-3"><summary class="text-sm font-bold cursor-pointer text-slate-800 dark:text-slate-200">Encontrei uma atividade que não reconheço ou suspeito de acesso indevido.</summary><p class="text-xs text-slate-600 dark:text-slate-400 mt-2">Não compartilhe prints em canais abertos. Encerre a sessão se possível e comunique imediatamente o responsável definido pela operação.</p></details>
+    </div>
+    <div class="rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 p-4">
+      <p class="text-xs font-bold text-amber-900 dark:text-amber-200">Atenção</p>
+      <p class="text-xs text-amber-800 dark:text-amber-300 mt-1">Os manuais estão em evolução e devem acompanhar a versão efetivamente publicada. Quando houver conflito entre este conteúdo e uma orientação operacional formal atualizada, interrompa a ação e confirme o procedimento com a liderança.</p>
+    </div>
+  </section>
 
   <!-- ==================== MODAL: PIN DO OPERADOR ==================== -->
   <div id="pin-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
@@ -3313,7 +3358,8 @@
         "canceladas": ["OMs Canceladas", "Consulte e, quando necessário, reative ordens canceladas."],
         "grade": ["Base GRADE", "Consulte transportadoras, regiões e janelas de doca."],
         "config-sap": ["Cadastro de Códigos SAP", "Gerencie a correspondência entre destinos e códigos SAP."],
-        "insumos": ["Atendimento de Insumos", "Gerencie demandas, fracionamento e solicitação de NF."]
+        "insumos": ["Atendimento de Insumos", "Gerencie demandas, fracionamento e solicitação de NF."],
+        "ajuda": ["Central de Ajuda", "Orientações rápidas, manuais e procedimentos para utilizar o sistema."]
       };
       document.querySelectorAll(".nav-tab").forEach(btn => btn.classList.toggle("tab-active", btn.dataset.tab === tabName));
       const activeButton = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);

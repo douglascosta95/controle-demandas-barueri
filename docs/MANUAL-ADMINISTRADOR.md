@@ -5,7 +5,7 @@
 
 ## 1. Responsabilidade do ADM
 
-O Administrador mantém os acessos e as configurações autorizadas do sistema. Deve proteger as credenciais, conceder somente as permissões necessárias e preservar a rastreabilidade.
+O Administrador mantém os acessos e as configurações autorizadas do sistema. O perfil Supervisor é destinado ao acompanhamento da operação e não substitui o ADM. Deve proteger as credenciais, conceder somente as permissões necessárias e preservar a rastreabilidade.
 
 O perfil ADM não deve:
 - Compartilhar sua conta.
@@ -61,7 +61,11 @@ O ADM não visualiza a senha antiga nem escolhe uma senha permanente para o usu�
 - Revise permissões periodicamente e após mudança de função.
 - Não transforme uma conta em ADM apenas para resolver uma dificuldade pontual.
 
-## 4. Rotinas de acompanhamento
+## 4. Diferença entre Supervisor e ADM
+
+O Supervisor acompanha indicadores, demandas e auditoria operacional dentro do escopo autorizado. Não cria usuários, não redefine senhas, não bloqueia contas, não altera perfis e não administra configurações de segurança. Solicitações desse tipo devem ser encaminhadas ao ADM.
+
+## 5. Rotinas de acompanhamento
 
 - Conferir usuários ativos e acessos administrativos.
 - Revisar cadastros de equipe e operadores.
@@ -70,7 +74,7 @@ O ADM não visualiza a senha antiga nem escolhe uma senha permanente para o usu�
 - Solicitar suporte técnico para problemas de infraestrutura, autenticação ou dados.
 - Verificar se os procedimentos e manuais continuam atualizados.
 
-## 5. Auditoria
+## 6. Auditoria
 
 Ao investigar uma ocorrência:
 1. Identifique o registro ou OM afetado.
@@ -81,11 +85,11 @@ Ao investigar uma ocorrência:
 
 A auditoria é uma ferramenta de rastreabilidade, não um mecanismo para vigiar pessoas fora da finalidade operacional.
 
-## 6. Rotinas operacionais que o ADM também pode executar
+## 7. Rotinas operacionais que o ADM também pode executar
 
 Quando necessário e autorizado, o ADM poderá utilizar os módulos operacionais seguindo o Manual do Operador. A conta administrativa deve continuar identificada como ADM; não se deve registrar a ação como se fosse feita por outra pessoa.
 
-## 7. Resposta a incidentes
+## 8. Resposta a incidentes
 
 Em caso de senha exposta, conta suspeita ou acesso indevido:
 1. Não tente investigar usando a conta de outra pessoa.
@@ -95,7 +99,7 @@ Em caso de senha exposta, conta suspeita ou acesso indevido:
 5. Não publique prints com dados pessoais ou tokens em grupos abertos.
 6. Siga o procedimento interno de incidente e aguarde orientação para reativação.
 
-## 8. Checklist diário do ADM
+## 9. Checklist diário do ADM
 
 - [ ] Minha conta está protegida e não foi compartilhada.
 - [ ] Não há usuários ativos sem necessidade conhecida.
@@ -105,6 +109,6 @@ Em caso de senha exposta, conta suspeita ou acesso indevido:
 - [ ] Não há senhas ou dados sensíveis expostos em arquivos ou mensagens.
 - [ ] Encerrei minha sessão ao finalizar o uso.
 
-## 9. Pontos ainda dependentes de implementação
+## 10. Pontos ainda dependentes de implementação
 
 O painel de usuários, os fluxos de redefinição, bloqueio, gestão de permissões e auditoria administrativa são requisitos planejados. Este manual descreve o procedimento esperado; os passos de tela deverão ser atualizados depois que a interface estiver pronta e testada.

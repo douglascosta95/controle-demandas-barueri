@@ -354,6 +354,9 @@
       <button data-tab="importar" class="nav-tab sidebar-link"><span class="sidebar-icon">⇄</span><span>DRP e Distribuição</span></button>
       <button data-tab="grade" class="nav-tab sidebar-link"><span class="sidebar-icon">▧</span><span>Base GRADE</span><span id="badge-grade" class="sidebar-badge">0</span></button>
 
+      <div class="sidebar-caption">CONFIGURAÇÕES</div>
+      <button data-tab="config-sap" class="nav-tab sidebar-link"><span class="sidebar-icon">⌘</span><span>Cadastro de Códigos SAP</span></button>
+
       <div class="sidebar-footer">
         <div class="sidebar-footer-title">CD BARUERI · SP</div>
         <div class="sidebar-footer-text">Controle Operacional</div>
@@ -897,6 +900,35 @@
 
   </main>
 
+  <section id="tab-config-sap" class="tab-panel hidden space-y-5">
+    <div class="dashboard-panel">
+      <div class="panel-heading"><div><h3>Cadastro de Códigos SAP</h3><p>Associe cada destino ao seu código SAP. Nomes com códigos diferentes ficam sinalizados para conferência.</p></div><span class="panel-heading-icon">⌘</span></div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <label class="text-xs font-semibold text-slate-600 dark:text-slate-300 md:col-span-2">Nome do Corner / Agência
+          <input id="sap-name-input" type="text" maxlength="120" placeholder="Ex.: AG 3504 MONTES CLAROS MG CORNER" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm">
+        </label>
+        <label class="text-xs font-semibold text-slate-600 dark:text-slate-300">Código SAP
+          <input id="sap-code-input" type="text" inputmode="numeric" maxlength="20" placeholder="Ex.: 19357" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm">
+        </label>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-3">
+        <button id="btn-sap-add" type="button" class="px-4 py-2 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold">+ Cadastrar código</button>
+        <button id="btn-sap-clear" type="button" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold">Limpar campos</button>
+      </div>
+    </div>
+
+    <div class="dashboard-panel space-y-3">
+      <div class="panel-heading"><div><h3>Importação em lote</h3><p>Cole a relação completa com duas colunas: Corner/Agência e SAP. Aceita tabela copiada do Excel ou texto separado por |.</p></div></div>
+      <textarea id="sap-bulk-input" rows="5" placeholder="Corner&#9;Sap&#10;AG 0341 BARUERI SP&#9;18529" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono"></textarea>
+      <div class="flex flex-wrap items-center gap-3"><button id="btn-sap-bulk-import" type="button" class="px-4 py-2 rounded-lg bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold">Importar cadastros</button><span class="text-[11px] text-slate-500">Cadastros repetidos com SAP diferente serão mantidos como ambíguos, sem escolha automática.</span></div>
+    </div>
+
+    <div class="dashboard-panel">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3"><div><h3 class="font-extrabold text-slate-800 dark:text-slate-100">Destinos cadastrados</h3><p id="sap-count-label" class="text-xs text-slate-500">0 registros</p></div><input id="sap-search" type="search" placeholder="Pesquisar destino ou SAP..." class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"></div>
+      <div id="sap-catalog-list" class="divide-y divide-slate-100 dark:divide-slate-800 max-h-[520px] overflow-y-auto"><p class="p-4 text-xs text-slate-500">Nenhum código cadastrado.</p></div>
+    </div>
+  </section>
+
   <!-- FOOTER CORPORATIVO -->
   <footer class="border-t border-slate-200 bg-white py-3 px-4 mt-8">
     <div class="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-500">
@@ -1247,7 +1279,8 @@
       cloudConnected: false,
       cloudDb: null,
       cloudUnsub: null,
-      editingCommentOm: null
+      editingCommentOm: null,
+      sapCatalog: []
     };
 
     // ==================== CLOUD & LOCAL STORAGE ====================
@@ -1260,6 +1293,7 @@
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed.pins) state.pins = parsed.pins;
+          if (Array.isArray(parsed.sapCatalog)) state.sapCatalog = parsed.sapCatalog;
           if (Array.isArray(parsed.operators) && parsed.operators.length > 0) {
             state.operators = parsed.operators;
             state.selectedMaqOperators = new Set(parsed.operators);
@@ -1272,7 +1306,8 @@
       try {
         localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({
           pins: state.pins,
-          operators: state.operators
+          operators: state.operators,
+          sapCatalog: state.sapCatalog
         }));
       } catch (e) {}
     }
@@ -1308,6 +1343,7 @@
         await fbFirestoreMod.setDoc(cfgRef, {
           pins: state.pins,
           operators: state.operators,
+          sapCatalog: state.sapCatalog,
           updatedAt: new Date().toISOString()
         }, { merge: true });
       } catch (err) {
@@ -1426,6 +1462,7 @@
           if (snap.exists()) {
             const d = snap.data();
             if (d.pins) state.pins = { ...state.pins, ...d.pins };
+            if (Array.isArray(d.sapCatalog)) state.sapCatalog = d.sapCatalog;
             if (Array.isArray(d.operators) && d.operators.length > 0) {
               const prevSet = new Set(state.operators);
               state.operators = d.operators;
@@ -1448,6 +1485,7 @@
             saveLocalConfig();
             renderAll();
             renderTeamModalList();
+            renderSapCatalog();
           } else {
             syncConfigToCloud();
           }
@@ -1506,6 +1544,102 @@
           </div>
         `;
       }).join("");
+    }
+
+    // ==================== CADASTRO DE CÓDIGOS SAP ====================
+    function normalizeSapName(value) {
+      return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")
+        .toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim().replace(/\\s+/g, " ");
+    }
+
+    function escapeSapHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+    }
+
+    function sapNameAmbiguous(name, code, ignoreIndex = -1) {
+      const key = normalizeSapName(name);
+      return state.sapCatalog.some((entry, index) => index !== ignoreIndex &&
+        normalizeSapName(entry.name) === key && String(entry.code) !== String(code));
+    }
+
+    function renderSapCatalog() {
+      const list = document.getElementById("sap-catalog-list");
+      if (!list) return;
+      const query = normalizeSapName(document.getElementById("sap-search")?.value || "");
+      const entries = state.sapCatalog.map((entry, index) => ({...entry, index}))
+        .filter(entry => !query || normalizeSapName(entry.name).includes(query) || String(entry.code).includes(query))
+        .sort((a,b) => a.name.localeCompare(b.name, "pt-BR"));
+      const count = document.getElementById("sap-count-label");
+      if (count) count.textContent = state.sapCatalog.length + " registros cadastrados";
+      if (!entries.length) {
+        list.innerHTML = '<p class="p-4 text-xs text-slate-500">Nenhum cadastro encontrado.</p>';
+        return;
+      }
+      list.innerHTML = entries.map(entry => {
+        const ambiguous = sapNameAmbiguous(entry.name, entry.code, entry.index);
+        return `<div class="flex flex-wrap items-center justify-between gap-2 px-3 py-3 text-xs">
+          <div class="min-w-0"><div class="font-bold text-slate-800 dark:text-slate-100 break-words">${escapeSapHtml(entry.name)}</div>
+          <div class="mt-1 font-mono text-slate-500">SAP: <strong>${escapeSapHtml(entry.code)}</strong>
+          ${ambiguous ? '<span class="ml-2 text-amber-700 dark:text-amber-300 font-bold">⚠ Código ambíguo — conferir</span>' : ''}</div></div>
+          <button type="button" data-sap-remove="${entry.index}" class="px-2.5 py-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-300 text-[11px] font-bold">Remover</button>
+        </div>`;
+      }).join("");
+    }
+
+    async function addSapEntry(name, code) {
+      const cleanName = String(name || "").trim().replace(/\\s+/g, " ");
+      const cleanCode = String(code || "").trim();
+      if (!cleanName || !/^\\d+$/.test(cleanCode)) return false;
+      const exists = state.sapCatalog.some(e => normalizeSapName(e.name) === normalizeSapName(cleanName) && String(e.code) === cleanCode);
+      if (exists) return false;
+      state.sapCatalog.push({name: cleanName, code: cleanCode});
+      return true;
+    }
+
+    async function handleAddSapEntry() {
+      const name = document.getElementById("sap-name-input").value;
+      const code = document.getElementById("sap-code-input").value;
+      if (!name.trim() || !/^\\d+$/.test(code.trim())) {
+        showToast("Informe o destino e um código SAP somente com números.");
+        return;
+      }
+      if (!await addSapEntry(name, code)) {
+        showToast("Esse destino e código SAP já estão cadastrados.");
+        return;
+      }
+      await syncConfigToCloud();
+      document.getElementById("sap-name-input").value = "";
+      document.getElementById("sap-code-input").value = "";
+      renderSapCatalog();
+      showToast("Código SAP cadastrado e sincronizado.");
+    }
+
+    async function handleSapBulkImport() {
+      const raw = document.getElementById("sap-bulk-input").value.trim();
+      if (!raw) return showToast("Cole a relação de Corner/Agência e SAP.");
+      let added = 0, invalid = 0, skipped = 0;
+      raw.split(/\\r?\\n/).forEach(line => {
+        const row = line.trim();
+        if (!row || /^(corner|agencia|agência|nome)\\b/i.test(row)) return;
+        let parts = row.includes("\\t") ? row.split("\\t") : row.split("|");
+        parts = parts.map(v => v.trim()).filter(Boolean);
+        if (parts.length < 2) { invalid++; return; }
+        const code = parts[parts.length - 1].replace(/[^0-9]/g, "");
+        const name = parts.slice(0, -1).join(" ").trim();
+        if (!name || !code) { invalid++; return; }
+        if (state.sapCatalog.some(e => normalizeSapName(e.name) === normalizeSapName(name) && String(e.code) === code)) skipped++;
+        else { state.sapCatalog.push({name, code}); added++; }
+      });
+      await syncConfigToCloud();
+      renderSapCatalog();
+      showToast(`Importação concluída: ${added} novos, ${skipped} já existentes, ${invalid} linhas ignoradas.`);
+    }
+
+    async function removeSapEntry(index) {
+      if (!Number.isInteger(index) || !state.sapCatalog[index]) return;
+      state.sapCatalog.splice(index, 1);
+      await syncConfigToCloud();
+      renderSapCatalog();
     }
 
     async function handleAddOperator() {
@@ -2794,7 +2928,8 @@
         "importar": ["DRP e Distribuição", "Importe a base diária e organize os sorteios AG / PA."],
         "emergenciais": ["OMs Emergenciais", "Acompanhe as demandas que exigem prioridade operacional."],
         "canceladas": ["OMs Canceladas", "Consulte e, quando necessário, reative ordens canceladas."],
-        "grade": ["Base GRADE", "Consulte transportadoras, regiões e janelas de doca."]
+        "grade": ["Base GRADE", "Consulte transportadoras, regiões e janelas de doca."],
+        "config-sap": ["Cadastro de Códigos SAP", "Gerencie a correspondência entre destinos e códigos SAP."]
       };
       document.querySelectorAll(".nav-tab").forEach(btn => btn.classList.toggle("tab-active", btn.dataset.tab === tabName));
       document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.toggle("hidden", panel.id !== `tab-${tabName}`));
@@ -2867,6 +3002,22 @@
       document.getElementById("btn-quick-import").addEventListener("click", () => switchTab("importar"));
       document.getElementById("btn-goto-chip-raffle").addEventListener("click", () => switchTab("importar"));
       document.getElementById("btn-export-xlsx").addEventListener("click", exportToExcel);
+
+      // Cadastro de Códigos SAP
+      document.getElementById("btn-sap-add").addEventListener("click", handleAddSapEntry);
+      document.getElementById("btn-sap-clear").addEventListener("click", () => {
+        document.getElementById("sap-name-input").value = "";
+        document.getElementById("sap-code-input").value = "";
+      });
+      document.getElementById("btn-sap-bulk-import").addEventListener("click", handleSapBulkImport);
+      document.getElementById("sap-search").addEventListener("input", renderSapCatalog);
+      document.getElementById("sap-catalog-list").addEventListener("click", e => {
+        const button = e.target.closest("[data-sap-remove]");
+        if (button && confirm("Remover este cadastro SAP?")) removeSapEntry(Number(button.dataset.sapRemove));
+      });
+      document.getElementById("sap-code-input").addEventListener("keydown", e => {
+        if (e.key === "Enter") handleAddSapEntry();
+      });
 
       // Modal Gerenciar Equipe
       document.getElementById("btn-open-team-modal").addEventListener("click", openTeamModal);
@@ -3314,6 +3465,7 @@
       populateDynamicFilters();
       bindEvents();
       renderAll();
+      renderSapCatalog();
       switchTab("overview");
       initCloudSync();
     }

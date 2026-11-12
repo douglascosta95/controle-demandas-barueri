@@ -97,3 +97,25 @@ Antes da liberação operacional, definir finalidade e base legal com a organiza
 ## 6. Critério de liberação
 
 A funcionalidade só será considerada pronta quando backend, regras do banco, testes positivos/negativos, backup/rollback, documentação e treinamento estiverem validados. Um controle visual no frontend não atende a esse critério.
+
+## 7. Inventário confirmado no código-fonte (12/11/2026)
+
+Auditoria da versão atual de `index.html` na branch `refactor/dashboard-navigation`:
+
+- A aba Emergenciais é renderizada por `renderSpecialTabs()`. A lista inclui registros não cancelados com `isEmergencial === true` ou `status === "EMERGENCIAL"`; portanto, a OM pode continuar na aba mesmo depois de mudar de status, desde que a marcação seja preservada.
+- O responsável operacional atual está no campo `colaborador` do objeto da OM. O importador DRP preserva `colaborador`, `status`, `validatedBy`, `updatedBy` e `updatedAt` de registros anteriores.
+- O objeto de estado ainda usa `currentOperator` como identidade ativa no navegador e `operators` como lista simples de nomes. Não há UID individual nem cadastro de perfil/permissão por usuário.
+- `pushAudit(om, actionText)` registra `who` a partir de `state.currentOperator` e cria `timestamp` com o relógio do navegador. O log é mantido em memória/localStorage e sincronizado pelo cliente; não é uma trilha imutável nem uma prova de identidade.
+- `syncToCloud()` grava `oms` e `auditLog` diretamente do navegador no documento diário do Firestore. `syncConfigToCloud()` também grava `pins`, `operators` e `sapCatalog` no documento público de configuração.
+- O fluxo de conexão ainda permite `signInAnonymously()` quando não há token customizado. O repositório não contém, na raiz, `package.json`, `vercel.json`, `firebase.json` ou `firestore.rules`; a existência/configuração de funções Vercel e regras publicadas precisa ser confirmada no painel e na configuração real do projeto.
+
+### Decisão de implementação
+
+O campo `colaborador` será tratado como **responsável atual legado**, não como identidade autenticada. A nova atribuição deve ser acrescentada sem destruir esse dado histórico durante a migração. O modelo futuro deverá separar:
+
+- `assignedToUid`: UID confiável do responsável atual;
+- `assignedToNameSnapshot`: nome exibido no momento da atribuição;
+- `assignmentHistory[]`: eventos append-only com UID do autor, UID anterior, UID destinatário, motivo e timestamp do servidor.
+
+Não será adicionado botão ativo de delegação nem gravação client-side de atribuição antes da camada de autenticação/autorização. Isso evitará criar um fluxo que pareça protegido, mas possa ser forjado pelo próprio navegador.
+

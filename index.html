@@ -2309,10 +2309,24 @@
       showToast(`Sorteio de SIM Cards limpo! ${assignedCount} OMs prontas para novo sorteio.`);
     }
 
-    // ==================== ZEBRA CLIPBOARD ====================
-    function formatZebraLine(o) {
+    // ==================== ZEBRA CLIPBOARD (FORMATO EXCEL 2 COLUNAS x 4 LINHAS) ====================
+    // Coluna A (Rótulos fixos) | Coluna B (Valores da OM)
+    // Linha 1: DE   | 04 (Volume VL)
+    // Linha 2:      | SE- MF Lagarto (Destino)
+    // Linha 3: OM:  | 1152190 (Número da OM)
+    // Linha 4:      | VDC (Transportadora)
+    function formatZebraBlock(o) {
       const vlStr = formatVL(o.vl) || "01";
-      return `${o.om}\t${o.destino}\t${o.modelo}\t${o.qtd}\t${vlStr}\t${o.transporte}`;
+      return [
+        `DE\t${vlStr}`,
+        `\t${o.destino}`,
+        `OM:\t${o.om}`,
+        `\t${o.transporte}`
+      ].join("\n");
+    }
+
+    function formatZebraBatch(list) {
+      return list.map(formatZebraBlock).join("\n\n");
     }
 
     async function copyToClipboard(text, msg) {
@@ -2696,8 +2710,8 @@
           showToast("Nenhuma OM filtrada possui Volume (VL) preenchido.");
           return;
         }
-        const lines = list.map(formatZebraLine).join("\n");
-        copyToClipboard(lines, `${list.length} etiquetas copiadas! Cole no software Zebra (Ctrl + V).`);
+        const block = formatZebraBatch(list);
+        copyToClipboard(block, `${list.length} etiquetas copiadas (formato Excel 4x2)! Cole no Excel ou Zebra (Ctrl + V).`);
       });
 
       // Modal Status Notice buttons
@@ -2711,7 +2725,7 @@
           showToast("Nenhuma OM emergencial possui Volume (VL) preenchido.");
           return;
         }
-        copyToClipboard(list.map(formatZebraLine).join("\n"), `${list.length} etiquetas emergenciais copiadas!`);
+        copyToClipboard(formatZebraBatch(list), `${list.length} etiquetas emergenciais copiadas (formato Excel 4x2)!`);
       });
 
       // Handler unificado para Tabela Máquinas, Emergenciais e Canceladas
@@ -2836,7 +2850,7 @@
           renderAll();
         } else if (action === "zebra") {
           if (!item.vl) return;
-          copyToClipboard(formatZebraLine(item), `Etiqueta OM ${om} copiada! Cole no Zebra (Ctrl + V).`);
+          copyToClipboard(formatZebraBlock(item), `Etiqueta OM ${om} copiada (formato Excel 4x2)! Cole no Excel ou Zebra (Ctrl + V).`);
         } else if (action === "comment") {
           if (!requireOperator()) return;
           state.editingCommentOm = om;

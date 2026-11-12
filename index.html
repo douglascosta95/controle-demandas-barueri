@@ -378,6 +378,7 @@
       </div>
       <div class="sidebar-caption">CONFIGURAÇÕES</div>
       <button data-tab="config-sap" class="nav-tab sidebar-link"><span class="sidebar-icon">⌘</span><span>Códigos SAP</span></button>
+      <button type="button" id="btn-manage-team-tab3" class="sidebar-link"><span class="sidebar-icon">👥</span><span>Equipe e operadores</span></button>
 
       <div class="sidebar-footer">
         <div class="sidebar-footer-title">CD BARUERI · SP</div>
@@ -1521,6 +1522,7 @@
         });
 
         subscribeCloudDay(state.date);
+        subscribeCloudInsumos(state.insumosDate);
       } catch (err) {
         clearTimeout(watchdog);
         console.warn("Fallback local ativado:", err);
@@ -1577,6 +1579,7 @@
 
     // ==================== INSUMOS: HISTÓRICO E FRACIONAMENTO ====================
     const INSUMOS_STORAGE_PREFIX = "cd_barueri_insumos_v1_";
+    const INSUMOS_DATE_FILTER_KEY = "cd_barueri_insumos_selected_date_v1";
 
     function saveInsumosLocal() {
       try { localStorage.setItem(INSUMOS_STORAGE_PREFIX + state.insumosDate, JSON.stringify(state.insumos)); } catch (e) {}
@@ -1680,7 +1683,8 @@
     }
 
     function splitIntegerQuantity(total, shares) {
-      const exact = shares.map(s => ({...s, raw: total * s.percent / 100}));
+      const percentTotal = shares.reduce((sum, s) => sum + s.percent, 0) || 100;
+      const exact = shares.map(s => ({...s, raw: total * s.percent / percentTotal}));
       const result = exact.map(s => ({...s, qty: Math.floor(s.raw), remainder: s.raw - Math.floor(s.raw)}));
       let remaining = total - result.reduce((sum,s) => sum+s.qty,0);
       [...result].sort((a,b) => b.remainder-a.remainder).forEach(s => { if (remaining > 0) { s.qty++; remaining--; } });
@@ -3229,6 +3233,7 @@
       insDate.addEventListener("change", () => {
         if (!insDate.value) return;
         state.insumosDate = insDate.value;
+        try { localStorage.setItem(INSUMOS_DATE_FILTER_KEY, state.insumosDate); } catch (e) {}
         state.insumos = loadInsumosLocal(state.insumosDate);
         insumosFracionados = [];
         document.getElementById("insumos-result-tbody").innerHTML = '<tr><td colspan="7" class="p-4 text-slate-500">Clique em Fracionar lote para gerar a relação desta data.</td></tr>';
@@ -3732,7 +3737,7 @@
       bindEvents();
       renderAll();
       renderSapCatalog();
-      state.insumosDate = state.date;
+      try { state.insumosDate = localStorage.getItem(INSUMOS_DATE_FILTER_KEY) || state.date; } catch (e) { state.insumosDate = state.date; }
       state.insumos = loadInsumosLocal(state.insumosDate);
       renderInsumos();
       switchTab("overview");

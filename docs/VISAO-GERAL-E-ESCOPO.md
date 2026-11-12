@@ -11,9 +11,10 @@ A aplicação não substitui os sistemas corporativos oficiais nem autoriza, por
 ### Supervisor
 Perfil de acompanhamento da operação, sem privilégios de administração de contas:
 - Consultar indicadores e acompanhar demandas dos módulos autorizados.
-- Delegar OMs emergenciais a operadores habilitados e atribuir responsáveis conforme a escala e as regras operacionais.
-- Reatribuir uma OM quando necessário, registrando motivo e preservando o histórico da atribuição anterior.
+- Delegar e reatribuir demandas nos módulos em que receber permissão explícita, começando pelas OMs emergenciais e podendo abranger Máquinas, SIM Cards e Insumos após validação das regras de cada processo.
+- Atribuir responsáveis conforme escala, habilitação e capacidade operacional; registrar motivo quando exigido e preservar o histórico de atribuições.
 - Definir prioridade operacional e acompanhar o aceite/execução da demanda, conforme regras aprovadas.
+- Realizar somente ações de coordenação expressamente liberadas por módulo e por tipo de ação; a delegação não concede automaticamente permissão para editar dados, validar, cancelar ou concluir uma OM.
 - Acompanhar atividades recentes e consultar auditoria operacional, conforme política aprovada.
 - Consultar pendências, divergências e resultados da equipe.
 - Solicitar correções ou ajustes administrativos ao ADM, sem alterar permissões ou credenciais.
@@ -54,7 +55,7 @@ Painel de acompanhamento com indicadores e resumos operacionais. Os indicadores 
 - **Emergenciais:** acompanhamento de demandas classificadas como emergenciais.
 - **Canceladas:** consulta e controle das demandas canceladas.
 
-Os registros devem preservar identificação da OM, informações operacionais necessárias, status e histórico das alterações relevantes.
+Os registros devem preservar identificação da OM, informações operacionais necessárias, status e histórico das alterações relevantes. A atribuição e a delegação de demandas pelo Supervisor deverão ser habilitadas individualmente por módulo e ação, conforme matriz aprovada.
 
 ### Outras demandas — Insumos
 - Consulta por data.

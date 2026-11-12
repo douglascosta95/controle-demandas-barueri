@@ -59,20 +59,22 @@ Como o Firebase Authentication não oferece autenticação nativa por nome de us
 
 ## 6. Matriz inicial de permissões
 
-Esta matriz é uma proposta inicial e precisa de aprovação da liderança antes da implementação definitiva.
+Esta matriz é uma proposta inicial e precisa de aprovação da liderança antes da implementação definitiva. O perfil Supervisor terá acesso de acompanhamento, sem poderes de administração de identidade.
 
-| Ação | Operador | Administrador |
+| Ação | Operador | Supervisor | Administrador |
 |---|---:|---:|
-| Consultar módulos liberados | Sim | Sim |
+| Consultar módulos liberados | Sim | Sim | Sim |
+| Consultar indicadores e visão geral | Conforme acesso | Sim | Sim |
 | Criar/editar demanda operacional | Conforme módulo | Sim, quando necessário |
 | Alterar status operacional | Conforme regra | Sim, com justificativa quando aplicável |
-| Consultar Ao Vivo | Conforme política | Sim |
-| Gerenciar usuários | Não | Sim |
-| Redefinir senha de usuário | Não | Sim |
-| Bloquear/reativar usuário | Não | Sim |
-| Alterar permissões | Não | Sim |
-| Alterar configurações globais | Não, salvo permissão específica | Sim |
-| Consultar auditoria administrativa | Não | Sim |
+| Consultar Ao Vivo | Conforme política | Sim | Sim |
+| Consultar auditoria operacional | Não, salvo liberação | Sim, conforme escopo | Sim |
+| Gerenciar usuários | Não | Não | Sim |
+| Redefinir senha de usuário | Não | Não | Sim |
+| Bloquear/reativar usuário | Não | Não | Sim |
+| Alterar permissões | Não | Não | Sim |
+| Alterar configurações globais | Não, salvo permissão específica | Não | Sim |
+| Consultar auditoria administrativa | Não | Não, salvo autorização específica | Sim |
 | Apagar trilha de auditoria | Não | Não |
 
 A administração do sistema não deve significar permissão irrestrita para apagar registros de auditoria.

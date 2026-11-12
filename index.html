@@ -3733,11 +3733,11 @@
       const saved = loadLocalState(state.date);
       state.oms = saved ? saved.oms : buildFullDrpOms();
       state.auditLog = saved ? saved.auditLog : [];
+      try { state.insumosDate = localStorage.getItem(INSUMOS_DATE_FILTER_KEY) || state.date; } catch (e) { state.insumosDate = state.date; }
       populateDynamicFilters();
       bindEvents();
       renderAll();
       renderSapCatalog();
-      try { state.insumosDate = localStorage.getItem(INSUMOS_DATE_FILTER_KEY) || state.date; } catch (e) { state.insumosDate = state.date; }
       state.insumos = loadInsumosLocal(state.insumosDate);
       renderInsumos();
       switchTab("overview");

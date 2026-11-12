@@ -570,14 +570,19 @@
             <div id="raffle-maq-operators" class="grid grid-cols-3 gap-2"></div>
           </div>
 
-          <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
             <label class="inline-flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
               <input type="checkbox" id="chk-maq-only-unassigned" class="rounded text-purple-600" />
               Sortear apenas OMs sem colaborador
             </label>
-            <button id="btn-run-raffle-maq" class="px-4 py-2 rounded-lg bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold shadow-xs transition cursor-pointer">
-              🎲 Sortear Máquinas (AG + PA)
-            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" id="btn-clear-raffle-maq" class="px-3 py-2 rounded-lg border border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-xs font-bold transition cursor-pointer" title="Remove os colaboradores atribuídos nas OMs de Máquinas">
+                🧹 Limpar Sorteio
+              </button>
+              <button type="button" id="btn-run-raffle-maq" class="px-4 py-2 rounded-lg bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold shadow-xs transition cursor-pointer">
+                🎲 Sortear Máquinas (AG + PA)
+              </button>
+            </div>
           </div>
 
           <!-- Placar Máquinas -->
@@ -605,14 +610,19 @@
             <div id="raffle-chip-operators" class="grid grid-cols-3 gap-2"></div>
           </div>
 
-          <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
             <label class="inline-flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
               <input type="checkbox" id="chk-chip-only-unassigned" class="rounded text-fuchsia-600" />
               Apenas OMs sem resp. de chip
             </label>
-            <button id="btn-run-raffle-chip" class="px-4 py-2 rounded-lg bg-fuchsia-700 hover:bg-fuchsia-600 text-white text-xs font-bold shadow-xs transition cursor-pointer">
-              🎲 Sortear SIM Cards (AG + PA)
-            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" id="btn-clear-raffle-chip" class="px-3 py-2 rounded-lg border border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-xs font-bold transition cursor-pointer" title="Remove os responsáveis atribuídos nos SIM Cards">
+                🧹 Limpar Sorteio
+              </button>
+              <button type="button" id="btn-run-raffle-chip" class="px-4 py-2 rounded-lg bg-fuchsia-700 hover:bg-fuchsia-600 text-white text-xs font-bold shadow-xs transition cursor-pointer">
+                🎲 Sortear SIM Cards (AG + PA)
+              </button>
+            </div>
           </div>
 
           <!-- Placar SIM Cards -->
@@ -1942,6 +1952,77 @@
       showToast(`Sorteio SIM Cards concluído (${res.ag} AG + ${res.pa} PA) para ${ops.join(" e ")}!`);
     }
 
+    let confirmClearMaqTimer = null;
+    let confirmClearChipTimer = null;
+
+    function clearRaffleMaquinas() {
+      if (!requireOperator()) return;
+      const assignedCount = state.oms.filter(o => o.colaborador).length;
+      if (assignedCount === 0) {
+        showToast("Nenhum colaborador atribuído em Máquinas para limpar.");
+        return;
+      }
+      const btn = document.getElementById("btn-clear-raffle-maq");
+      if (btn.dataset.armed !== "true") {
+        btn.dataset.armed = "true";
+        btn.textContent = `⚠️ Confirmar (${assignedCount} OMs)?`;
+        btn.classList.add("bg-rose-600", "text-white", "border-rose-600");
+        clearTimeout(confirmClearMaqTimer);
+        confirmClearMaqTimer = setTimeout(() => {
+          btn.dataset.armed = "false";
+          btn.textContent = "🧹 Limpar Sorteio";
+          btn.classList.remove("bg-rose-600", "text-white", "border-rose-600");
+        }, 4000);
+        return;
+      }
+
+      clearTimeout(confirmClearMaqTimer);
+      btn.dataset.armed = "false";
+      btn.textContent = "🧹 Limpar Sorteio";
+      btn.classList.remove("bg-rose-600", "text-white", "border-rose-600");
+
+      state.oms.forEach(o => { o.colaborador = ""; });
+      document.getElementById("filter-colab").value = "";
+      pushAudit("LOTE", `Sorteio de Máquinas limpo (${assignedCount} OMs desatribuídas)`);
+      syncToCloud();
+      renderAll();
+      showToast(`Sorteio de Máquinas limpo! ${assignedCount} OMs estão prontas para novo sorteio.`);
+    }
+
+    function clearRaffleSimCards() {
+      if (!requireOperator()) return;
+      const assignedCount = state.oms.filter(o => !o.chipExempt && o.colaboradorChip).length;
+      if (assignedCount === 0) {
+        showToast("Nenhum responsável de SIM Card atribuído para limpar.");
+        return;
+      }
+      const btn = document.getElementById("btn-clear-raffle-chip");
+      if (btn.dataset.armed !== "true") {
+        btn.dataset.armed = "true";
+        btn.textContent = `⚠️ Confirmar (${assignedCount} OMs)?`;
+        btn.classList.add("bg-rose-600", "text-white", "border-rose-600");
+        clearTimeout(confirmClearChipTimer);
+        confirmClearChipTimer = setTimeout(() => {
+          btn.dataset.armed = "false";
+          btn.textContent = "🧹 Limpar Sorteio";
+          btn.classList.remove("bg-rose-600", "text-white", "border-rose-600");
+        }, 4000);
+        return;
+      }
+
+      clearTimeout(confirmClearChipTimer);
+      btn.dataset.armed = "false";
+      btn.textContent = "🧹 Limpar Sorteio";
+      btn.classList.remove("bg-rose-600", "text-white", "border-rose-600");
+
+      state.oms.forEach(o => { o.colaboradorChip = ""; });
+      document.getElementById("chip-filter-colab").value = "";
+      pushAudit("LOTE", `Sorteio de SIM Cards limpo (${assignedCount} OMs desatribuídas)`);
+      syncToCloud();
+      renderAll();
+      showToast(`Sorteio de SIM Cards limpo! ${assignedCount} OMs prontas para novo sorteio.`);
+    }
+
     // ==================== ZEBRA CLIPBOARD ====================
     function formatZebraLine(o) {
       const vlStr = formatVL(o.vl) || "01";
@@ -2523,6 +2604,8 @@
 
       document.getElementById("btn-run-raffle-maq").addEventListener("click", runRaffleMaquinas);
       document.getElementById("btn-run-raffle-chip").addEventListener("click", runRaffleSimCards);
+      document.getElementById("btn-clear-raffle-maq").addEventListener("click", clearRaffleMaquinas);
+      document.getElementById("btn-clear-raffle-chip").addEventListener("click", clearRaffleSimCards);
 
       // GRADE filtros
       document.getElementById("grade-search").addEventListener("input", renderGrade);

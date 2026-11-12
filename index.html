@@ -888,9 +888,9 @@
 
   <!-- ==================== FIREBASE & APP LOGIC ==================== -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    // Importações do Firebase carregadas dinamicamente dentro de initCloudSync()
+    // para que o painel NUNCA trave mesmo se a rede bloquear gstatic.com ou abrir via file://
+    let fbFirestoreMod = null;
 
     // ==================== THEME (LIGHT / DARK MODE) ====================
     const THEME_STORAGE_KEY = "cd_barueri_theme_v1";
@@ -1159,8 +1159,8 @@
       if (!state.cloudConnected || !state.cloudDb) return;
       try {
         const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
-        const cfgRef = doc(state.cloudDb, "artifacts", appId, "public", "data", "config", "operator_pins");
-        await setDoc(cfgRef, {
+        const cfgRef = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "config", "operator_pins");
+        await fbFirestoreMod.setDoc(cfgRef, {
           pins: state.pins,
           operators: state.operators,
           updatedAt: new Date().toISOString()
@@ -1176,8 +1176,8 @@
       if (!state.cloudConnected || !state.cloudDb) return;
       try {
         const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
-        const dayRef = doc(state.cloudDb, "artifacts", appId, "public", "data", "demandas_dias", state.date);
-        await setDoc(dayRef, {
+        const dayRef = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "demandas_dias", state.date);
+        await fbFirestoreMod.setDoc(dayRef, {
           oms: state.oms,
           auditLog: state.auditLog.slice(0, 20),
           updatedAt: new Date().toISOString()
@@ -1194,8 +1194,8 @@
         state.cloudUnsub = null;
       }
       const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
-      const dayRef = doc(state.cloudDb, "artifacts", appId, "public", "data", "demandas_dias", dateStr);
-      state.cloudUnsub = onSnapshot(dayRef, (snap) => {
+      const dayRef = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "demandas_dias", dateStr);
+      state.cloudUnsub = fbFirestoreMod.onSnapshot(dayRef, (snap) => {
         if (snap.exists()) {
           const data = snap.data();
           if (Array.isArray(data.oms) && data.oms.length > 0) {
@@ -1235,21 +1235,38 @@
         return;
       }
 
-      try {
-        const app = initializeApp(cfg);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+      // Watchdog de segurança: se em 4 segundos não conectar, libera o status como Modo Local
+      const watchdog = setTimeout(() => {
+        if (!state.cloudConnected) {
+          badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5 cursor-pointer";
+          dot.className = "w-2 h-2 rounded-full bg-amber-500";
+          txt.textContent = "Modo Local (Offline)";
+        }
+      }, 4000);
 
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 4500));
-        const authPromise = (async () => {
+      try {
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3800));
+        const connectPromise = (async () => {
+          const [appMod, authMod, fsMod] = await Promise.all([
+            import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"),
+            import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"),
+            import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js")
+          ]);
+          fbFirestoreMod = fsMod;
+          const app = appMod.initializeApp(cfg);
+          const auth = authMod.getAuth(app);
+          const db = fsMod.getFirestore(app);
+
           if (typeof __initial_auth_token !== "undefined" && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
+            await authMod.signInWithCustomToken(auth, __initial_auth_token);
           } else {
-            await signInAnonymously(auth);
+            await authMod.signInAnonymously(auth);
           }
+          return db;
         })();
 
-        await Promise.race([authPromise, timeoutPromise]);
+        const db = await Promise.race([connectPromise, timeoutPromise]);
+        clearTimeout(watchdog);
 
         state.cloudDb = db;
         state.cloudConnected = true;
@@ -1259,8 +1276,8 @@
         txt.textContent = "Nuvem Sincronizada";
 
         const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
-        const cfgRef = doc(db, "artifacts", appId, "public", "data", "config", "operator_pins");
-        onSnapshot(cfgRef, (snap) => {
+        const cfgRef = fbFirestoreMod.doc(db, "artifacts", appId, "public", "data", "config", "operator_pins");
+        fbFirestoreMod.onSnapshot(cfgRef, (snap) => {
           if (snap.exists()) {
             const d = snap.data();
             if (d.pins) state.pins = { ...state.pins, ...d.pins };
@@ -1293,8 +1310,10 @@
 
         subscribeCloudDay(state.date);
       } catch (err) {
+        clearTimeout(watchdog);
         console.warn("Fallback local ativado:", err);
-        badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5";
+        badge.title = "Motivo: " + (err && err.message ? err.message : "Sem resposta da nuvem");
+        badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5 cursor-pointer";
         dot.className = "w-2 h-2 rounded-full bg-amber-500";
         txt.textContent = "Modo Local (Offline)";
       }

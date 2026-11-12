@@ -1374,6 +1374,19 @@
     const state = {
       date: todayStr,
       currentOperator: "",
+      // Contas de acesso ficam separadas dos colaboradores operacionais.
+      currentUser: null,
+      users: {
+        ADM: {
+          username: "ADM",
+          role: "admin",
+          active: true,
+          operatorName: null,
+          mustChangePin: true,
+          pinConfigured: false,
+          createdAt: new Date().toISOString()
+        }
+      },
       operators: [...DEFAULT_OPERATORS],
       oms: [],
       pins: {},
@@ -1400,6 +1413,51 @@
     // ==================== CLOUD & LOCAL STORAGE ====================
     const STORAGE_KEY_PREFIX = "cd_barueri_demandas_v3_";
     const CONFIG_STORAGE_KEY = "cd_barueri_team_config_v1";
+    const USER_ROLES = Object.freeze({
+      ADMIN: "admin",
+      SUPERVISOR: "supervisor",
+      OPERATOR: "operator"
+    });
+
+    function normalizeUserAccounts(rawUsers = {}) {
+      const users = {};
+      if (rawUsers && typeof rawUsers === "object" && !Array.isArray(rawUsers)) {
+        Object.entries(rawUsers).forEach(([key, value]) => {
+          if (!value || typeof value !== "object") return;
+          const username = String(value.username || key).trim().toUpperCase();
+          const role = [USER_ROLES.ADMIN, USER_ROLES.SUPERVISOR, USER_ROLES.OPERATOR].includes(value.role)
+            ? value.role : USER_ROLES.OPERATOR;
+          if (!username) return;
+          users[username] = {
+            username,
+            role,
+            active: value.active !== false,
+            operatorName: typeof value.operatorName === "string" ? value.operatorName : null,
+            mustChangePin: value.mustChangePin === true,
+            pinConfigured: value.pinConfigured === true,
+            createdAt: value.createdAt || new Date().toISOString(),
+            updatedAt: value.updatedAt || null
+          };
+        });
+      }
+      if (!users.ADM) {
+        users.ADM = {
+          username: "ADM",
+          role: USER_ROLES.ADMIN,
+          active: true,
+          operatorName: null,
+          mustChangePin: true,
+          pinConfigured: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: null
+        };
+      } else {
+        users.ADM.role = USER_ROLES.ADMIN;
+        users.ADM.active = true;
+        users.ADM.operatorName = null;
+      }
+      return users;
+    }
 
     function loadLocalConfig() {
       try {
@@ -1407,6 +1465,7 @@
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed.pins) state.pins = parsed.pins;
+          state.users = normalizeUserAccounts(parsed.users || state.users);
           if (Array.isArray(parsed.sapCatalog)) state.sapCatalog = parsed.sapCatalog;
           if (Array.isArray(parsed.operators) && parsed.operators.length > 0) {
             state.operators = parsed.operators;
@@ -1420,6 +1479,7 @@
       try {
         localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({
           pins: state.pins,
+          users: state.users,
           operators: state.operators,
           sapCatalog: state.sapCatalog
         }));
@@ -1456,6 +1516,7 @@
         const cfgRef = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "config", "operator_pins");
         await fbFirestoreMod.setDoc(cfgRef, {
           pins: state.pins,
+          users: state.users,
           operators: state.operators,
           sapCatalog: state.sapCatalog,
           updatedAt: new Date().toISOString()
@@ -1576,6 +1637,9 @@
           if (snap.exists()) {
             const d = snap.data();
             if (d.pins) state.pins = { ...state.pins, ...d.pins };
+            if (d.users && typeof d.users === "object") {
+              state.users = normalizeUserAccounts({ ...state.users, ...d.users });
+            }
             if (Array.isArray(d.sapCatalog)) state.sapCatalog = d.sapCatalog;
             if (Array.isArray(d.operators) && d.operators.length > 0) {
               const prevSet = new Set(state.operators);

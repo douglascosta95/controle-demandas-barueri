@@ -2319,6 +2319,7 @@
               <select data-field="status" data-om="${o.om}" class="px-2 py-1 text-xs font-bold rounded-lg border status-${statusKey} focus:outline-none cursor-pointer">
                 ${STATUS_LIST.map(st => `<option value="${st}" ${o.status === st ? "selected" : ""}>${st}</option>`).join("")}
               </select>
+              ${o.validatedBy ? `<div class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">Validada por ${escapeSapHtml(o.validatedBy)}</div>` : ""}
               ${o.updatedBy ? `<div class="text-[10px] text-slate-400 mt-0.5">${o.updatedBy} • ${o.updatedAt}</div>` : ""}
             </td>
 
@@ -3404,18 +3405,27 @@
         const item = state.oms.find(x => x.om === om);
         if (!item) return;
 
-        // Se a OM estiver validada/SAPB1 e travada, exige PIN para alterar
+        // Status de OMs já validadas/SAPB1 sempre exige PIN.
         const isLockedStatus = item.status === "VALIDADA" || item.status === "SAPB1";
-        if (isLockedStatus && !item.unlocked) {
+        const statusPinApproved = Boolean(item.statusChangePinApproved);
+        if ((field === "status" && isLockedStatus && !statusPinApproved) || (isLockedStatus && !item.unlocked)) {
           e.preventDefault();
+          const requestedStatus = field === "status" ? el.value : null;
           openPinModalForUnlock(om, () => {
             item.unlocked = true;
-            renderAll();
-            showToast(`OM ${om} destravada para edição por ${state.currentOperator}!`);
+            if (requestedStatus) {
+              item.statusChangePinApproved = true;
+              el.value = requestedStatus;
+              handleOperationalTableChange({ target: el, preventDefault() {} });
+            } else {
+              renderAll();
+              showToast(`OM ${om} destravada para edição por ${state.currentOperator}!`);
+            }
           });
           renderAll();
           return;
         }
+        if (statusPinApproved) item.statusChangePinApproved = false;
 
         const nowTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
@@ -3479,6 +3489,17 @@
           pushAudit(om, `Status → ${nextStatus}${item.validatedBy ? " (por " + item.validatedBy + ")" : ""}`);
           syncToCloud();
           renderAll();
+
+          if (nextStatus === "DIVERGENTE") {
+            state.editingCommentOm = om;
+            document.getElementById("comment-modal-title").textContent = `OM ${item.om} — Divergência`;
+            document.getElementById("comment-modal-sub").textContent = "Descreva o motivo da divergência para facilitar a tratativa (opcional).";
+            document.getElementById("comment-textarea").value = item.comment || "";
+            document.getElementById("comment-pin-checkbox").checked = Boolean(item.pinned);
+            const commentModal = document.getElementById("comment-modal");
+            commentModal.classList.remove("hidden");
+            commentModal.classList.add("flex");
+          }
 
           if (nextStatus === "VALIDADA") {
             openStatusNoticeModal({

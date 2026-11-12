@@ -330,6 +330,7 @@
           </select>
           <span id="operator-lock-badge" class="hidden px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">PIN OK</span>
           <button id="btn-manage-pin" class="hidden px-1.5 py-0.5 rounded bg-purple-200/70 dark:bg-purple-800/70 hover:opacity-80 text-purple-900 dark:text-purple-100 text-[10px] font-semibold transition cursor-pointer" title="Alterar ou redefinir PIN">PIN</button>
+          <button id="btn-open-accounts-modal" class="hidden px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-bold transition cursor-pointer" title="Gerenciar contas de acesso">🔐 Contas</button>
           <button id="btn-open-team-modal" class="px-2 py-0.5 rounded bg-purple-700 hover:bg-purple-600 text-white text-[10px] font-bold transition cursor-pointer" title="Adicionar ou remover operadores da equipe">👥 Equipe</button>
         </div>
 
@@ -1046,6 +1047,48 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: GESTÃO DE CONTAS (ADM) ==================== -->
+  <div id="accounts-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs hidden items-center justify-center z-[60] p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-bold tracking-widest uppercase text-purple-600">Acesso administrativo</p>
+          <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Gestão de contas</h3>
+          <p class="text-xs text-slate-500 mt-1">Crie acessos individuais para Supervisores e Operadores.</p>
+        </div>
+        <button id="accounts-modal-close" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="account-new-username" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Usuário de acesso</label>
+          <input id="account-new-username" maxlength="30" autocomplete="off" placeholder="Ex.: JOAO.SILVA" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-sm uppercase font-bold">
+        </div>
+        <div>
+          <label for="account-new-role" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Perfil</label>
+          <select id="account-new-role" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-sm">
+            <option value="operator">Operador</option>
+            <option value="supervisor">Supervisor</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2">
+          <label for="account-new-operator" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Vincular colaborador operacional (opcional para Supervisor)</label>
+          <select id="account-new-operator" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-sm">
+            <option value="">Sem vínculo operacional</option>
+          </select>
+        </div>
+      </div>
+      <p class="text-[11px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl p-3">A conta será criada ativa, com PIN provisório <strong>0000</strong>. No primeiro acesso, a pessoa deverá cadastrar seu próprio PIN de 4 números.</p>
+      <div class="flex justify-end">
+        <button id="btn-create-account" class="px-4 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold">+ Criar conta</button>
+      </div>
+      <div class="border-t border-slate-200 dark:border-slate-700 pt-4">
+        <h4 class="text-sm font-bold text-slate-800 dark:text-white mb-2">Contas cadastradas</h4>
+        <div id="accounts-list" class="space-y-2"></div>
+      </div>
+      <p class="text-[10px] text-slate-400">Versão de homologação: o PIN provisório e as permissões ainda são controlados no cliente.</p>
+    </div>
+  </div>
+
   <!-- ==================== CENTRAL DE AJUDA ==================== -->
   <section id="tab-ajuda" class="tab-panel hidden space-y-5">
     <div class="rounded-2xl bg-gradient-to-r from-slate-950 via-purple-950 to-violet-900 text-white p-6 sm:p-8 shadow-lg">
@@ -1712,6 +1755,93 @@
       }
     }
 
+    // ==================== GESTÃO DE CONTAS (SOMENTE ADM) ====================
+    function setAccountAdminControls() {
+      const button = document.getElementById("btn-open-accounts-modal");
+      if (button) button.classList.toggle("hidden", !isAdmin());
+    }
+
+    function openAccountsModal() {
+      if (!isAdmin()) return showToast("Apenas ADM pode gerenciar contas.");
+      const select = document.getElementById("account-new-operator");
+      select.innerHTML = '<option value="">Sem vínculo operacional</option>';
+      state.operators.forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+      renderAccountsList();
+      const modal = document.getElementById("accounts-modal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeAccountsModal() {
+      const modal = document.getElementById("accounts-modal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function renderAccountsList() {
+      const container = document.getElementById("accounts-list");
+      if (!container) return;
+      const roleNames = { admin: "ADM", supervisor: "Supervisor", operator: "Operador" };
+      const users = Object.values(state.users).sort((a,b) => a.username === "ADM" ? -1 : b.username === "ADM" ? 1 : a.username.localeCompare(b.username));
+      container.innerHTML = users.map(user => {
+        const status = user.active ? "Ativa" : "Desativada";
+        const pinStatus = user.pinConfigured ? "PIN cadastrado" : "Aguardando primeiro acesso";
+        const linked = user.operatorName ? " • " + user.operatorName : "";
+        const canManage = user.username !== "ADM";
+        return '<div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-700 p-3">' +
+          '<div class="min-w-0"><div class="text-xs font-bold text-slate-800 dark:text-white">' + user.username + ' <span class="font-medium text-purple-600">· ' + (roleNames[user.role] || "Operador") + '</span></div>' +
+          '<div class="text-[10px] text-slate-500 mt-1">' + status + ' • ' + pinStatus + linked + '</div></div>' +
+          (canManage ? '<div class="flex gap-1"><button data-account-reset="' + user.username + '" class="px-2 py-1 rounded-lg border border-amber-300 text-amber-700 text-[10px] font-bold">Redefinir PIN</button><button data-account-toggle="' + user.username + '" class="px-2 py-1 rounded-lg border border-slate-300 text-slate-600 text-[10px] font-bold">' + (user.active ? "Desativar" : "Ativar") + '</button></div>' : '<span class="text-[10px] font-bold text-emerald-600">Conta principal</span>') +
+          '</div>';
+      }).join("");
+    }
+
+    async function createAccount() {
+      if (!isAdmin()) return showToast("Apenas ADM pode criar contas.");
+      const username = document.getElementById("account-new-username").value.trim().toUpperCase();
+      const role = document.getElementById("account-new-role").value;
+      const operatorName = document.getElementById("account-new-operator").value || null;
+      if (!/^[A-Z0-9._-]{2,30}$/.test(username)) return showToast("Use um usuário de 2 a 30 caracteres: letras, números, ponto, hífen ou underline.");
+      if (username === "ADM" || state.users[username]) return showToast("Esse usuário já existe ou é reservado.");
+      if (![USER_ROLES.OPERATOR, USER_ROLES.SUPERVISOR].includes(role)) return showToast("Perfil inválido.");
+      if (role === USER_ROLES.OPERATOR && !operatorName) return showToast("Vincule o Operador a um colaborador operacional.");
+      if (operatorName && !state.operators.includes(operatorName)) return showToast("Colaborador operacional não encontrado.");
+      state.users[username] = {
+        username, role, active: true, operatorName, mustChangePin: true,
+        pinConfigured: false, pinSalt: "", pinHash: "",
+        createdAt: new Date().toISOString(), updatedAt: null
+      };
+      await syncConfigToCloud();
+      document.getElementById("account-new-username").value = "";
+      renderAccountsList();
+      showToast("Conta criada. Primeiro acesso com PIN provisório 0000.");
+    }
+
+    async function handleAccountAdminAction(event) {
+      if (!isAdmin()) return showToast("Apenas ADM pode gerenciar contas.");
+      const resetButton = event.target.closest("[data-account-reset]");
+      const toggleButton = event.target.closest("[data-account-toggle]");
+      const username = resetButton?.dataset.accountReset || toggleButton?.dataset.accountToggle;
+      if (!username || !state.users[username] || username === "ADM") return;
+      const user = state.users[username];
+      if (resetButton) {
+        if (!confirm("Redefinir o PIN de " + username + "? A pessoa deverá usar 0000 e cadastrar um novo PIN no próximo acesso.")) return;
+        state.users[username] = { ...user, pinConfigured: false, pinSalt: "", pinHash: "", mustChangePin: true, updatedAt: new Date().toISOString() };
+      } else if (toggleButton) {
+        const nextActive = !user.active;
+        if (!confirm((nextActive ? "Ativar" : "Desativar") + " a conta " + username + "?")) return;
+        state.users[username] = { ...user, active: nextActive, updatedAt: new Date().toISOString() };
+      }
+      await syncConfigToCloud();
+      renderAccountsList();
+      showToast("Conta atualizada.");
+    }
+
     // ==================== GESTÃO DE EQUIPE (ADICIONAR / REMOVER) ====================
     function openTeamModal() {
       renderTeamModalList();
@@ -1787,8 +1917,8 @@
       const username = (usernameInput.value || "ADM").trim().toUpperCase();
       const user = state.users[username];
       accountAuthMode = user && !user.pinConfigured ? "bootstrap" : "login";
-      if (accountAuthMode === "bootstrap" && username === "ADM") {
-        description.textContent = "Primeiro acesso: informe a senha provisória 0000 e crie um PIN pessoal.";
+      if (accountAuthMode === "bootstrap") {
+        description.textContent = "Primeiro acesso: informe o PIN provisório 0000 e crie seu PIN pessoal.";
         confirmWrap.classList.remove("hidden");
         button.textContent = "Criar PIN e entrar";
       } else {
@@ -1817,7 +1947,7 @@
       button.textContent = "Verificando...";
       try {
         if (!user.pinConfigured || !user.pinHash || !user.pinSalt) {
-          if (username !== "ADM" || pin !== TEMP_INITIAL_PIN) return setAccountAuthError("Conta ainda não configurada. Verifique o usuário e a senha provisória.");
+          if (pin !== TEMP_INITIAL_PIN) return setAccountAuthError("Conta ainda não configurada. Verifique o usuário e a senha provisória.");
           if (!/^\d{4}$/.test(pin2) || pin2 === TEMP_INITIAL_PIN) return setAccountAuthError("O novo PIN deve ter 4 números e ser diferente de 0000.");
           if (!/^\d{4}$/.test(pin3) || pin2 !== pin3) return setAccountAuthError("Os dois campos do novo PIN devem ser iguais e conter 4 números.");
           const result = await hashAccountPin(pin2);
@@ -1834,6 +1964,7 @@
         sessionStorage.setItem("cd_barueri_account", username);
         document.getElementById("account-auth-gate").classList.add("hidden");
         renderOperatorSelectors();
+        setAccountAdminControls();
         showToast(`Acesso liberado — perfil ${authenticatedUser.role === "admin" ? "ADM" : authenticatedUser.role === "supervisor" ? "Supervisor" : "Operador"}.`);
       } catch (error) {
         console.error("Falha no acesso por conta:", error);
@@ -1850,6 +1981,7 @@
       sessionStorage.removeItem("cd_barueri_account");
       sessionStorage.removeItem("cd_barueri_op");
       showAccountAuth();
+      setAccountAdminControls();
     }
 
     function isAdmin() {
@@ -3727,6 +3859,18 @@
         if (e.key === "Enter") handleAddSapEntry();
       });
 
+      // Gestão de contas (ADM)
+      document.getElementById("btn-open-accounts-modal").addEventListener("click", openAccountsModal);
+      document.getElementById("accounts-modal-close").addEventListener("click", closeAccountsModal);
+      document.getElementById("btn-create-account").addEventListener("click", createAccount);
+      document.getElementById("accounts-list").addEventListener("click", handleAccountAdminAction);
+      document.getElementById("account-new-role").addEventListener("change", () => {
+        const role = document.getElementById("account-new-role").value;
+        const select = document.getElementById("account-new-operator");
+        select.disabled = role === "supervisor";
+        if (role === "supervisor") select.value = "";
+      });
+
       // Modal Gerenciar Equipe
       document.getElementById("btn-open-team-modal").addEventListener("click", openTeamModal);
       document.getElementById("btn-open-team-sidebar").addEventListener("click", openTeamModal);
@@ -4202,6 +4346,7 @@
       renderInsumos();
       switchTab("overview");
       showAccountAuth();
+      setAccountAdminControls();
       initCloudSync();
     }
 

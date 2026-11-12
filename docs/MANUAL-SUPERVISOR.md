@@ -5,12 +5,12 @@
 
 ## 1. Papel do Supervisor
 
-O Supervisor acompanha o andamento das demandas, consulta indicadores e identifica situações que precisam de intervenção. Seu acesso deve ser de leitura e acompanhamento, com ações operacionais adicionais somente quando aprovadas e explicitamente concedidas.
+O Supervisor acompanha o andamento das demandas, consulta indicadores, coordena a distribuição do trabalho e identifica situações que precisam de intervenção. Pode delegar OMs emergenciais a operadores habilitados, conforme as regras da operação. Seu acesso deve ser delimitado por módulo e ação.
 
 O Supervisor não:
 - Cria, bloqueia ou reativa usuários.
 - Redefine senhas ou administra credenciais.
-- Concede ou altera permissões.
+- Concede ou altera permissões de acesso ao sistema.
 - Altera configurações de segurança.
 - Apaga ou modifica trilhas de auditoria.
 - Usa a conta de outra pessoa ou compartilha sua própria conta.
@@ -23,7 +23,21 @@ O Supervisor não:
 4. Encerre a sessão ao terminar, principalmente em equipamento compartilhado.
 5. Em caso de acesso indevido ou perfil incorreto, comunique o ADM.
 
-## 3. Acompanhamento da operação
+## 3. Coordenação e delegação de OMs emergenciais
+
+1. Abra o módulo de OMs Emergenciais.
+2. Confira a OM, prioridade, prazo e informações necessárias para execução.
+3. Selecione um operador habilitado e disponível conforme a escala.
+4. Confirme a delegação e registre a orientação operacional necessária, evitando dados pessoais desnecessários.
+5. Confira se a atribuição foi salva e se o responsável aparece corretamente.
+6. Acompanhe o andamento e intervenha quando houver impedimento.
+7. Se precisar reatribuir, informe o motivo e preserve a trilha da atribuição anterior.
+
+**Regras de controle:** a delegação não altera o autor original da OM nem permite que o Supervisor se passe pelo operador. O sistema deve registrar o UID do Supervisor que delegou, o UID do operador designado, data/hora do servidor, OM, ação e motivo quando exigido. O operador designado continua responsável por registrar suas próprias ações com sua conta.
+
+O Supervisor só pode delegar para pessoas ativas, habilitadas no módulo e autorizadas para aquela atividade. Não pode atribuir uma demanda a uma conta bloqueada ou conceder permissão por meio da própria delegação.
+
+## 4. Acompanhamento da operação
 
 - Consulte a Visão geral para acompanhar os indicadores disponíveis.
 - Utilize os filtros de data e módulo para analisar o período correto.
@@ -33,7 +47,7 @@ O Supervisor não:
 
 Indicadores são instrumentos de acompanhamento. Antes de tomar uma decisão, considere a regra de cálculo, o período e a qualidade dos dados apresentados.
 
-## 4. Auditoria e rastreabilidade
+## 5. Auditoria e rastreabilidade
 
 Quando precisar esclarecer uma alteração:
 1. Localize o registro ou OM.
@@ -44,7 +58,7 @@ Quando precisar esclarecer uma alteração:
 
 A consulta deve ter finalidade operacional legítima. Não utilize a auditoria para monitorar pessoas fora do escopo de trabalho.
 
-## 5. Solicitações ao ADM
+## 6. Solicitações ao ADM
 
 Encaminhe ao ADM solicitações de:
 - Criação ou bloqueio de conta.
@@ -54,7 +68,7 @@ Encaminhe ao ADM solicitações de:
 
 A solicitação deve informar a necessidade operacional e, quando aplicável, a aprovação da liderança. Não solicite que o ADM compartilhe credenciais de terceiros.
 
-## 6. Incidentes e falhas
+## 7. Incidentes e falhas
 
 Se identificar atividade não reconhecida, exposição de dados ou suspeita de acesso indevido:
 1. Não tente contornar o controle nem investigar usando outra conta.
@@ -62,7 +76,7 @@ Se identificar atividade não reconhecida, exposição de dados ou suspeita de a
 3. Comunique imediatamente o canal interno definido e o responsável técnico.
 4. Siga o procedimento de incidente.
 
-## 7. Checklist de acompanhamento
+## 8. Checklist de acompanhamento
 
 - [ ] Consultei o período e os filtros corretos.
 - [ ] Analisei os indicadores considerando seus critérios.
@@ -71,6 +85,6 @@ Se identificar atividade não reconhecida, exposição de dados ou suspeita de a
 - [ ] Protegi as informações consultadas.
 - [ ] Encerrei minha sessão.
 
-## 8. Limites deste manual
+## 9. Limites deste manual
 
 As permissões reais dependem da matriz aprovada e da implementação efetiva no backend e no Firestore. Este manual não concede acesso por si só. Se uma tela permitir ação incompatível com o perfil, interrompa o uso e comunique o responsável técnico.

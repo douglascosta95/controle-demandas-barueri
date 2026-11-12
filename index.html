@@ -1117,6 +1117,7 @@
           comment: "",
           commentBy: "",
           pinned: false,
+          isEmergencial: false,
           updatedBy: "",
           updatedAt: ""
         };
@@ -1809,7 +1810,7 @@
           <tr class="${rowClass} transition" data-om="${o.om}">
             <td class="py-2.5 px-3 align-top">
               <div class="flex items-center gap-1.5">
-                ${o.pinned ? `<span title="OM Fixada no topo" class="text-purple-700 dark:text-purple-300 text-xs">📌</span>` : ""}
+                ${o.pinned ? `<span title="OM Fixada no topo" class="text-purple-700 dark:text-purple-300 text-xs">📌</span>` : ""}${(o.isEmergencial || o.status === "EMERGENCIAL") ? `<span title="OM Emergencial" class="text-xs">🚨</span>` : ""}
                 <span class="mono font-bold text-slate-900">${o.om}</span>
                 <span class="px-1.5 py-0.2 rounded text-[10px] font-bold ${o.tipo === "AG" ? "bg-purple-100 text-purple-900 dark:bg-purple-900/70 dark:text-purple-200" : "bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200"}">${o.tipo}</span>
               </div>
@@ -2097,13 +2098,13 @@
 
     // ==================== RENDER ABAS EMERGENCIAIS & CANCELADAS ====================
     function renderSpecialTabs() {
-      const emergList = state.oms.filter(o => o.status === "EMERGENCIAL");
+      const emergList = state.oms.filter(o => o.status !== "CANCELADA" && (o.isEmergencial || o.status === "EMERGENCIAL"));
       const cancList = state.oms.filter(o => o.status === "CANCELADA");
 
       document.getElementById("badge-emergenciais").textContent = emergList.length;
       document.getElementById("badge-canceladas").textContent = cancList.length;
 
-      // Render Emergenciais
+      // Render Emergenciais (mantém tanto pendentes quanto já validadas)
       const emTbody = document.getElementById("emergenciais-tbody");
       const emEmpty = document.getElementById("emergenciais-empty");
       if (!emergList.length) {
@@ -2112,6 +2113,7 @@
       } else {
         emEmpty.classList.add("hidden");
         emTbody.innerHTML = emergList.map(o => {
+          const statusKey = o.status.replace(/\s+/g, "_").replace(/\./g, "");
           const hasVl = Boolean(o.vl && parseInt(o.vl, 10) > 0);
           const sug = suggestVolume(o.modelo, o.qtd);
           const opChoices = state.operators.includes(o.colaborador) || !o.colaborador
@@ -2122,9 +2124,14 @@
             <tr class="row-pinned transition" data-om="${o.om}">
               <td class="py-2.5 px-3 align-top">
                 <div class="flex items-center gap-1.5">
-                  <span>🚨</span>
+                  <span>${o.status === "VALIDADA" ? "✅" : "🚨"}</span>
                   <span class="mono font-bold text-slate-900">${o.om}</span>
                   <span class="px-1.5 py-0.2 rounded text-[10px] font-bold ${o.tipo === "AG" ? "bg-purple-100 text-purple-900 dark:bg-purple-900/70 dark:text-purple-200" : "bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200"}">${o.tipo}</span>
+                </div>
+                <div class="mt-1">
+                  <button type="button" data-action="unmark-emergencial" data-om="${o.om}" title="Remover marcação emergencial desta OM" class="text-[10px] text-slate-400 hover:text-rose-600 underline cursor-pointer">
+                    Remover de emergenciais
+                  </button>
                 </div>
               </td>
               <td class="py-2.5 px-3 align-top max-w-[260px]">
@@ -2155,7 +2162,7 @@
                 </select>
               </td>
               <td class="py-2.5 px-3 align-top">
-                <select data-field="status" data-om="${o.om}" class="px-2 py-1 text-xs font-bold rounded-lg border status-EMERGENCIAL cursor-pointer">
+                <select data-field="status" data-om="${o.om}" class="px-2 py-1 text-xs font-bold rounded-lg border status-${statusKey} cursor-pointer">
                   ${STATUS_LIST.map(st => `<option value="${st}" ${o.status === st ? "selected" : ""}>${st}</option>`).join("")}
                 </select>
                 ${o.updatedBy ? `<div class="text-[10px] text-slate-400 mt-0.5">${o.updatedBy} • ${o.updatedAt}</div>` : ""}
@@ -2509,6 +2516,7 @@
               comment: prev ? prev.comment : "",
               commentBy: prev ? prev.commentBy : "",
               pinned: prev ? prev.pinned : false,
+              isEmergencial: prev ? Boolean(prev.isEmergencial || prev.status === "EMERGENCIAL") : false,
               updatedBy: prev ? prev.updatedBy : "",
               updatedAt: prev ? prev.updatedAt : ""
             });
@@ -2811,7 +2819,7 @@
       document.getElementById("btn-status-notice-confirm").addEventListener("click", () => closeStatusNoticeModal(true));
 
       document.getElementById("btn-copy-emergenciais-zebra").addEventListener("click", () => {
-        const list = state.oms.filter(o => o.status === "EMERGENCIAL" && o.vl && parseInt(o.vl, 10) > 0);
+        const list = state.oms.filter(o => o.status !== "CANCELADA" && (o.isEmergencial || o.status === "EMERGENCIAL") && o.vl && parseInt(o.vl, 10) > 0);
         if (!list.length) {
           showToast("Nenhuma OM emergencial possui Volume (VL) preenchido.");
           return;
@@ -2880,10 +2888,13 @@
             return;
           }
 
+          if (nextStatus === "EMERGENCIAL") {
+            item.isEmergencial = true;
+          }
           item.status = nextStatus;
           item.updatedBy = state.currentOperator;
           item.updatedAt = nowTime;
-          pushAudit(om, `Status → ${nextStatus}`);
+          pushAudit(om, `Status → ${nextStatus}${item.isEmergencial && nextStatus === "VALIDADA" ? " (Validada • mantida no painel Emergencial)" : ""}`);
           syncToCloud();
           renderAll();
 
@@ -2939,6 +2950,14 @@
           pushAudit(om, `Volume (VL) aplicado: ${item.vl}`);
           syncToCloud();
           renderAll();
+        } else if (action === "unmark-emergencial") {
+          if (!requireOperator()) return;
+          item.isEmergencial = false;
+          if (item.status === "EMERGENCIAL") item.status = "NOVA";
+          pushAudit(om, "Removida da lista de Emergenciais");
+          syncToCloud();
+          renderAll();
+          showToast(`OM ${om} removida da aba Emergenciais.`);
         } else if (action === "zebra") {
           if (!item.vl) return;
           copyToClipboard(formatZebraBlock(item), `Etiqueta OM ${om} copiada (formato Excel 4x2)! Cole no Excel ou Zebra (Ctrl + V).`);

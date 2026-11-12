@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
     }
 
     const actorProfile = actorSnap.data();
-    const role = actor.role || actorProfile.role;
+    const role = actor.role;
     const canDelegate = role === "admin" ||
       (role === "supervisor" &&
        actor.permissions?.[MODULE_KEY]?.delegate === true);

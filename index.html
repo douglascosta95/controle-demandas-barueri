@@ -2085,18 +2085,55 @@
         "OM": o.om,
         "DESTINO": o.destino,
         "MODELO": o.modelo,
-        "QTD": o.qtd,
+        "QTD": Number(o.qtd) || 0,
         "VL": formatVL(o.vl),
         "TRANSPORTE": o.transporte,
         "COLABORADOR": o.colaborador,
-        "STATUS": o.status,
-        "REGIÃO": o.regiao,
-        "UF": o.uf,
-        "OBSERVAÇÃO": o.comment || ""
+        "STATUS": o.status
       });
+
+      const autoFitCols = (ws, rows) => {
+        if (!rows || !rows.length) return;
+        const keys = Object.keys(rows[0]);
+        ws["!cols"] = keys.map(k => {
+          const maxLen = Math.max(
+            k.length,
+            ...rows.map(r => String(r[k] == null ? "" : r[k]).length)
+          );
+          return { wch: Math.min(Math.max(maxLen + 3, 10), 48) };
+        });
+      };
 
       const agRows = state.oms.filter(o => o.tipo === "AG").map(mapRow);
       const paRows = state.oms.filter(o => o.tipo === "PA").map(mapRow);
+
+      // Aba Resumo / Produtividade por Colaborador
+      const resumoMap = new Map();
+      state.oms.forEach(o => {
+        const colab = o.colaborador || "NÃO ATRIBUÍDO";
+        if (!resumoMap.has(colab)) {
+          resumoMap.set(colab, {
+            "COLABORADOR": colab,
+            "TOTAL OMs": 0,
+            "OMs AG": 0,
+            "OMs PA": 0,
+            "QTD MÁQUINAS": 0,
+            "TOTAL VOLUMES (VL)": 0,
+            "VALIDADAS": 0,
+            "PENDENTES / OUTROS": 0
+          });
+        }
+        const entry = resumoMap.get(colab);
+        entry["TOTAL OMs"] += 1;
+        if (o.tipo === "AG") entry["OMs AG"] += 1;
+        else entry["OMs PA"] += 1;
+        entry["QTD MÁQUINAS"] += Number(o.qtd) || 0;
+        entry["TOTAL VOLUMES (VL)"] += parseInt(o.vl, 10) || 0;
+        if (o.status === "VALIDADA" || o.status === "SAPB1") entry["VALIDADAS"] += 1;
+        else entry["PENDENTES / OUTROS"] += 1;
+      });
+      const resumoRows = Array.from(resumoMap.values()).sort((a, b) => b["TOTAL OMs"] - a["TOTAL OMs"]);
+
       const chipRows = state.oms.filter(o => !o.chipExempt).map(o => ({
         "OM": o.om,
         "TIPO": o.tipo,
@@ -2104,7 +2141,7 @@
         "CT": o.ct,
         "UF": o.uf,
         "MODELO": o.modelo,
-        "QTD MÁQ": o.qtd,
+        "QTD MÁQ": Number(o.qtd) || 0,
         "TIPO CHIP": o.tipoChip,
         "TIM": o.tim,
         "VIVO": o.vivo,
@@ -2113,12 +2150,23 @@
         "STATUS CHIP": o.statusChip || "NOVA"
       }));
 
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(agRows.length ? agRows : [{}]), `DEMANDA ${dateTag} AG`);
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(paRows.length ? paRows : [{}]), `DEMANDA ${dateTag} PA`);
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(chipRows.length ? chipRows : [{}]), `SIM CARDS ${dateTag}`);
+      const wsAg = XLSX.utils.json_to_sheet(agRows.length ? agRows : [{}]);
+      const wsPa = XLSX.utils.json_to_sheet(paRows.length ? paRows : [{}]);
+      const wsResumo = XLSX.utils.json_to_sheet(resumoRows.length ? resumoRows : [{}]);
+      const wsChip = XLSX.utils.json_to_sheet(chipRows.length ? chipRows : [{}]);
+
+      autoFitCols(wsAg, agRows);
+      autoFitCols(wsPa, paRows);
+      autoFitCols(wsResumo, resumoRows);
+      autoFitCols(wsChip, chipRows);
+
+      XLSX.utils.book_append_sheet(wb, wsAg, `DEMANDA ${dateTag} AG`);
+      XLSX.utils.book_append_sheet(wb, wsPa, `DEMANDA ${dateTag} PA`);
+      XLSX.utils.book_append_sheet(wb, wsResumo, `RESUMO EQUIPE ${dateTag}`);
+      XLSX.utils.book_append_sheet(wb, wsChip, `SIM CARDS ${dateTag}`);
 
       XLSX.writeFile(wb, `Demanda_CD_Barueri_${dateTag}_${yyyy}.xlsx`);
-      showToast("Planilha Excel exportada!");
+      showToast("Planilha Excel exportada com sucesso!");
     }
 
     // ==================== POPULATE FILTERS & TABS ====================

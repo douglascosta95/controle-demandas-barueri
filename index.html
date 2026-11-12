@@ -344,18 +344,30 @@
       <div class="sidebar-caption">MENU PRINCIPAL</div>
       <button data-tab="overview" class="nav-tab sidebar-link tab-active"><span class="sidebar-icon">⌂</span><span>Visão geral</span></button>
 
-      <div class="sidebar-caption">OPERAÇÃO</div>
-      <button data-tab="maquinas" class="nav-tab sidebar-link"><span class="sidebar-icon">▦</span><span>Atendimento Máquinas</span><span id="badge-maquinas" class="sidebar-badge">0</span></button>
-      <button data-tab="simcards" class="nav-tab sidebar-link"><span class="sidebar-icon">▤</span><span>Atendimento SIM Cards</span><span id="badge-simcards" class="sidebar-badge">0</span></button>
-      <button data-tab="emergenciais" class="nav-tab sidebar-link"><span class="sidebar-icon">!</span><span>OMs Emergenciais</span><span id="badge-emergenciais" class="sidebar-badge badge-alert">0</span></button>
-      <button data-tab="canceladas" class="nav-tab sidebar-link"><span class="sidebar-icon">×</span><span>OMs Canceladas</span><span id="badge-canceladas" class="sidebar-badge">0</span></button>
-
-      <div class="sidebar-caption">PLANEJAMENTO</div>
-      <button data-tab="importar" class="nav-tab sidebar-link"><span class="sidebar-icon">⇄</span><span>DRP e Distribuição</span></button>
-      <button data-tab="grade" class="nav-tab sidebar-link"><span class="sidebar-icon">▧</span><span>Base GRADE</span><span id="badge-grade" class="sidebar-badge">0</span></button>
-
+      <div class="sidebar-group">
+        <button type="button" class="sidebar-group-toggle" data-nav-group-toggle="aluguel" aria-expanded="true"><span>▣</span> Demanda Aluguel <span class="ml-auto">⌄</span></button>
+        <div class="sidebar-group-items" data-nav-group="aluguel">
+          <button data-tab="maquinas" class="nav-tab sidebar-link"><span class="sidebar-icon">▦</span><span>Máquinas</span><span id="badge-maquinas" class="sidebar-badge">0</span></button>
+          <button data-tab="simcards" class="nav-tab sidebar-link"><span class="sidebar-icon">▤</span><span>SIM Cards</span><span id="badge-simcards" class="sidebar-badge">0</span></button>
+          <button data-tab="emergenciais" class="nav-tab sidebar-link"><span class="sidebar-icon">!</span><span>Emergenciais</span><span id="badge-emergenciais" class="sidebar-badge badge-alert">0</span></button>
+          <button data-tab="canceladas" class="nav-tab sidebar-link"><span class="sidebar-icon">×</span><span>Canceladas</span><span id="badge-canceladas" class="sidebar-badge">0</span></button>
+        </div>
+      </div>
+      <div class="sidebar-group">
+        <button type="button" class="sidebar-group-toggle" data-nav-group-toggle="outras" aria-expanded="true"><span>▤</span> Outras demandas <span class="ml-auto">⌄</span></button>
+        <div class="sidebar-group-items" data-nav-group="outras">
+          <button data-tab="insumos" class="nav-tab sidebar-link"><span class="sidebar-icon">▧</span><span>Insumos</span><span id="badge-insumos" class="sidebar-badge">0</span></button>
+        </div>
+      </div>
+      <div class="sidebar-group">
+        <button type="button" class="sidebar-group-toggle" data-nav-group-toggle="planejamento" aria-expanded="true"><span>⇄</span> Planejamento <span class="ml-auto">⌄</span></button>
+        <div class="sidebar-group-items" data-nav-group="planejamento">
+          <button data-tab="importar" class="nav-tab sidebar-link"><span class="sidebar-icon">⇄</span><span>DRP e Distribuição</span></button>
+          <button data-tab="grade" class="nav-tab sidebar-link"><span class="sidebar-icon">▧</span><span>Base GRADE</span><span id="badge-grade" class="sidebar-badge">0</span></button>
+        </div>
+      </div>
       <div class="sidebar-caption">CONFIGURAÇÕES</div>
-      <button data-tab="config-sap" class="nav-tab sidebar-link"><span class="sidebar-icon">⌘</span><span>Cadastro de Códigos SAP</span></button>
+      <button data-tab="config-sap" class="nav-tab sidebar-link"><span class="sidebar-icon">⌘</span><span>Códigos SAP</span></button>
 
       <div class="sidebar-footer">
         <div class="sidebar-footer-title">CD BARUERI · SP</div>
@@ -415,6 +427,10 @@
         </section>
       </div>
 
+      <div class="dashboard-grid">
+        <section class="dashboard-panel"><div class="panel-heading"><div><h3>Ranking de atendimento</h3><p>Colaboradores com mais OMs validadas</p></div></div><div id="dash-ranking" class="space-y-2"></div></section>
+        <section class="dashboard-panel"><div class="panel-heading"><div><h3>Modelos mais atendidos</h3><p>Unidades em OMs validadas</p></div></div><div id="dash-models" class="space-y-2"></div></section>
+      </div>
       <section class="dashboard-panel quick-panel">
         <div class="panel-heading"><div><h3>Acesso rápido</h3><p>Atalhos para as tarefas mais utilizadas</p></div></div>
         <div class="quick-actions">
@@ -1281,7 +1297,9 @@
       cloudUnsub: null,
       editingCommentOm: null,
       sapCatalog: [],
-      insumos: []
+      insumos: [],
+      insumosDate: todayStr,
+      insumosCloudUnsub: null
     };
 
     // ==================== CLOUD & LOCAL STORAGE ====================
@@ -1551,7 +1569,7 @@
     const INSUMOS_STORAGE_PREFIX = "cd_barueri_insumos_v1_";
 
     function saveInsumosLocal() {
-      try { localStorage.setItem(INSUMOS_STORAGE_PREFIX + state.date, JSON.stringify(state.insumos)); } catch (e) {}
+      try { localStorage.setItem(INSUMOS_STORAGE_PREFIX + state.insumosDate, JSON.stringify(state.insumos)); } catch (e) {}
     }
 
     function loadInsumosLocal(dateStr) {
@@ -1567,16 +1585,17 @@
       if (!state.cloudConnected || !state.cloudDb) return;
       try {
         const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
-        const ref = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "insumos_dias", state.date);
+        const ref = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "insumos_dias", state.insumosDate);
         await fbFirestoreMod.setDoc(ref, { insumos: state.insumos, updatedAt: new Date().toISOString() }, { merge: true });
       } catch (err) { console.warn("Erro ao sincronizar insumos:", err); }
     }
 
     function subscribeCloudInsumos(dateStr) {
       if (!state.cloudConnected || !state.cloudDb) return;
+      if (state.insumosCloudUnsub) { state.insumosCloudUnsub(); state.insumosCloudUnsub = null; }
       const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
       const ref = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "insumos_dias", dateStr);
-      fbFirestoreMod.onSnapshot(ref, snap => {
+      state.insumosCloudUnsub = fbFirestoreMod.onSnapshot(ref, snap => {
         if (dateStr !== state.date) return;
         if (snap.exists()) {
           const data = snap.data();
@@ -1595,8 +1614,8 @@
     }
 
     function parseInsumosRows(raw) {
-      return raw.split(/\\r?\\n/).map(line => line.trim()).filter(Boolean).filter(line => !/^OM[\\t|]/i.test(line)).map((line, idx) => {
-        const parts = (line.includes("\\t") ? line.split("\\t") : line.split("|")).map(v => v.trim());
+      return raw.split(/\r?\n/).map(line => line.trim()).filter(Boolean).filter(line => !/^OM[\t|]/i.test(line)).map((line, idx) => {
+        const parts = (line.includes("\t") ? line.split("\t") : line.split("|")).map(v => v.trim());
         if (parts.length < 4) return null;
         const [om, destino, observacao, qtdRaw, volRaw, transporte, status, colaborador] = parts;
         const qtd = Number(String(qtdRaw || "").replace(",", "."));
@@ -1632,8 +1651,8 @@
       const text = String(observation || "").toUpperCase();
       const shares = [];
       const patterns = [
-        /(VIVO|CLARO|TIM)\\s*(\\d{1,3})\\s*%/g,
-        /(\\d{1,3})\\s*%\\s*(VIVO|CLARO|TIM)/g
+        /(VIVO|CLARO|TIM)\s*(\d{1,3})\s*%/g,
+        /(\d{1,3})\s*%\s*(VIVO|CLARO|TIM)/g
       ];
       patterns.forEach((pattern, idx) => {
         let match;
@@ -1701,15 +1720,15 @@
     function copyInsumosNf() {
       const rows = insumosFracionados.filter(row => row.tipo === "AG");
       if (!rows.length) return showToast("Não há linhas de Agência (AG) para solicitação de NF.");
-      const header = ["OM","COD SAP","MODELO","AGÊNCIA","Quantidade","VOL","PESO"].join("\\t");
+      const header = ["OM","COD SAP","MODELO","AGÊNCIA","Quantidade","VOL","PESO"] .join("\t");
       const data = rows.map(r => [r.om,r.sap,r.modelo,r.agencia,r.quantidade,r.vol,r.peso].join("\\t"));
-      copyToClipboard([header,...data].join("\\n"), `Relação de NF copiada: ${rows.length} linhas de Agência.`);
+      copyToClipboard([header,...data] .join("\n"), `Relação de NF copiada: ${rows.length} linhas de Agência.`);
     }
 
     // ==================== CADASTRO DE CÓDIGOS SAP ====================
     function normalizeSapName(value) {
-      return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")
-        .toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim().replace(/\\s+/g, " ");
+      return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim().replace(/\s+/g, " ");
     }
 
     function escapeSapHtml(value) {
@@ -3089,9 +3108,17 @@
         "emergenciais": ["OMs Emergenciais", "Acompanhe as demandas que exigem prioridade operacional."],
         "canceladas": ["OMs Canceladas", "Consulte e, quando necessário, reative ordens canceladas."],
         "grade": ["Base GRADE", "Consulte transportadoras, regiões e janelas de doca."],
-        "config-sap": ["Cadastro de Códigos SAP", "Gerencie a correspondência entre destinos e códigos SAP."]
+        "config-sap": ["Cadastro de Códigos SAP", "Gerencie a correspondência entre destinos e códigos SAP."],
+        "insumos": ["Atendimento de Insumos", "Gerencie demandas, fracionamento e solicitação de NF."]
       };
       document.querySelectorAll(".nav-tab").forEach(btn => btn.classList.toggle("tab-active", btn.dataset.tab === tabName));
+      const activeButton = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
+      const parentGroup = activeButton?.closest(".sidebar-group-items");
+      if (parentGroup) {
+        parentGroup.classList.remove("hidden");
+        const toggle = document.querySelector(`[data-nav-group-toggle="${parentGroup.dataset.navGroup}"]`);
+        if (toggle) toggle.setAttribute("aria-expanded", "true");
+      }
       document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.toggle("hidden", panel.id !== `tab-${tabName}`));
       const meta = titles[tabName] || titles.overview;
       const title = document.getElementById("page-title");
@@ -3131,6 +3158,20 @@
       const bar = document.getElementById("dash-progress-bar");
       if (bar) bar.style.width = pct + "%";
       set("dashboard-date-label", state.date ? new Date(state.date + "T12:00:00").toLocaleDateString("pt-BR") : "—");
+      const ranking = new Map();
+      active.filter(o => o.status === "VALIDADA").forEach(o => { const op = o.validatedBy || o.colaborador || "Não identificado"; ranking.set(op,(ranking.get(op)||0)+1); });
+      const rankingEl = document.getElementById("dash-ranking");
+      if (rankingEl) {
+        const rows = [...ranking.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,5);
+        rankingEl.innerHTML = rows.length ? rows.map(([name,total],i)=>`<div class="flex justify-between text-xs"><span>${i+1}. ${escapeSapHtml(name)}</span><strong>${total} OMs</strong></div>`).join("") : '<p class="text-xs text-slate-500">Sem validações registradas.</p>';
+      }
+      const models = new Map();
+      active.filter(o => o.status === "VALIDADA").forEach(o => { const name=o.modelo||"Não informado"; const v=models.get(name)||{units:0}; v.units+=Number(o.qtd)||0; models.set(name,v); });
+      const modelsEl = document.getElementById("dash-models");
+      if (modelsEl) {
+        const rows=[...models.entries()].sort((a,b)=>b[1].units-a[1].units).slice(0,5);
+        modelsEl.innerHTML=rows.length?rows.map(([name,v])=>`<div class="flex justify-between text-xs"><span>${escapeSapHtml(name)}</span><strong>${v.units} un.</strong></div>`).join(""):'<p class="text-xs text-slate-500">Sem dados disponíveis.</p>';
+      }
     }
 
     function renderAll() {
@@ -3158,6 +3199,14 @@
       document.querySelectorAll("[data-go-tab]").forEach(btn => {
         btn.addEventListener("click", () => switchTab(btn.dataset.goTab));
       });
+      document.querySelectorAll("[data-nav-group-toggle]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const group = document.querySelector(`[data-nav-group="${btn.dataset.navGroupToggle}"]`);
+          if (!group) return;
+          group.classList.toggle("hidden");
+          btn.setAttribute("aria-expanded", String(!group.classList.contains("hidden")));
+        });
+      });
 
       document.getElementById("btn-quick-import").addEventListener("click", () => switchTab("importar"));
       document.getElementById("btn-goto-chip-raffle").addEventListener("click", () => switchTab("importar"));
@@ -3165,15 +3214,15 @@
 
       // Atendimento de Insumos
       const insDate = document.getElementById("insumos-date");
-      insDate.value = state.date;
+      insDate.value = state.insumosDate;
       insDate.addEventListener("change", () => {
         if (!insDate.value) return;
-        state.date = insDate.value;
-        state.insumos = loadInsumosLocal(state.date);
+        state.insumosDate = insDate.value;
+        state.insumos = loadInsumosLocal(state.insumosDate);
         insumosFracionados = [];
         document.getElementById("insumos-result-tbody").innerHTML = '<tr><td colspan="7" class="p-4 text-slate-500">Clique em Fracionar lote para gerar a relação desta data.</td></tr>';
         renderInsumos();
-        subscribeCloudInsumos(state.date);
+        subscribeCloudInsumos(state.insumosDate);
       });
       document.getElementById("btn-insumos-import").addEventListener("click", async () => {
         const rows = parseInsumosRows(document.getElementById("insumos-import").value);
@@ -3652,7 +3701,8 @@
       bindEvents();
       renderAll();
       renderSapCatalog();
-      state.insumos = loadInsumosLocal(state.date);
+      state.insumosDate = state.date;
+      state.insumos = loadInsumosLocal(state.insumosDate);
       renderInsumos();
       switchTab("overview");
       initCloudSync();

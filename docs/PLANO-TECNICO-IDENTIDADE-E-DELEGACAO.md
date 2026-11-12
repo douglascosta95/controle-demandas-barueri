@@ -221,3 +221,49 @@ Mesmo com PIN simples na primeira versão, manter as responsabilidades separadas
 - Os fluxos operacionais salvam, recarregam e preservam dados e filtros conforme especificado.
 - Testes de regressão diários são registrados; defeitos críticos impedem considerar a funcionalidade concluída.
 - A documentação deixa explícito que a autenticação por PIN é provisória e que a fase robusta continua planejada.
+
+
+## 10. Modelo de contas da primeira versão — decisão de 12/11/2026
+
+### Identidade inicial
+- A primeira conta administrativa terá o identificador de acesso **ADM**.
+- Não será associado nome pessoal ao identificador, à interface, aos registros de auditoria ou à documentação funcional.
+- A conta ADM será distinta da lista de colaboradores usada para atribuição de OMs. Assim, o perfil administrativo nunca aparecerá por engano como responsável operacional.
+- O primeiro acesso seguirá o fluxo de PIN provisório individual e criação de PIN pessoal. O identificador ADM não será uma senha compartilhada entre pessoas.
+
+### Separação obrigatória de conceitos
+O frontend deverá manter separados:
+1. **Conta de acesso:** identificador, perfil, situação ativa/inativa e PIN individual.
+2. **Colaborador operacional:** nome usado nos campos de responsável por OM, SIM Cards e sorteios.
+3. **Sessão ativa:** conta que autenticou nesta sessão e perfil associado a ela.
+
+A conta de acesso poderá estar vinculada a um colaborador operacional quando fizer sentido, mas essa associação não será obrigatória para ADM.
+
+### Perfis da primeira versão
+- **ADM:** cria, edita, ativa/inativa contas, define perfil e redefine PIN provisório. É o único perfil que administra contas.
+- **Supervisor:** acessa os módulos operacionais autorizados e pode delegar OMs emergenciais. Não administra contas nem redefine PIN de terceiros.
+- **Operador:** executa atividades nos módulos liberados e não administra contas nem delega OMs.
+
+### Modelo lógico provisório
+A estrutura de configuração deverá evoluir para um mapa de contas separado da lista legada de operadores:
+- `users[username]`: `username`, `role`, `active`, `operatorName` (opcional), `pin`/representação provisória compatível com a migração e `mustChangePin`.
+- `operators[]`: permanece como lista de colaboradores para atribuição operacional, filtros e sorteios.
+- `currentUser`: identidade da conta autenticada na sessão.
+- `currentOperator`: contexto operacional legado, mantido apenas enquanto os módulos antigos precisarem dele.
+
+A implementação deve migrar a configuração sem apagar `pins`, `operators`, `sapCatalog`, atribuições ou histórico já existentes. Não converter automaticamente todo colaborador em conta ativa: o ADM deverá criar/liberar contas explicitamente.
+
+### Regras de transição
+- A conta ADM deve existir no bootstrap inicial sem exigir inclusão na lista de colaboradores.
+- O ADM poderá criar usuários Supervisor e Operador com PIN provisório individual.
+- Redefinir PIN de terceiro exige sessão ADM; o usuário deverá criar seu próprio PIN pessoal no próximo acesso.
+- A conta ADM não poderá ser removida ou desativada pela própria tela de gestão nesta primeira versão.
+- A transferência futura da administração será uma ação explícita: ativar e testar o novo ADM antes de retirar o perfil administrativo da conta anterior.
+- A interface pode ocultar ações não permitidas, mas essa restrição é apenas organizacional na versão PIN; não deve ser anunciada como segurança de backend.
+
+### Próximo incremento de implementação
+1. Introduzir o repositório de contas separado de `operators[]`, com migração retrocompatível da configuração local e Firestore.
+2. Criar o fluxo de entrada por conta/PIN e sessão, incluindo ADM inicial.
+3. Implementar a tela de gestão de contas exclusiva do ADM.
+4. Aplicar permissões de interface por perfil sem quebrar as ações operacionais atuais.
+5. Testar persistência, recarga, múltiplas sessões e regressão dos módulos antes de iniciar delegação emergencial na interface.

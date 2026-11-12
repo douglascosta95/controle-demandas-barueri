@@ -62,15 +62,15 @@ Capacitar Administradores e Operadores para utilizar o sistema com segurança, c
 | Módulo | Conteúdo | Tempo |
 |---|---|---:|
 | S1 — Visão geral | Indicadores, módulos e responsabilidades | 20 min |
-| S2 — Acompanhamento | Pendências, divergências, Ao Vivo e histórico | 25 min |
+| S2 — Acompanhamento e delegação | Pendências, divergências, Ao Vivo, atribuição e reatribuição de OMs emergenciais | 30 min |
 | S3 — Auditoria e privacidade | Consulta responsável, limites de acesso e LGPD | 20 min |
 | S4 — Escalonamento | Solicitações ao ADM, incidentes e contingência | 10 min |
 | S5 — Avaliação prática | Cenário de acompanhamento e encaminhamento | 15 min |
 
 **Competências esperadas do Supervisor**
-- Acompanhar a operação sem executar administração de contas.
+- Acompanhar e coordenar a operação, inclusive delegando OMs emergenciais a operadores habilitados, sem administrar contas.
 - Interpretar indicadores e eventos dentro da finalidade operacional.
-- Identificar divergências e encaminhar correções ao responsável.
+- Identificar divergências, delegar demandas e encaminhar correções ao responsável.
 - Respeitar a privacidade e os limites de consulta.
 - Escalonar incidentes sem tentar contornar controles.
 

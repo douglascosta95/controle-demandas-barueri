@@ -8,6 +8,15 @@ A aplicação não substitui os sistemas corporativos oficiais nem autoriza, por
 
 ## 2. Perfis de acesso
 
+### Supervisor
+Perfil de acompanhamento da operação, sem privilégios de administração de contas:
+- Consultar indicadores e acompanhar demandas dos módulos autorizados.
+- Acompanhar atividades recentes e consultar auditoria operacional, conforme política aprovada.
+- Consultar pendências, divergências e resultados da equipe.
+- Solicitar correções ou ajustes ao ADM, sem alterar permissões ou credenciais.
+- Não criar, bloquear ou redefinir usuários.
+- Não alterar configurações de segurança nem apagar trilhas de auditoria.
+
 ### Administrador (ADM)
 Perfil responsável pela administração do ambiente e dos acessos. O escopo planejado inclui:
 - Criar, editar, bloquear e reativar usuários.

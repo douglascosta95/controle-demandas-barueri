@@ -4034,7 +4034,7 @@
         // Status de OMs já validadas/SAPB1 sempre exige PIN.
         const isLockedStatus = item.status === "VALIDADA" || item.status === "SAPB1";
         const statusPinApproved = Boolean(item.statusChangePinApproved);
-        if ((field === "status" && isLockedStatus && !statusPinApproved) || (isLockedStatus && !item.unlocked)) {
+        if (!state.currentUser && ((field === "status" && isLockedStatus && !statusPinApproved) || (isLockedStatus && !item.unlocked))) {
           e.preventDefault();
           const requestedStatus = field === "status" ? el.value : null;
           openPinModalForUnlock(om, () => {
@@ -4069,7 +4069,7 @@
           const nextAssignee = el.value || "";
           if (previousAssignee !== nextAssignee) {
             if (!Array.isArray(item.delegationHistory)) item.delegationHistory = [];
-            if (!item.originalAssignee) item.originalAssignee = previousAssignee;
+            if (!Object.prototype.hasOwnProperty.call(item, "originalAssignee")) item.originalAssignee = previousAssignee;
             item.delegationHistory.push({ from: previousAssignee, to: nextAssignee, by: state.currentUser?.username || state.currentOperator || "SISTEMA", role: state.currentUser?.role || null, at: new Date().toISOString() });
             pushAudit(om, `Responsável alterado: ${previousAssignee || "não atribuído"} → ${nextAssignee || "não atribuído"}`);
           }

@@ -364,6 +364,43 @@
         </div>
       </div>
 
+      <!-- Painel Simples de SLA: Validadas x Pendências -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5">
+            <span class="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-wide bg-purple-700 text-white">SLA Operacional</span>
+            <h2 class="text-xs sm:text-sm font-bold text-slate-800">Validadas x Pendências (Dia)</h2>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <button type="button" id="btn-sla-filter-valid" class="px-2.5 py-1 rounded-lg font-bold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 hover:opacity-85 transition cursor-pointer">
+              ✅ Validadas: <span id="sla-valid-count">0</span> (<span id="sla-valid-pct">0%</span>)
+            </button>
+            <button type="button" id="btn-sla-filter-pend" class="px-2.5 py-1 rounded-lg font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 hover:opacity-85 transition cursor-pointer">
+              ⏳ Pendências: <span id="sla-pend-count">0</span> (<span id="sla-pend-pct">0%</span>)
+            </button>
+            <button type="button" id="btn-sla-filter-all" class="px-2 py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-purple-700 dark:hover:text-purple-300 underline cursor-pointer">
+              Ver todas
+            </button>
+          </div>
+        </div>
+
+        <!-- Barra de Progresso Dual (Verde = Validadas | Âmbar = Pendências) -->
+        <div class="w-full h-3.5 rounded-full bg-amber-500/25 overflow-hidden flex border border-slate-200">
+          <div id="sla-bar-valid" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
+          <div id="sla-bar-pend" class="h-full bg-amber-400/80 transition-all duration-300" style="width: 100%"></div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+          <div class="flex flex-wrap items-center gap-4">
+            <span><strong>AG (Corner):</strong> <span id="sla-ag-detail" class="font-semibold text-slate-700">0/0 (0%)</span></span>
+            <span><strong>PA:</strong> <span id="sla-pa-detail" class="font-semibold text-slate-700">0/0 (0%)</span></span>
+          </div>
+          <div id="sla-status-label" class="font-semibold text-purple-800 dark:text-purple-300">
+            Aguardando validações...
+          </div>
+        </div>
+      </div>
+
       <!-- Barra de Filtros Rápidos por Operador Ativo (esconde zerados) -->
       <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-xs space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -1099,6 +1136,7 @@
       selectedChipOperators: new Set(["BEATRIZ", "LUANA"]),
       showExemptChips: false,
       filterPinnedOnly: false,
+      slaFilter: "ALL",
       cloudConnected: false,
       cloudDb: null,
       cloudUnsub: null,
@@ -1651,6 +1689,8 @@
 
       let list = state.oms.filter(o => {
         if (o.status === "CANCELADA") return false;
+        if (state.slaFilter === "VALIDADA" && o.status !== "VALIDADA") return false;
+        if (state.slaFilter === "PENDENTE" && o.status === "VALIDADA") return false;
         if (state.filterPinnedOnly && !o.pinned && !o.comment) return false;
         if (fTipo && o.tipo !== fTipo) return false;
         if (fColab === "__NONE__" && o.colaborador) return false;
@@ -1705,6 +1745,44 @@
       document.getElementById("kpi-sapb1").textContent = sapb1;
       document.getElementById("kpi-pendentes-vl").textContent = semVl;
       document.getElementById("count-pinned").textContent = pinnedCount;
+
+      // Atualiza barra de SLA (Validadas x Pendências)
+      const pendentesTotal = Math.max(0, totalOms - validadas);
+      const validPct = totalOms ? Math.round((validadas / totalOms) * 100) : 0;
+      const pendPct = totalOms ? (100 - validPct) : 0;
+
+      const agOms = activeOms.filter(o => o.tipo === "AG");
+      const agValid = agOms.filter(o => o.status === "VALIDADA").length;
+      const agPct = agOms.length ? Math.round((agValid / agOms.length) * 100) : 0;
+
+      const paOms = activeOms.filter(o => o.tipo !== "AG");
+      const paValid = paOms.filter(o => o.status === "VALIDADA").length;
+      const paPct = paOms.length ? Math.round((paValid / paOms.length) * 100) : 0;
+
+      document.getElementById("sla-valid-count").textContent = validadas;
+      document.getElementById("sla-valid-pct").textContent = `${validPct}%`;
+      document.getElementById("sla-pend-count").textContent = pendentesTotal;
+      document.getElementById("sla-pend-pct").textContent = `${pendPct}%`;
+      document.getElementById("sla-bar-valid").style.width = `${validPct}%`;
+      document.getElementById("sla-bar-pend").style.width = `${pendPct}%`;
+      document.getElementById("sla-ag-detail").textContent = `${agValid}/${agOms.length} (${agPct}%)`;
+      document.getElementById("sla-pa-detail").textContent = `${paValid}/${paOms.length} (${paPct}%)`;
+
+      const slaLbl = document.getElementById("sla-status-label");
+      if (totalOms === 0) {
+        slaLbl.textContent = "Sem OMs carregadas";
+      } else if (pendentesTotal === 0) {
+        slaLbl.textContent = "🎉 100% do dia validado!";
+      } else {
+        slaLbl.textContent = `Faltam ${pendentesTotal} OM(s) para 100%`;
+      }
+
+      const btnValid = document.getElementById("btn-sla-filter-valid");
+      const btnPend = document.getElementById("btn-sla-filter-pend");
+      btnValid.classList.toggle("ring-2", state.slaFilter === "VALIDADA");
+      btnValid.classList.toggle("ring-emerald-600", state.slaFilter === "VALIDADA");
+      btnPend.classList.toggle("ring-2", state.slaFilter === "PENDENTE");
+      btnPend.classList.toggle("ring-amber-500", state.slaFilter === "PENDENTE");
 
       const sortMode = document.getElementById("sort-maquinas").value;
       document.getElementById("ind-sort-vl").textContent = sortMode === "VL_DESC" ? "▼" : sortMode === "VL_ASC" ? "▲" : "";
@@ -2701,6 +2779,19 @@
         state.filterPinnedOnly = !state.filterPinnedOnly;
         e.currentTarget.classList.toggle("ring-2", state.filterPinnedOnly);
         e.currentTarget.classList.toggle("ring-purple-600", state.filterPinnedOnly);
+        renderMaquinas();
+      });
+
+      document.getElementById("btn-sla-filter-valid").addEventListener("click", () => {
+        state.slaFilter = state.slaFilter === "VALIDADA" ? "ALL" : "VALIDADA";
+        renderMaquinas();
+      });
+      document.getElementById("btn-sla-filter-pend").addEventListener("click", () => {
+        state.slaFilter = state.slaFilter === "PENDENTE" ? "ALL" : "PENDENTE";
+        renderMaquinas();
+      });
+      document.getElementById("btn-sla-filter-all").addEventListener("click", () => {
+        state.slaFilter = "ALL";
         renderMaquinas();
       });
 

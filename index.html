@@ -387,16 +387,15 @@
     </aside>
     <div class="app-content">
 
-  <!-- LIVE AUDIT FEED (Harmonizado com o tema claro e escuro) -->
+  <!-- ATIVIDADES: acesso sob demanda para manter o painel principal limpo -->
   <div class="audit-strip text-xs">
-    <div class="max-w-[1600px] mx-auto px-4 py-1.5 flex items-center justify-between gap-4 overflow-x-auto">
-      <div class="flex items-center gap-2 shrink-0">
-        <span class="px-2 py-0.5 rounded-md bg-purple-700 text-white font-bold text-[10px] uppercase tracking-wider shadow-2xs">Ao Vivo</span>
-        <span class="font-medium opacity-80">Últimas alterações:</span>
+    <div class="max-w-[1600px] mx-auto px-4 py-1.5 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="px-2 py-0.5 rounded-md bg-purple-700 text-white font-bold text-[10px] uppercase tracking-wider">Ao Vivo</span>
+        <span class="font-medium opacity-80">Histórico de atividades</span>
+        <span id="audit-feed" class="text-[11px] opacity-70">Consulte as alterações da equipe.</span>
       </div>
-      <div id="audit-feed" class="flex items-center gap-3 text-[11px] whitespace-nowrap">
-        <span class="opacity-75">Nenhuma alteração registrada ainda nesta sessão.</span>
-      </div>
+      <button type="button" id="btn-open-audit" class="shrink-0 px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-[11px] font-bold shadow-sm">Ver alterações ↗</button>
     </div>
   </div>
 
@@ -1101,6 +1100,21 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: PAINEL DE ATIVIDADES ==================== -->
+  <div id="audit-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-sm hidden items-center justify-center z-[60] p-3 sm:p-5">
+    <div class="w-full max-w-7xl max-h-[92vh] overflow-hidden rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col">
+      <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div><div class="text-[10px] font-bold tracking-widest text-purple-600 dark:text-purple-300 uppercase">Rastreamento operacional</div><h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Painel de atividades</h3><p class="text-xs text-slate-500 dark:text-slate-400">Alterações registradas por colaborador, com atualização em tempo real.</p></div>
+        <button type="button" id="btn-close-audit" class="w-9 h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-2xl text-slate-500" aria-label="Fechar">&times;</button>
+      </div>
+      <div class="px-5 py-3 flex flex-wrap items-end gap-3 border-b border-slate-200 dark:border-slate-800">
+        <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase">Data das alterações<input type="date" id="audit-date-filter" class="block mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium"></label>
+        <div class="text-xs text-slate-500 dark:text-slate-400 pb-2" id="audit-summary">Carregando atividades...</div>
+      </div>
+      <div id="audit-columns" class="p-4 sm:p-5 overflow-auto flex-1 bg-slate-50 dark:bg-slate-900/60"><div class="text-sm text-slate-500 text-center py-12">Selecione uma data para consultar as atividades.</div></div>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="fixed bottom-5 right-5 bg-purple-950 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-purple-700 hidden items-center gap-2.5 z-50">
     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
@@ -1334,6 +1348,10 @@
       insumosCloudUnsub: null
     };
 
+    let auditViewLog = [];
+    let auditViewDate = todayStr;
+    let auditViewUnsub = null;
+
     // ==================== CLOUD & LOCAL STORAGE ====================
     const STORAGE_KEY_PREFIX = "cd_barueri_demandas_v3_";
     const CONFIG_STORAGE_KEY = "cd_barueri_team_config_v1";
@@ -1411,7 +1429,7 @@
         const dayRef = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "demandas_dias", state.date);
         await fbFirestoreMod.setDoc(dayRef, {
           oms: state.oms,
-          auditLog: state.auditLog.slice(0, 20),
+          auditLog: state.auditLog.slice(0, 500),
           updatedAt: new Date().toISOString()
         }, { merge: true });
       } catch (err) {
@@ -2107,29 +2125,92 @@
       }
     }
 
-    // ==================== AUDIT LOG ====================
+    // ==================== AUDIT LOG / PAINEL DE ATIVIDADES ====================
     function pushAudit(om, actionText) {
       const now = new Date();
-      const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       const who = state.currentOperator || "SISTEMA";
-      state.auditLog.unshift({ who, om, actionText, time });
-      if (state.auditLog.length > 25) state.auditLog.length = 25;
+      state.auditLog.unshift({ who, om: String(om || "—"), actionText: String(actionText || ""), time, date: state.date, timestamp: now.toISOString() });
+      if (state.auditLog.length > 500) state.auditLog.length = 500;
       renderAuditFeed();
+      if (document.getElementById("audit-modal").classList.contains("flex") && auditViewDate === state.date) {
+        auditViewLog = [...state.auditLog];
+        renderAuditColumns();
+      }
     }
 
     function renderAuditFeed() {
       const el = document.getElementById("audit-feed");
-      if (!state.auditLog.length) {
-        el.innerHTML = `<span class="opacity-75">Nenhuma alteração registrada ainda nesta sessão.</span>`;
+      if (!el) return;
+      const count = state.auditLog.length;
+      el.textContent = count ? `${count} alteração(ões) registradas hoje` : "Nenhuma alteração registrada hoje.";
+    }
+
+    function renderAuditColumns() {
+      const wrap = document.getElementById("audit-columns");
+      const summary = document.getElementById("audit-summary");
+      const entries = (auditViewLog || []).slice().sort((a, b) => {
+        const ta = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const tb = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return tb - ta;
+      });
+      const grouped = new Map();
+      entries.forEach(item => {
+        const who = String(item.who || "SISTEMA");
+        if (!grouped.has(who)) grouped.set(who, []);
+        grouped.get(who).push(item);
+      });
+      const people = [...grouped.entries()].sort((a,b) => a[0].localeCompare(b[0], "pt-BR"));
+      const total = entries.length;
+      summary.textContent = `${total} alteração(ões) · ${people.length} colaborador(es) com atividade`;
+      if (!people.length) {
+        wrap.innerHTML = '<div class="text-center py-16"><div class="text-3xl mb-3">🗂️</div><p class="font-bold text-slate-700 dark:text-slate-200">Nenhuma alteração nesta data</p><p class="text-xs text-slate-500 mt-1">Quando alguém realizar uma ação, ela aparecerá aqui.</p></div>';
         return;
       }
-      el.innerHTML = state.auditLog.slice(0, 6).map(item => `
-        <span class="audit-pill inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md">
-          <strong class="text-purple-700 dark:text-purple-300">${item.who}</strong>
-          <span class="opacity-65">(${item.time})</span>
-          <span>OM <strong>${item.om}</strong>: ${item.actionText}</span>
-        </span>
-      `).join("");
+      wrap.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">${people.map(([who, items]) => `
+        <section class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 overflow-hidden min-w-0">
+          <header class="px-4 py-3 bg-purple-50 dark:bg-purple-950/50 border-b border-purple-100 dark:border-purple-900 flex items-center justify-between gap-2"><div class="font-extrabold text-sm text-purple-950 dark:text-purple-100 truncate">${escapeSapHtml(who)}</div><span class="shrink-0 text-[10px] font-bold px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">${items.length} ação(ões)</span></header>
+          <div class="p-3 space-y-2 max-h-[55vh] overflow-y-auto">${items.map(item => {
+            const time = item.timestamp ? new Date(item.timestamp).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit",second:"2-digit"}) : (item.time || "--:--");
+            return `<article class="rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3"><div class="flex items-center justify-between gap-2 mb-1"><span class="text-[10px] font-bold text-purple-700 dark:text-purple-300 mono">${escapeSapHtml(time)}</span><span class="text-[10px] text-slate-500 dark:text-slate-400 truncate">OM ${escapeSapHtml(item.om || "—")}</span></div><p class="text-xs leading-relaxed text-slate-700 dark:text-slate-200 break-words">${escapeSapHtml(item.actionText || "Alteração registrada")}</p></article>`;
+          }).join("")}</div>
+        </section>`).join("")}</div>`;
+    }
+
+    function loadAuditLocal(dateStr) {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_PREFIX + dateStr);
+        const parsed = raw ? JSON.parse(raw) : null;
+        return parsed && Array.isArray(parsed.auditLog) ? parsed.auditLog : [];
+      } catch (e) { return []; }
+    }
+
+    function subscribeAuditDate(dateStr) {
+      if (auditViewUnsub) { auditViewUnsub(); auditViewUnsub = null; }
+      auditViewLog = dateStr === state.date ? [...state.auditLog] : loadAuditLocal(dateStr);
+      renderAuditColumns();
+      if (!state.cloudConnected || !state.cloudDb) return;
+      const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
+      const ref = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "demandas_dias", dateStr);
+      auditViewUnsub = fbFirestoreMod.onSnapshot(ref, snap => {
+        if (dateStr !== auditViewDate || !document.getElementById("audit-modal").classList.contains("flex")) return;
+        const data = snap.exists() ? snap.data() : {};
+        auditViewLog = Array.isArray(data.auditLog) ? data.auditLog : loadAuditLocal(dateStr);
+        renderAuditColumns();
+      }, err => console.warn("Snapshot do painel de atividades:", err));
+    }
+
+    function openAuditModal() {
+      const modal = document.getElementById("audit-modal");
+      auditViewDate = document.getElementById("audit-date-filter").value || state.date;
+      modal.classList.remove("hidden"); modal.classList.add("flex");
+      subscribeAuditDate(auditViewDate);
+    }
+
+    function closeAuditModal() {
+      const modal = document.getElementById("audit-modal");
+      modal.classList.add("hidden"); modal.classList.remove("flex");
+      if (auditViewUnsub) { auditViewUnsub(); auditViewUnsub = null; }
     }
 
     // ==================== TOAST ====================
@@ -3300,6 +3381,19 @@
 
     // ==================== EVENT LISTENERS ====================
     function bindEvents() {
+      // Painel de atividades sob demanda
+      const auditDateInput = document.getElementById("audit-date-filter");
+      auditDateInput.value = state.date;
+      document.getElementById("btn-open-audit").addEventListener("click", openAuditModal);
+      document.getElementById("btn-close-audit").addEventListener("click", closeAuditModal);
+      document.getElementById("audit-modal").addEventListener("click", e => { if (e.target.id === "audit-modal") closeAuditModal(); });
+      auditDateInput.addEventListener("change", () => {
+        if (!auditDateInput.value) return;
+        auditViewDate = auditDateInput.value;
+        subscribeAuditDate(auditViewDate);
+      });
+      document.addEventListener("keydown", e => { if (e.key === "Escape") closeAuditModal(); });
+
       // Theme toggle
       document.getElementById("btn-theme-toggle").addEventListener("click", () => {
         const nextTheme = document.documentElement.classList.contains("dark") ? "light" : "dark";

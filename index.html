@@ -10,7 +10,6 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
-    /* ==================== IDENTIDADE VISUAL ALYA (ROXO CORPORATIVO) ==================== */
     :root {
       --bg-page: #f5f3ff;
       --bg-surface: #ffffff;
@@ -215,7 +214,7 @@
         <span id="badge-maquinas" class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 font-bold">0</span>
       </button>
       <button data-tab="insumos" class="nav-tab w-full px-3.5 py-3 rounded-xl text-left flex items-center justify-between transition cursor-pointer">
-        <span>🏷️ 2. Atendimento Insumos & SIM Cards</span>
+        <span>🏷️ 2. Demanda de Insumos & SIM Cards</span>
         <span id="badge-insumos" class="px-2 py-0.5 rounded-full bg-fuchsia-100 text-fuchsia-900 font-bold">0</span>
       </button>
       <button data-tab="simcards" class="nav-tab w-full px-3.5 py-3 rounded-xl text-left flex items-center justify-between transition cursor-pointer">
@@ -263,20 +262,23 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 2: INSUMOS & SIM CARDS ==================== -->
+    <!-- ==================== TAB 2: DEMANDA DE INSUMOS & SIM CARDS ==================== -->
     <section id="tab-insumos" class="tab-panel hidden space-y-4">
-      <div class="bg-white p-4 rounded-xl border border-fuchsia-300 dark:border-fuchsia-700/60 bg-fuchsia-50/20 shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-fuchsia-700 text-white">Insumos & SIM Cards</span>
-            <h2 class="text-base font-bold text-slate-800">Fracionamento de SIM Cards & Pedidos de NF</h2>
+      <div class="bg-white p-5 rounded-xl border border-fuchsia-300 dark:border-fuchsia-700/60 bg-fuchsia-50/20 shadow-xs space-y-3">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-fuchsia-700 text-white">Insumos à Parte</span>
+              <h2 class="text-base font-bold text-slate-800">Importação de Insumos & Fracionamento de SIM Cards para NF</h2>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Importe a planilha de insumos (ex: <code class="bg-slate-100 px-1 py-0.5 rounded">DemandaInsumos.xlsx</code>). O sistema identifica SIM Cards, separa proporcionalmente por operadora (Vivo, Claro, Tim), define <strong>VOL = 1</strong> e gera o e-mail Outlook para pedido de NF.</p>
           </div>
-          <p class="text-xs text-slate-500 mt-0.5">SIM Cards à parte das máquinas. Fracione pedidos por operadora e envie solicitação de NF direto pelo Outlook com Volume = 1.</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button id="btn-fracionar-lote" class="px-3.5 py-2 rounded-xl bg-fuchsia-700 hover:bg-fuchsia-600 text-white text-xs font-bold shadow-xs transition cursor-pointer">
-            ⚡ Fracionar SIM Cards em Lote
-          </button>
+          <div class="flex items-center gap-2">
+            <input type="file" id="insumos-file-input" accept=".xlsx,.xls,.csv" class="hidden" />
+            <label for="insumos-file-input" class="px-3.5 py-2 rounded-xl bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold shadow-xs transition cursor-pointer inline-flex items-center gap-1.5">
+              📁 Importar Planilha de Insumos (.xlsx)
+            </label>
+          </div>
         </div>
       </div>
 
@@ -286,22 +288,25 @@
             <thead>
               <tr class="bg-slate-100 text-slate-600 text-[11px] uppercase tracking-wider border-b border-slate-200">
                 <th class="py-2.5 px-3 font-bold">OM</th>
-                <th class="py-2.5 px-3 font-bold">Destino / Agência</th>
-                <th class="py-2.5 px-3 font-bold">Insumo / Observação</th>
+                <th class="py-2.5 px-3 font-bold">Agência / PA</th>
+                <th class="py-2.5 px-3 font-bold">Insumo / Observação Original</th>
                 <th class="py-2.5 px-2.5 font-bold text-center">Quantidade</th>
                 <th class="py-2.5 px-2.5 font-bold text-center">Vol</th>
                 <th class="py-2.5 px-3 font-bold">Operadora / Divisão</th>
                 <th class="py-2.5 px-3 font-bold">Status NF</th>
-                <th class="py-2.5 px-3 font-bold text-right">Ações (Fracionar / E-mail NF)</th>
+                <th class="py-2.5 px-3 font-bold text-right">Ações (Fracionar / E-mail Outlook)</th>
               </tr>
             </thead>
             <tbody id="insumos-tbody" class="divide-y divide-slate-100 text-xs"></tbody>
           </table>
         </div>
+        <div id="insumos-empty" class="p-8 text-center text-slate-500 text-sm">
+          Nenhuma planilha de insumos importada. Clique em "Importar Planilha de Insumos" acima.
+        </div>
       </div>
     </section>
 
-    <!-- Demais abas -->
+    <!-- Outras abas -->
     <section id="tab-simcards" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">Fila SIM Cards Geral</div></section>
     <section id="tab-importar" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">Importar DRP</div></section>
     <section id="tab-emergenciais" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200">OMs Emergenciais</div></section>
@@ -318,9 +323,7 @@
       date: new Date().toISOString().slice(0, 10),
       currentOperator: sessionStorage.getItem("cd_barueri_op") || "",
       operators: ["BEATRIZ", "DOUGLAS", "GABI", "GISELE", "ITALO", "LEO", "LUANA", "NEUSA", "ORLANDA"],
-      oms: [
-        { om: "1193092", destino: "MG - DOMINGOS TRANSPORTES E SERVICOS", modelo: "SIM CARD", qtd: 30, vl: 1, observacao: "SIM CARD - 75% VIVO - 25% CLARO", fracionado: false }
-      ]
+      insumosOms: []
     };
 
     function toggleSidebar(forceOpen = null) {
@@ -342,7 +345,7 @@
       });
       const titles = {
         "maquinas": "1. Atendimento Máquinas",
-        "insumos": "2. Atendimento Insumos & SIM Cards",
+        "insumos": "2. Demanda de Insumos & SIM Cards",
         "simcards": "3. Fila SIM Cards Geral",
         "importar": "4. Importar DRP & Sorteios",
         "emergenciais": "5. OMs Emergenciais",
@@ -354,57 +357,175 @@
       toggleSidebar(false);
     }
 
-    window.enviarEmailNF = function(omNum, operadora, qtd) {
+    // Disparar E-mail para Outlook com mensagem pronta
+    window.enviarEmailNF = function(omNum, operadora, qtd, agenciabase) {
       const assunto = encodeURIComponent(`Solicitação de NF - OM ${omNum} - SIM Card ${operadora}`);
-      const corpo = encodeURIComponent(`Prezada equipe fiscal/faturamento,\n\nSolicitamos a emissão de Nota Fiscal referente à OM fracionada de SIM Card:\n\n- OM: ${omNum}\n- Operadora: ${operadora}\n- Quantidade Ajustada: ${qtd} un\n- Volume (VOL): 1\n\nObrigado!\nCD Barueri - SP`);
+      const corpo = encodeURIComponent(`Prezada equipe fiscal/faturamento,\n\nSolicitamos a emissão de Nota Fiscal de SIM Card fracionado:\n\n- OM: ${omNum}\n- Agência / Destino: ${agenciabase}\n- Operadora: ${operadora}\n- Quantidade Ajustada: ${qtd} un\n- Volume (VOL): 1\n\nObrigado!\nCD Barueri - SP`);
       window.location.href = `mailto:fiscal@empresa.com?subject=${assunto}&body=${corpo}`;
     };
 
-    window.fracionarOmInsumo = function(omNum) {
-      const idx = state.oms.findIndex(o => o.om === omNum);
-      if (idx === -1) return;
-      const item = state.oms[idx];
+    // Fracionar SIM Cards proporcionalmente conforme as porcentagens da observação
+    window.fracionarInsumo = function(index) {
+      const item = state.insumosOms[index];
       if (item.fracionado) {
-        alert("Esta OM já foi fracionada.");
+        alert("Este item já foi fracionado.");
         return;
       }
-      
-      // Simula fracionamento 75% VIVO / 25% CLARO baseado na observação ou padrão
-      const q = item.qtd;
-      const vivoQtd = Math.round(q * 0.75);
-      const claroQtd = q - vivoQtd;
 
-      // Substitui a original por duas linhas fracionadas com VOL = 1
-      const fracionadas = [
-        { om: item.om, destino: item.destino, modelo: "SIM CARD - VIVO", qtd: vivoQtd, vl: 1, observacao: "75% VIVO", fracionado: true, operadora: "VIVO" },
-        { om: item.om, destino: item.destino, modelo: "SIM CARD - CLARO", qtd: claroQtd, vl: 1, observacao: "25% CLARO", fracionado: true, operadora: "CLARO" }
-      ];
+      const obs = String(item.observacao || "").toUpperCase();
+      const isSim = obs.includes("SIM CARD") || obs.includes("MICRO CHIP") || obs.includes("CHIP");
 
-      state.oms.splice(idx, 1, ...fracionadas);
-      renderInsumos();
-      alert(`OM ${omNum} fracionada com sucesso em VIVO (${vivoQtd} un) e CLARO (${claroQtd} un) com VOL = 1!`);
+      if (!isSim) {
+        alert("Este insumo não é um SIM Card (outros insumos não precisam de fracionamento de operadora).");
+        return;
+      }
+
+      // Extrair percentuais de VIVO, CLARO, TIM da observação
+      const opsList = ["VIVO", "CLARO", "TIM"];
+      let splits = [];
+
+      opsList.forEach(op => {
+        if (obs.includes(op)) {
+          // Procurar padrão como "75% VIVO" ou "VIVO 75%"
+          const reg1 = new RegExp(`(\\d+(?:\\.\\d+)?)\\s*%\\s*(?:DE\\s*)?${op}`);
+          const reg2 = new RegExp(`${op}\\s*(?:[-:]\\s*)?(\\d+(?:\\.\\d+)?)\\s*%`);
+          const m1 = obs.match(reg1);
+          const m2 = obs.match(reg2);
+          let pct = 0;
+          if (m1) pct = parseFloat(m1[1]) / 100;
+          else if (m2) pct = parseFloat(m2[1]) / 100;
+
+          if (pct > 0) {
+            splits.push({ operadora: op, pct });
+          }
+        }
+      });
+
+      if (splits.length === 0) {
+        // Se tem o nome da operadora mas sem % explícita, atribui 100%
+        const found = opsList.filter(op => obs.includes(op));
+        if (found.length === 1) {
+          splits.push({ operadora: found[0], pct: 1.0 });
+        } else if (found.length > 1) {
+          const eq = 1.0 / found.length;
+          found.forEach(op => splits.push({ operadora: op, pct: eq }));
+        } else {
+          alert("Não foi possível identificar as operadoras na observação para fracionar.");
+          return;
+        }
+      }
+
+      const qTotal = Number(item.quantidade) || 0;
+      let novasLinhas = [];
+
+      splits.forEach((s, idx) => {
+        let qParcial = Math.round(qTotal * s.pct);
+        if (idx === splits.length - 1) {
+          // Ajusta arredondamento na última operadora
+          const sumSoFar = novasLinhas.reduce((acc, cur) => acc + cur.qtd, 0);
+          qParcial = qTotal - sumSoFar;
+        }
+
+        novasLinhas.push({
+          om: item.om,
+          agencia: item.agencia,
+          observacao: `${item.modeloOriginal || item.observacao} (${Math.round(s.pct * 100)}% ${s.operadora})`,
+          quantidade: qParcial,
+          vol: 1, // Volume sempre 1 após fracionamento
+          operadora: s.operadora,
+          fracionado: true,
+          modeloOriginal: item.observacao
+        });
+      });
+
+      // Substitui o item original pelas novas linhas fracionadas
+      state.insumosOms.splice(index, 1, ...novasLinhas);
+      renderInsumosTable();
+      alert(`Fracionamento concluído! OMs geradas com Volume = 1 e separadas por operadora.`);
     };
 
-    function renderInsumos() {
+    // Importar arquivo Excel de Insumos
+    function handleInsumosUpload(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type: "array" });
+          const sheetName = wb.SheetNames[0];
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
+
+          if (!rows.length) {
+            alert("Planilha de insumos vazia.");
+            return;
+          }
+
+          state.insumosOms = rows.map(r => {
+            const om = r["OM"] || r["om"] || "";
+            const agencia = r["PA"] || r["PA / Agência"] || r["AGÊNCIA"] || r["AGENCIA"] || "";
+            const observacao = r["Observação"] || r["OBSERVAÇÃO"] || r["Modelo"] || r["MODELO"] || "";
+            const qtd = parseInt(r["Quantidade"] || r["QUANTIDADE"] || 1, 10) || 1;
+            const vol = parseInt(r["1"] || r["VOL"] || 1, 10) || 1;
+
+            return {
+              om: String(om),
+              agencia: String(agencia),
+              observacao: String(observacao),
+              quantidade: qtd,
+              vol: vol,
+              operadora: "-",
+              fracionado: false,
+              modeloOriginal: String(observacao)
+            };
+          }).filter(x => x.om && x.om !== "OM");
+
+          renderInsumosTable();
+          alert(`${state.insumosOms.length} itens de insumos importados com sucesso!`);
+        } catch (err) {
+          console.error(err);
+          alert("Erro ao ler planilha de insumos.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function renderInsumosTable() {
       const tbody = document.getElementById("insumos-tbody");
+      const empty = document.getElementById("insumos-empty");
       if (!tbody) return;
-      tbody.innerHTML = state.oms.map(o => `
+
+      if (!state.insumosOms.length) {
+        tbody.innerHTML = "";
+        empty.classList.remove("hidden");
+        document.getElementById("badge-insumos").textContent = "0";
+        return;
+      }
+
+      empty.classList.add("hidden");
+      tbody.innerHTML = state.insumosOms.map((o, idx) => `
         <tr class="hover:bg-slate-50 transition">
           <td class="py-2.5 px-3 mono font-bold">${o.om}</td>
-          <td class="py-2.5 px-3 font-semibold text-slate-800">${o.destino}</td>
-          <td class="py-2.5 px-3 text-slate-700">${o.modelo} <br/><span class="text-[10px] text-purple-600">${o.observacao || ""}</span></td>
-          <td class="py-2.5 px-2.5 text-center mono font-bold">${o.qtd}</td>
-          <td class="py-2.5 px-2.5 text-center mono font-bold bg-slate-100">${o.vl}</td>
-          <td class="py-2.5 px-3 font-bold text-purple-900">${o.operadora || "Misto"}</td>
-          <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.fracionado ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}">${o.fracionado ? "FRACIONADO" : "PENDENTE"}</span></td>
+          <td class="py-2.5 px-3 font-semibold text-slate-800">${o.agencia}</td>
+          <td class="py-2.5 px-3 text-slate-700">${o.observacao}</td>
+          <td class="py-2.5 px-2.5 text-center mono font-bold">${o.quantidade}</td>
+          <td class="py-2.5 px-2.5 text-center mono font-bold bg-slate-100">${o.vol}</td>
+          <td class="py-2.5 px-3 font-bold text-purple-900">${o.operadora}</td>
+          <td class="py-2.5 px-3">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.fracionado ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}">
+              ${o.fracionado ? "FRACIONADO (NF PRONTA)" : "PENDENTE FRACIONAMENTO"}
+            </span>
+          </td>
           <td class="py-2.5 px-3 text-right space-x-1">
-            ${!o.fracionado ? `<button onclick="fracionarOmInsumo('${o.om}')" class="px-2.5 py-1 rounded bg-fuchsia-700 text-white font-bold cursor-pointer hover:bg-fuchsia-600">Fracionar</button>` : `
-              <button onclick="enviarEmailNF('${o.om}', '${o.operadora}', ${o.qtd})" class="px-2.5 py-1 rounded bg-blue-600 text-white font-bold cursor-pointer hover:bg-blue-500">📧 E-mail NF</button>
+            {!o.fracionado ? `
+              <button onclick="fracionarInsumo(${idx})" class="px-2.5 py-1 rounded bg-fuchsia-700 text-white font-bold cursor-pointer hover:bg-fuchsia-600">⚡ Fracionar</button>
+            ` : `
+              <button onclick="enviarEmailNF('${o.om}', '${o.operadora}', ${o.quantidade}, '${o.agencia}')" class="px-2.5 py-1 rounded bg-blue-600 text-white font-bold cursor-pointer hover:bg-blue-500">📧 E-mail Outlook NF</button>
             `}
           </td>
         </tr>
       `).join("");
-      document.getElementById("badge-insumos").textContent = state.oms.length;
+
+      document.getElementById("badge-insumos").textContent = state.insumosOms.length;
     }
 
     function init() {
@@ -415,7 +536,14 @@
         btn.addEventListener("click", () => switchTab(btn.dataset.tab));
       });
       document.getElementById("op-date").value = state.date;
-      renderInsumos();
+      
+      document.getElementById("insumos-file-input").addEventListener("change", (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleInsumosUpload(e.target.files[0]);
+          e.target.value = "";
+        }
+      });
+      renderInsumosTable();
     }
 
     init();

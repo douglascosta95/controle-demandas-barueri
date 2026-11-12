@@ -992,6 +992,31 @@
     </div>
   </div>
 
+  <!-- ==================== ACESSO À APLICAÇÃO (CONTA INDIVIDUAL) ==================== -->
+  <div id="account-auth-gate" class="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-6 shadow-2xl space-y-4">
+      <div class="text-center">
+        <div class="mx-auto mb-3 w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-2xl">🔐</div>
+        <p class="text-[10px] font-bold tracking-[0.18em] uppercase text-purple-700 dark:text-purple-300">Controle Operacional de Demandas</p>
+        <h2 class="text-xl font-extrabold text-slate-900 dark:text-white mt-1">Acesso ao sistema</h2>
+        <p id="account-auth-description" class="text-xs text-slate-500 mt-2">Entre com sua conta e PIN individual.</p>
+      </div>
+      <div class="space-y-2">
+        <label for="account-username" class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-300">Usuário</label>
+        <input id="account-username" type="text" value="ADM" autocomplete="username" autocapitalize="characters" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-sm font-bold uppercase focus:outline-none focus:ring-2 focus:ring-purple-500" />
+        <label for="account-pin-1" class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-300">PIN</label>
+        <input id="account-pin-1" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="••••" class="w-full px-3 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-center tracking-[0.6em] text-xl font-bold focus:outline-none focus:ring-2 focus:ring-purple-500" />
+        <div id="account-pin-confirm-wrap" class="hidden">
+          <label for="account-pin-2" class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-300 mb-2">Confirme seu novo PIN</label>
+          <input id="account-pin-2" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" placeholder="••••" class="w-full px-3 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-center tracking-[0.6em] text-xl font-bold focus:outline-none focus:ring-2 focus:ring-purple-500" />
+        </div>
+      </div>
+      <p id="account-auth-error" class="hidden text-xs font-semibold text-rose-600" role="alert"></p>
+      <button id="btn-account-auth" type="button" class="w-full py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-bold shadow-lg">Entrar</button>
+      <p class="text-[10px] leading-relaxed text-center text-slate-400">Acesso por PIN individual — versão de homologação.</p>
+    </div>
+  </div>
+
   <!-- ==================== MODAL: GERENCIAR EQUIPE (ADICIONAR / REMOVER) ==================== -->
   <div id="team-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
@@ -1435,6 +1460,8 @@
             operatorName: typeof value.operatorName === "string" ? value.operatorName : null,
             mustChangePin: value.mustChangePin === true,
             pinConfigured: value.pinConfigured === true,
+            pinSalt: typeof value.pinSalt === "string" ? value.pinSalt : "",
+            pinHash: typeof value.pinHash === "string" ? value.pinHash : "",
             createdAt: value.createdAt || new Date().toISOString(),
             updatedAt: value.updatedAt || null
           };
@@ -1448,6 +1475,8 @@
           operatorName: null,
           mustChangePin: true,
           pinConfigured: false,
+          pinSalt: "",
+          pinHash: "",
           createdAt: new Date().toISOString(),
           updatedAt: null
         };
@@ -1723,6 +1752,102 @@
           </div>
         `;
       }).join("");
+    }
+
+    // ==================== ACESSO POR CONTA / PIN INDIVIDUAL ====================
+    let accountAuthMode = "login";
+
+    async function hashAccountPin(pin, saltHex) {
+      if (!window.crypto?.subtle) throw new Error("Este navegador não oferece criptografia segura. Acesse pelo endereço HTTPS do sistema.");
+      const salt = saltHex || Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, "0")).join("");
+      const data = new TextEncoder().encode(`${salt}:${pin}`);
+      const digest = await crypto.subtle.digest("SHA-256", data);
+      const hash = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+      return { salt, hash };
+    }
+
+    function setAccountAuthError(message) {
+      const el = document.getElementById("account-auth-error");
+      el.textContent = message;
+      el.classList.remove("hidden");
+    }
+
+    function showAccountAuth() {
+      const gate = document.getElementById("account-auth-gate");
+      if (gate) gate.classList.remove("hidden");
+      state.currentUser = null;
+      state.currentOperator = "";
+      const description = document.getElementById("account-auth-description");
+      const confirmWrap = document.getElementById("account-pin-confirm-wrap");
+      const button = document.getElementById("btn-account-auth");
+      const usernameInput = document.getElementById("account-username");
+      const username = (usernameInput.value || "ADM").trim().toUpperCase();
+      const user = state.users[username];
+      accountAuthMode = user && !user.pinConfigured ? "bootstrap" : "login";
+      if (accountAuthMode === "bootstrap" && username === "ADM") {
+        description.textContent = "Primeiro acesso: informe a senha provisória 0000 e crie um PIN pessoal.";
+        confirmWrap.classList.remove("hidden");
+        button.textContent = "Criar PIN e entrar";
+      } else {
+        description.textContent = "Entre com sua conta e PIN individual.";
+        confirmWrap.classList.add("hidden");
+        button.textContent = "Entrar";
+      }
+      document.getElementById("account-pin-1").value = "";
+      document.getElementById("account-pin-2").value = "";
+      document.getElementById("account-auth-error").classList.add("hidden");
+    }
+
+    async function handleAccountAuth() {
+      const username = document.getElementById("account-username").value.trim().toUpperCase();
+      const pin = document.getElementById("account-pin-1").value.trim();
+      const pin2 = document.getElementById("account-pin-2").value.trim();
+      const button = document.getElementById("btn-account-auth");
+      document.getElementById("account-auth-error").classList.add("hidden");
+      if (!/^[A-Z0-9._-]{2,30}$/.test(username)) return setAccountAuthError("Informe um usuário válido.");
+      if (!/^\\d{4}$/.test(pin)) return setAccountAuthError("O PIN deve conter exatamente 4 números.");
+      const user = state.users[username];
+      if (!user || user.active === false) return setAccountAuthError("Usuário não encontrado ou desativado.");
+      button.disabled = true;
+      button.textContent = "Verificando...";
+      try {
+        if (!user.pinConfigured || !user.pinHash || !user.pinSalt) {
+          if (username !== "ADM" || pin !== TEMP_INITIAL_PIN) return setAccountAuthError("Conta ainda não configurada. Verifique o usuário e a senha provisória.");
+          if (!/^\\d{4}$/.test(pin2) || pin2 === TEMP_INITIAL_PIN) return setAccountAuthError("Crie um PIN pessoal de 4 dígitos diferente de 0000.");
+          const result = await hashAccountPin(pin2);
+          state.users[username] = { ...user, pinSalt: result.salt, pinHash: result.hash, pinConfigured: true, mustChangePin: false, updatedAt: new Date().toISOString() };
+          await syncConfigToCloud();
+        } else {
+          const result = await hashAccountPin(pin, user.pinSalt);
+          if (result.hash !== user.pinHash) return setAccountAuthError("PIN incorreto.");
+        }
+        const authenticatedUser = state.users[username];
+        state.currentUser = { username, role: authenticatedUser.role, operatorName: authenticatedUser.operatorName || null };
+        state.currentOperator = authenticatedUser.operatorName && state.operators.includes(authenticatedUser.operatorName)
+          ? authenticatedUser.operatorName : (username === "ADM" ? "ADM" : "");
+        sessionStorage.setItem("cd_barueri_account", username);
+        document.getElementById("account-auth-gate").classList.add("hidden");
+        renderOperatorSelectors();
+        showToast(`Acesso liberado — perfil ${authenticatedUser.role === "admin" ? "ADM" : authenticatedUser.role === "supervisor" ? "Supervisor" : "Operador"}.`);
+      } catch (error) {
+        console.error("Falha no acesso por conta:", error);
+        setAccountAuthError(error.message || "Não foi possível validar o acesso.");
+      } finally {
+        button.disabled = false;
+        button.textContent = accountAuthMode === "bootstrap" ? "Criar PIN e entrar" : "Entrar";
+      }
+    }
+
+    function logoutAccount() {
+      state.currentUser = null;
+      state.currentOperator = "";
+      sessionStorage.removeItem("cd_barueri_account");
+      sessionStorage.removeItem("cd_barueri_op");
+      showAccountAuth();
+    }
+
+    function isAdmin() {
+      return Boolean(state.currentUser && state.currentUser.role === USER_ROLES.ADMIN);
     }
 
     // ==================== INSUMOS: HISTÓRICO E FRACIONAMENTO ====================
@@ -2119,6 +2244,7 @@
     }
 
     function requireOperator() {
+      if (state.currentUser && state.currentUser.role === USER_ROLES.ADMIN) return true;
       if (!state.currentOperator) {
         showToast("Selecione seu nome e digite seu PIN no topo antes de editar!");
         document.getElementById("current-operator").focus();
@@ -3515,6 +3641,22 @@
       document.addEventListener("keydown", e => { if (e.key === "Escape") closeAuditModal(); });
 
       // Theme toggle
+      document.getElementById("btn-account-auth").addEventListener("click", handleAccountAuth);
+      document.getElementById("account-pin-1").addEventListener("keydown", e => { if (e.key === "Enter") handleAccountAuth(); });
+      document.getElementById("account-pin-2").addEventListener("keydown", e => { if (e.key === "Enter") handleAccountAuth(); });
+      document.getElementById("account-username").addEventListener("input", () => {
+        const username = document.getElementById("account-username").value.trim().toUpperCase();
+        document.getElementById("account-username").value = username;
+        const user = state.users[username];
+        const bootstrap = Boolean(user && !user.pinConfigured && username === "ADM");
+        document.getElementById("account-pin-confirm-wrap").classList.toggle("hidden", !bootstrap);
+        document.getElementById("account-auth-description").textContent = bootstrap
+          ? "Primeiro acesso: informe a senha provisória 0000 e crie um PIN pessoal."
+          : "Entre com sua conta e PIN individual.";
+        document.getElementById("btn-account-auth").textContent = bootstrap ? "Criar PIN e entrar" : "Entrar";
+        accountAuthMode = bootstrap ? "bootstrap" : "login";
+      });
+
       document.getElementById("btn-theme-toggle").addEventListener("click", () => {
         const nextTheme = document.documentElement.classList.contains("dark") ? "light" : "dark";
         applyTheme(nextTheme);
@@ -4037,8 +4179,9 @@
 
     // ==================== BOOT ====================
     function init() {
-      try { sessionStorage.removeItem("cd_barueri_op"); } catch (e) {}
+      try { sessionStorage.removeItem("cd_barueri_op"); sessionStorage.removeItem("cd_barueri_account"); } catch (e) {}
       state.currentOperator = "";
+      state.currentUser = null;
       loadLocalConfig();
       const saved = loadLocalState(state.date);
       state.oms = saved ? saved.oms : buildFullDrpOms();
@@ -4051,6 +4194,7 @@
       state.insumos = loadInsumosLocal(state.insumosDate);
       renderInsumos();
       switchTab("overview");
+      showAccountAuth();
       initCloudSync();
     }
 

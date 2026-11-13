@@ -2503,15 +2503,19 @@
 
     function requireOperator() {
       if (state.currentUser) return true;
-      if (!state.currentOperator) {
-        showToast("Selecione seu nome e digite seu PIN no topo antes de editar!");
-        document.getElementById("current-operator").focus();
-        return false;
-      }
-      return true;
+      showToast("Entre com seu usuário e PIN individual antes de realizar alterações.");
+      const gate = document.getElementById("account-auth-gate");
+      if (gate) gate.classList.remove("hidden");
+      return false;
     }
 
     function openPinModal(opName, forceMode = null) {
+      if (!state.currentUser) {
+        showToast("O acesso por PIN legado foi desativado. Entre com seu usuário e PIN individual.");
+        const gate = document.getElementById("account-auth-gate");
+        if (gate) gate.classList.remove("hidden");
+        return;
+      }
       pendingOperator = opName;
       const hasPin = Boolean(state.pins[opName]);
       pinModalMode = forceMode || (hasPin ? "verify" : "first-access");

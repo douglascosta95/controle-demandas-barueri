@@ -52,10 +52,21 @@
     .brand-lockup { background-color: var(--header-pill-bg); border: 1px solid var(--header-pill-border); }
     .header-control-box { background-color: var(--header-pill-bg); border: 1px solid var(--header-pill-border); color: var(--header-text); }
     .nav-bar { background-color: var(--bg-surface); border-bottom: 1px solid var(--border-main); }
+    
     .nav-tab { color: var(--text-muted); }
-    .nav-tab:hover { color: var(--text-main); }
-    .tab-active { border-bottom: 3px solid #7c3aed; color: #6d28d9 !important; font-weight: 700; background-color: rgba(124, 58, 237, 0.1); }
-    html.dark .tab-active { border-bottom-color: #a78bfa; color: #ddd6fe !important; background-color: rgba(167, 139, 250, 0.15); }
+    .nav-tab:hover { color: var(--text-main); background-color: rgba(124, 58, 237, 0.05); }
+    .tab-active {
+      border-left: 4px solid #7c3aed;
+      color: #6d28d9 !important;
+      font-weight: 700;
+      background-color: rgba(124, 58, 237, 0.1);
+    }
+    html.dark .tab-active {
+      border-left-color: #a78bfa;
+      color: #ddd6fe !important;
+      background-color: rgba(167, 139, 250, 0.15);
+    }
+
     html.dark .bg-white { background-color: var(--bg-surface) !important; }
     html.dark select, html.dark option { background-color: #1d1a2b !important; color: #f3f0ff !important; }
     html.dark input:not([type="checkbox"]), html.dark textarea { background-color: #13111c; color: #f3f0ff; border-color: #4a416e; }
@@ -88,7 +99,7 @@
             <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-purple-100 text-purple-900 dark:bg-purple-900/50 dark:text-purple-200">CD Barueri - SP</span>
             <span class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">Conectado à Nuvem</span>
           </div>
-          <p class="text-[11px] text-purple-700/80 dark:text-purple-300/80 font-medium">Demanda Aluguel • Máquinas • SIM Cards Separados • Base GRADE</p>
+          <p class="text-[11px] text-purple-700/80 dark:text-purple-300/80 font-medium">Demanda Aluguel • Máquinas • SIM Cards • Insumos • Configurações</p>
         </div>
       </div>
 
@@ -112,17 +123,16 @@
             <option value="">-- Escolher Nome --</option>
           </select>
           <span id="operator-lock-badge" class="hidden px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[10px] font-bold">PIN OK</span>
-          <button id="btn-open-team-modal" class="px-2 py-0.5 rounded bg-purple-700 hover:bg-purple-600 text-white text-[10px] font-bold transition cursor-pointer">👥 Equipe</button>
         </div>
       </div>
     </div>
 
-    <!-- NAVIGATION BAR -->
+    <!-- NAVIGATION BAR COM BOTÃO DA GAVETA LATERAL -->
     <div class="nav-bar">
       <div class="max-w-[1600px] mx-auto px-4 py-2 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
           <button id="btn-open-sidebar" type="button" class="px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs sm:text-sm font-extrabold flex items-center gap-2 shadow-xs transition cursor-pointer">
-            <span>☰ Menu Principal</span>
+            <span>☰ Menu de Telas</span>
           </button>
           <div class="flex items-center gap-2 bg-purple-950/90 text-white px-3.5 py-1.5 rounded-xl border border-purple-700/60 shadow-2xs dark:bg-[#28243d]">
             <span class="text-purple-300 text-xs font-semibold">📍 Tela Atual:</span>
@@ -134,7 +144,7 @@
     </div>
   </header>
 
-  <!-- SIDEBAR -->
+  <!-- SIDEBAR (GAVETA LATERAL RECOLHÍVEL ESTILO ARTIFACT) -->
   <div id="sidebar-backdrop" class="fixed inset-0 bg-purple-950/60 backdrop-blur-xs z-40 hidden transition-opacity"></div>
   <aside id="app-sidebar" class="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white dark:bg-[#1d1a2b] border-r border-slate-200 dark:border-[#36304f] shadow-2xl z-50 transform -translate-x-full transition-transform duration-200 flex flex-col">
     <div class="p-4 border-b border-slate-200 dark:border-[#36304f] flex items-center justify-between bg-purple-950 text-white dark:bg-[#181524]">
@@ -146,37 +156,75 @@
     </div>
 
     <div class="p-3 flex-1 overflow-y-auto space-y-3 text-xs sm:text-sm">
-      <button data-tab="maquinas" class="nav-tab tab-active w-full px-3.5 py-3 rounded-lg text-left font-bold flex items-center justify-between transition cursor-pointer">
-        <span>📦 Atendimento Máquinas</span>
-        <span id="badge-maquinas" class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 font-bold text-[10px]">0</span>
-      </button>
-      <button data-tab="simcards" class="nav-tab w-full px-3.5 py-3 rounded-lg text-left font-bold flex items-center justify-between transition cursor-pointer">
-        <span>💳 Atendimento SIM Cards (Separado)</span>
-        <span id="badge-simcards" class="px-2 py-0.5 rounded-full bg-fuchsia-100 text-fuchsia-900 font-bold text-[10px]">0</span>
-      </button>
-      <button data-tab="insumos" class="nav-tab w-full px-3.5 py-3 rounded-lg text-left font-bold flex items-center justify-between transition cursor-pointer">
-        <span>🏷️ Insumos à Parte</span>
-      </button>
-      <button data-tab="grade" class="nav-tab w-full px-3.5 py-3 rounded-lg text-left font-bold flex items-center justify-between transition cursor-pointer">
-        <span>🚚 Base GRADE</span>
-      </button>
-      <button data-tab="dashboard" class="nav-tab w-full px-3.5 py-3 rounded-lg text-left font-bold flex items-center justify-between transition cursor-pointer font-bold text-purple-700 dark:text-purple-300">
-        <span>📺 Painel SLA / Modo TV</span>
-      </button>
+      
+      <!-- BLOCO 1: DEMANDA ALUGUEL -->
+      <div class="border border-purple-200 dark:border-[#36304f] rounded-xl overflow-hidden">
+        <button type="button" onclick="toggleBlock('block-aluguel')" class="w-full px-3.5 py-2.5 bg-purple-100/70 dark:bg-[#28243d] font-bold flex items-center justify-between text-purple-950 dark:text-purple-200 cursor-pointer">
+          <span>📁 Demanda Aluguel</span>
+          <span id="arrow-aluguel">▲</span>
+        </button>
+        <div id="block-aluguel" class="p-1 space-y-1">
+          <button data-tab="maquinas" class="nav-tab tab-active w-full px-3 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
+            <span>📦 Atendimento Máquinas</span>
+            <span id="badge-maquinas" class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 font-bold text-[10px]">0</span>
+          </button>
+          <button data-tab="simcards" class="nav-tab w-full px-3 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
+            <span>💳 Atendimento SIM Cards</span>
+            <span id="badge-simcards" class="px-2 py-0.5 rounded-full bg-fuchsia-100 text-fuchsia-900 font-bold text-[10px]">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- BLOCO 2: OUTRAS DEMANDAS -->
+      <div class="border border-fuchsia-200 dark:border-[#36304f] rounded-xl overflow-hidden">
+        <button type="button" onclick="toggleBlock('block-outras')" class="w-full px-3.5 py-2.5 bg-fuchsia-100/70 dark:bg-[#28243d] font-bold flex items-center justify-between text-fuchsia-950 dark:text-fuchsia-200 cursor-pointer">
+          <span>📁 Outras Demandas</span>
+          <span id="arrow-outras">▲</span>
+        </button>
+        <div id="block-outras" class="p-1 space-y-1">
+          <button data-tab="insumos" class="nav-tab w-full px-3 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
+            <span>🏷️ Demanda Insumos</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- BLOCO 3: CONFIGURAÇÕES & GESTÃO -->
+      <div class="border border-slate-200 dark:border-[#36304f] rounded-xl overflow-hidden">
+        <button type="button" onclick="toggleBlock('block-config')" class="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-[#28243d] font-bold flex items-center justify-between text-slate-800 dark:text-slate-200 cursor-pointer">
+          <span>⚙️ Configurações & Gestão</span>
+          <span id="arrow-config">▲</span>
+        </button>
+        <div id="block-config" class="p-1 space-y-1">
+          <button data-tab="equipe" class="nav-tab w-full px-3 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
+            <span>👥 Gestão da Equipe</span>
+          </button>
+          <button data-tab="grade" class="nav-tab w-full px-3 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
+            <span>🚚 Grade</span>
+          </button>
+          <button data-tab="sap" class="nav-tab w-full px-3 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
+            <span>🔢 Código SAP</span>
+          </button>
+          <button data-tab="dashboard" class="nav-tab w-full px-3 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer font-bold text-purple-700 dark:text-purple-300">
+            <span>📺 Painel SLA / Modo TV</span>
+          </button>
+        </div>
+      </div>
+
     </div>
   </aside>
 
   <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 py-5 space-y-4">
+    
     <!-- TAB 1: MÁQUINAS -->
     <section id="tab-maquinas" class="tab-panel space-y-4">
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs dark:border-[#36304f] dark:bg-[#1d1a2b] flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="text-sm font-bold text-slate-800 dark:text-purple-100">Atendimento de Máquinas (Aluguel - Equipe de Máquinas)</h2>
-          <p class="text-xs text-slate-500 dark:text-purple-300 mt-0.5">Prioridade AG (Corner) sobre PA. Validação exige conferência no OPPAY.</p>
+          <h2 class="text-sm font-bold text-slate-800 dark:text-purple-100">Atendimento de Máquinas (Aluguel)</h2>
+          <p class="text-xs text-slate-500 dark:text-purple-300 mt-0.5">Prioridade AG sobre PA. Validação exige conferência no OPPAY.</p>
         </div>
         <div class="flex items-center gap-2">
           <button id="btn-sortear-maquinas" class="px-3.5 py-2 rounded-xl bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold shadow-xs transition cursor-pointer">
-            🎲 Sortear Máquinas (AG + PA)
+            🎲 Sortear Máquinas
           </button>
           <input type="file" id="drp-file-home" accept=".xlsx,.xls,.csv" class="hidden" />
           <label for="drp-file-home" class="px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold shadow-xs transition cursor-pointer inline-flex items-center gap-1.5">
@@ -189,7 +237,7 @@
         <div class="overflow-x-auto scrollbar-thin">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="bg-slate-100 dark:bg-[#28243d] text-slate-600 dark:text-purple-300 text-[11px] uppercase tracking-wider border-b border-slate-200 dark:border-[#36304f]">
+              <tr class="bg-slate-100 dark:bg-[#28243d] text-slate-600 dark:text-purple-300 text-[11px] uppercase tracking-wider border-b dark:border-[#36304f]">
                 <th class="py-2.5 px-3 font-bold">OM</th>
                 <th class="py-2.5 px-3 font-bold">Destino (Base)</th>
                 <th class="py-2.5 px-3 font-bold">Modelo Máquina</th>
@@ -199,22 +247,22 @@
                 <th class="py-2.5 px-3 font-bold text-right">Ação / Comentário</th>
               </tr>
             </thead>
-            <tbody id="maquinas-tbody" class="divide-y divide-slate-100 dark:divide-[#36304f] text-xs"></tbody>
+            <tbody id="maquinas-tbody" class="divide-y dark:divide-[#36304f] text-xs"></tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <!-- TAB 2: SIM CARDS (SEPARADO) -->
+    <!-- TAB 2: SIM CARDS -->
     <section id="tab-simcards" class="tab-panel hidden space-y-4">
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs dark:border-[#36304f] dark:bg-[#1d1a2b] flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="text-sm font-bold text-slate-800 dark:text-purple-100">Atendimento de SIM Cards (Equipe de Chips Separada)</h2>
-          <p class="text-xs text-slate-500 dark:text-purple-300 mt-0.5">Fila exclusiva para separação e ativação de chips por operador de SIM Card.</p>
+          <h2 class="text-sm font-bold text-slate-800 dark:text-purple-100">Atendimento de SIM Cards</h2>
+          <p class="text-xs text-slate-500 dark:text-purple-300 mt-0.5">Separação e ativação de chips por operador de SIM Card.</p>
         </div>
         <div>
           <button id="btn-sortear-simcards" class="px-3.5 py-2 rounded-xl bg-fuchsia-700 hover:bg-fuchsia-600 text-white text-xs font-bold shadow-xs transition cursor-pointer">
-            🎲 Sortear SIM Cards (2 Operadores)
+            🎲 Sortear SIM Cards
           </button>
         </div>
       </div>
@@ -223,7 +271,7 @@
         <div class="overflow-x-auto scrollbar-thin">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="bg-fuchsia-50 dark:bg-[#28243d] text-fuchsia-800 dark:text-fuchsia-300 text-[11px] uppercase tracking-wider border-b border-fuchsia-100 dark:border-[#36304f]">
+              <tr class="bg-fuchsia-50 dark:bg-[#28243d] text-fuchsia-800 dark:text-fuchsia-300 text-[11px] uppercase tracking-wider border-b dark:border-[#36304f]">
                 <th class="py-2.5 px-3 font-bold">OM</th>
                 <th class="py-2.5 px-3 font-bold">Destino (Base)</th>
                 <th class="py-2.5 px-3 font-bold">Modelo Máquina</th>
@@ -234,7 +282,7 @@
                 <th class="py-2.5 px-3 font-bold">Status Chip</th>
               </tr>
             </thead>
-            <tbody id="simcards-tbody" class="divide-y divide-slate-100 dark:divide-[#36304f] text-xs"></tbody>
+            <tbody id="simcards-tbody" class="divide-y dark:divide-[#36304f] text-xs"></tbody>
           </table>
         </div>
       </div>
@@ -242,33 +290,75 @@
 
     <!-- TAB 3: INSUMOS -->
     <section id="tab-insumos" class="tab-panel hidden space-y-4">
-      <div class="bg-white p-5 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b]">
-        <h2 class="text-base font-bold">Outras Demandas (Insumos à Parte)</h2>
+      <div class="bg-white p-5 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b] space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-base font-bold text-slate-800 dark:text-purple-100">Demanda Insumos & Fracionamento</h2>
+            <p class="text-xs text-slate-500">Controle de insumos à parte e emissão de notas fiscais.</p>
+          </div>
+          <div>
+            <input type="file" id="insumos-file-input" accept=".xlsx,.xls,.csv" class="hidden" />
+            <label for="insumos-file-input" class="px-3.5 py-2 rounded-xl bg-violet-700 text-white text-xs font-bold cursor-pointer inline-flex items-center gap-1.5">
+              📁 Importar Insumos (.xlsx)
+            </label>
+          </div>
+        </div>
+        <div id="insumos-container" class="text-xs text-slate-500">Importe a planilha de insumos para iniciar o gerenciamento.</div>
       </div>
     </section>
 
-    <!-- TAB 4: BASE GRADE -->
+    <!-- TAB 4: GESTÃO DA EQUIPE (ADICIONAR / REMOVER) -->
+    <section id="tab-equipe" class="tab-panel hidden space-y-4">
+      <div class="bg-white p-5 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b] space-y-4 max-w-2xl">
+        <h2 class="text-base font-bold text-slate-800 dark:text-purple-100">👥 Gestão da Equipe (Adicionar e Remover Colaboradores)</h2>
+        <div class="flex gap-2">
+          <input type="text" id="input-new-operator" maxlength="25" placeholder="NOME DO NOVO COLABORADOR" class="flex-1 px-3 py-2 text-xs uppercase border rounded-xl dark:bg-[#13111c]" />
+          <button type="button" id="btn-add-op-main" class="px-4 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold cursor-pointer">+ Adicionar Colaborador</button>
+        </div>
+        <div class="border rounded-xl overflow-hidden divide-y dark:divide-[#36304f]" id="operators-manage-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB 5: GRADE (ADICIONAR / REMOVER) -->
     <section id="tab-grade" class="tab-panel hidden space-y-4">
-      <div class="bg-white p-4 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b] space-y-3">
-        <h2 class="text-base font-bold text-slate-800 dark:text-purple-100">🚚 Base GRADE & Rotas</h2>
-        <input type="text" id="grade-search" placeholder="Pesquisar destino ou transportadora..." class="px-3 py-1.5 text-xs border rounded-lg w-full sm:w-80" />
-        <div class="overflow-x-auto max-h-96 scrollbar-thin">
+      <div class="bg-white p-5 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b] space-y-4">
+        <h2 class="text-base font-bold text-slate-800 dark:text-purple-100">🚚 Base GRADE & Rotas (Adicionar e Remover)</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+          <input type="text" id="grade-dest" placeholder="Destino / Agência" class="px-3 py-2 text-xs border rounded-xl dark:bg-[#13111c]" />
+          <input type="text" id="grade-uf" placeholder="UF (ex: SP)" class="px-3 py-2 text-xs border rounded-xl dark:bg-[#13111c]" />
+          <input type="text" id="grade-transp" placeholder="Transportadora" class="px-3 py-2 text-xs border rounded-xl dark:bg-[#13111c]" />
+          <button type="button" id="btn-add-grade" class="px-4 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold cursor-pointer">+ Adicionar à Grade</button>
+        </div>
+        <div class="overflow-x-auto max-h-96 scrollbar-thin border rounded-xl dark:border-[#36304f]">
           <table class="w-full text-left border-collapse text-xs">
             <thead class="sticky top-0 bg-slate-100 dark:bg-[#28243d]">
               <tr class="uppercase border-b dark:border-[#36304f]">
-                <th class="py-2 px-3">Destino</th>
-                <th class="py-2 px-3">UF</th>
-                <th class="py-2 px-3">Transportadora</th>
-                <th class="py-2 px-3">Doca</th>
+                <th class="py-2.5 px-3">Destino</th>
+                <th class="py-2.5 px-3">UF</th>
+                <th class="py-2.5 px-3">Transportadora</th>
+                <th class="py-2.5 px-3 text-right">Ação</th>
               </tr>
             </thead>
-            <tbody id="grade-tbody" class="divide-y dark:divide-[#36304f]"></tbody>
+            <tbody id="grade-manage-tbody" class="divide-y dark:divide-[#36304f]"></tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <!-- TAB 5: DASHBOARD / MODO TV -->
+    <!-- TAB 6: CÓDIGO SAP (ADICIONAR / REMOVER) -->
+    <section id="tab-sap" class="tab-panel hidden space-y-4">
+      <div class="bg-white p-5 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b] space-y-4 max-w-3xl">
+        <h2 class="text-base font-bold text-slate-800 dark:text-purple-100">🔢 Cadastro de Códigos SAP (Adicionar e Remover)</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input type="text" id="sap-model" placeholder="Corner / Modelo" class="px-3 py-2 text-xs border rounded-xl dark:bg-[#13111c]" />
+          <input type="text" id="sap-code" placeholder="Código SAP" class="px-3 py-2 text-xs border rounded-xl dark:bg-[#13111c]" />
+          <button type="button" id="btn-add-sap" class="px-4 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold cursor-pointer">+ Adicionar SAP</button>
+        </div>
+        <div class="border rounded-xl max-h-80 overflow-y-auto divide-y dark:divide-[#36304f]" id="sap-manage-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB 7: DASHBOARD / MODO TV -->
     <section id="tab-dashboard" class="tab-panel hidden space-y-4">
       <div class="bg-white p-5 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b] space-y-3">
         <h2 class="text-base font-bold">📺 Painel SLA / Modo TV</h2>
@@ -310,21 +400,6 @@
     </div>
   </div>
 
-  <!-- MODAL EQUIPE -->
-  <div id="team-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-    <div class="bg-white dark:bg-[#1d1a2b] dark:border dark:border-[#36304f] rounded-2xl max-w-md w-full p-6 shadow-2xl border space-y-4">
-      <div class="flex items-center justify-between">
-        <span class="font-bold text-sm">Gerenciar Equipe</span>
-        <button id="team-modal-close" class="text-slate-400 font-bold text-lg cursor-pointer">&times;</button>
-      </div>
-      <div class="flex gap-2">
-        <input type="text" id="new-operator-input" maxlength="25" placeholder="Nome do colaborador" class="flex-1 px-3 py-2 text-xs uppercase border rounded-xl dark:bg-[#13111c]" />
-        <button type="button" id="btn-add-operator" class="px-4 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold cursor-pointer">+ Adicionar</button>
-      </div>
-      <div class="border rounded-xl max-h-64 overflow-y-auto divide-y dark:divide-[#36304f]" id="team-modal-list"></div>
-    </div>
-  </div>
-
   <!-- MODAL AUDITORIA -->
   <div id="audit-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white dark:bg-[#1d1a2b] dark:border dark:border-[#36304f] rounded-2xl max-w-xl w-full p-6 shadow-2xl border space-y-4">
@@ -359,6 +434,12 @@
         ["AG 3131 FLORIANOPOLIS SC", "SC", "AEROSOFT", "16:00 às 17:00"],
         ["AG 3253 PORTO VELHO RO", "RO", "AEROSOFT", "16:00 às 17:00"]
       ],
+      customSaps: {
+        "AG 0341 BARUERI SP": "18529",
+        "AG 4017 CARUARU PE CORNER": "17664",
+        "AG.0201_SAO PAULO_SP": "18558",
+        "PRISMA BARUERI": "43276"
+      },
       auditLog: []
     };
 
@@ -367,6 +448,25 @@
       document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.toggle("hidden", panel.id !== `tab-${tabName}`));
       document.getElementById("app-sidebar").classList.add("-translate-x-full");
       document.getElementById("sidebar-backdrop").classList.add("hidden");
+    };
+
+    function toggleSidebar(forceOpen = null) {
+      const sb = document.getElementById("app-sidebar");
+      const bd = document.getElementById("sidebar-backdrop");
+      if (!sb || !bd) return;
+      const isClosed = sb.classList.contains("-translate-x-full");
+      const shouldOpen = forceOpen !== null ? forceOpen : isClosed;
+      sb.classList.toggle("-translate-x-full", !shouldOpen);
+      bd.classList.toggle("hidden", !shouldOpen);
+    }
+
+    window.toggleBlock = function(id) {
+      const el = document.getElementById(id);
+      const arrow = document.getElementById("arrow-" + id.replace("block-", ""));
+      if (!el) return;
+      const isHidden = el.classList.contains("hidden");
+      el.classList.toggle("hidden", !isHidden);
+      if (arrow) arrow.textContent = isHidden ? "▲" : "▼";
     };
 
     function showToast(msg) {
@@ -383,6 +483,110 @@
       state.auditLog.unshift({ who, om, action, time });
     }
 
+    // Gestão de Equipe (Adicionar e Remover)
+    function renderOperatorsManage() {
+      const container = document.getElementById("operators-manage-list");
+      if (!container) return;
+      container.innerHTML = state.operators.map(op => `
+        <div class="flex items-center justify-between px-4 py-2.5 text-xs">
+          <span class="font-bold">${op}</span>
+          <button onclick="removeOperator('${op}')" class="text-rose-600 font-bold hover:underline cursor-pointer">Remover</button>
+        </div>
+      `).join("");
+    }
+
+    window.removeOperator = function(op) {
+      if (state.operators.length <= 1) { showToast("Mantenha ao menos um colaborador."); return; }
+      state.operators = state.operators.filter(o => o !== op);
+      renderOperatorsManage();
+      renderOperatorSelectors();
+      showToast(`Colaborador ${op} removido.`);
+    };
+
+    document.getElementById("btn-add-op-main")?.addEventListener("click", () => {
+      const val = document.getElementById("input-new-operator").value.trim().toUpperCase();
+      if (val && !state.operators.includes(val)) {
+        state.operators.push(val);
+        document.getElementById("input-new-operator").value = "";
+        renderOperatorsManage();
+        renderOperatorSelectors();
+        showToast(`Colaborador ${val} adicionado!`);
+      }
+    });
+
+    function renderOperatorSelectors() {
+      const topSel = document.getElementById("current-operator");
+      if (!topSel) return;
+      topSel.innerHTML = `<option value="">-- Escolher Nome --</option>` + state.operators.map(op => `<option value="${op}">${op}</option>`).join("");
+      topSel.value = state.currentOperator;
+    }
+
+    // Gestão de Grade (Adicionar e Remover)
+    function renderGradeManage() {
+      const tbody = document.getElementById("grade-manage-tbody");
+      if (!tbody) return;
+      tbody.innerHTML = state.customGrades.map((r, idx) => `
+        <tr class="border-b dark:border-[#36304f]">
+          <td class="py-2.5 px-3 font-semibold">${r[0]}</td>
+          <td class="py-2.5 px-3">${r[1]}</td>
+          <td class="py-2.5 px-3">${r[2]}</td>
+          <td class="py-2.5 px-3 text-right">
+            <button onclick="removeGrade(${idx})" class="text-rose-600 font-bold hover:underline cursor-pointer">Remover</button>
+          </td>
+        </tr>
+      `).join("");
+      renderGradeTable();
+    }
+
+    window.removeGrade = function(idx) {
+      state.customGrades.splice(idx, 1);
+      renderGradeManage();
+      showToast("Rota removida da Grade.");
+    };
+
+    document.getElementById("btn-add-grade")?.addEventListener("click", () => {
+      const dest = document.getElementById("grade-dest").value.trim().toUpperCase();
+      const uf = document.getElementById("grade-uf").value.trim().toUpperCase();
+      const transp = document.getElementById("grade-transp").value.trim().toUpperCase();
+      if (!dest) { showToast("Preencha o destino."); return; }
+      state.customGrades.unshift([dest, uf || "SP", transp || "ALYA", "11:00 às 13:00"]);
+      document.getElementById("grade-dest").value = "";
+      document.getElementById("grade-uf").value = "";
+      document.getElementById("grade-transp").value = "";
+      renderGradeManage();
+      showToast("Nova rota adicionada à Grade!");
+    });
+
+    // Gestão de Códigos SAP (Adicionar e Remover)
+    function renderSapManage() {
+      const container = document.getElementById("sap-manage-list");
+      if (!container) return;
+      container.innerHTML = Object.entries(state.customSaps).slice(0, 50).map(([mod, code]) => `
+        <div class="flex items-center justify-between px-4 py-2.5 text-xs">
+          <div><strong class="text-purple-700 dark:text-purple-300">${mod}</strong>: <span class="mono">${code}</span></div>
+          <button onclick="removeSap('${mod}')" class="text-rose-600 font-bold hover:underline cursor-pointer">Remover</button>
+        </div>
+      `).join("");
+    }
+
+    window.removeSap = function(mod) {
+      delete state.customSaps[mod];
+      renderSapManage();
+      showToast("Código SAP removido.");
+    };
+
+    document.getElementById("btn-add-sap")?.addEventListener("click", () => {
+      const mod = document.getElementById("sap-model").value.trim().toUpperCase();
+      const code = document.getElementById("sap-code").value.trim();
+      if (!mod || !code) { showToast("Preencha modelo e código SAP."); return; }
+      state.customSaps[mod] = code;
+      document.getElementById("sap-model").value = "";
+      document.getElementById("sap-code").value = "";
+      renderSapManage();
+      showToast("Código SAP salvo!");
+    });
+
+    // Modais e Status
     let activeCommentOm = null;
     let pendingCommentCallback = null;
 
@@ -452,13 +656,6 @@
       } else {
         showToast("Digite um PIN válido de 4 dígitos (ou 0000).");
       }
-    });
-
-    document.getElementById("pin-modal-close")?.addEventListener("click", () => {
-      document.getElementById("pin-modal").classList.add("hidden");
-      document.getElementById("pin-modal").classList.remove("flex");
-      renderMaquinas();
-      renderSimCards();
     });
 
     window.updateOmStatus = function(omNum, newStatus) {
@@ -533,7 +730,6 @@
       openCommentModal(omNum, () => {});
     };
 
-    // Sorteio Máquinas
     document.getElementById("btn-sortear-maquinas")?.addEventListener("click", () => {
       if (!state.oms.length) { showToast("Nenhuma OM para sortear."); return; }
       const ops = state.operators;
@@ -543,7 +739,6 @@
       showToast("Sorteio de Máquinas concluído!");
     });
 
-    // Sorteio SIM Cards
     document.getElementById("btn-sortear-simcards")?.addEventListener("click", () => {
       if (!state.oms.length) { showToast("Nenhuma OM para sortear SIM cards."); return; }
       const ops = state.operators.slice(0, 2);
@@ -674,10 +869,10 @@
       if (!tbody) return;
       tbody.innerHTML = state.customGrades.map(r => `
         <tr class="border-b dark:border-[#36304f]">
-          <td class="py-2 px-3 font-semibold">${r[0]}</td>
-          <td class="py-2 px-3">${r[1]}</td>
-          <td class="py-2 px-3">${r[2]}</td>
-          <td class="py-2 px-3">${r[3]}</td>
+          <td class="py-2.5 px-3 font-semibold">${r[0]}</td>
+          <td class="py-2.5 px-3">${r[1]}</td>
+          <td class="py-2.5 px-3">${r[2]}</td>
+          <td class="py-2.5 px-3">${r[3]}</td>
         </tr>
       `).join("");
     }
@@ -707,18 +902,9 @@
     }
 
     function init() {
-      document.getElementById("btn-open-sidebar").addEventListener("click", () => {
-        document.getElementById("app-sidebar").classList.remove("-translate-x-full");
-        document.getElementById("sidebar-backdrop").classList.remove("hidden");
-      });
-      document.getElementById("btn-close-sidebar").addEventListener("click", () => {
-        document.getElementById("app-sidebar").classList.add("-translate-x-full");
-        document.getElementById("sidebar-backdrop").classList.add("hidden");
-      });
-      document.getElementById("sidebar-backdrop").addEventListener("click", () => {
-        document.getElementById("app-sidebar").classList.add("-translate-x-full");
-        document.getElementById("sidebar-backdrop").classList.add("hidden");
-      });
+      document.getElementById("btn-open-sidebar").addEventListener("click", () => toggleSidebar(true));
+      document.getElementById("btn-close-sidebar").addEventListener("click", () => toggleSidebar(false));
+      document.getElementById("sidebar-backdrop").addEventListener("click", () => toggleSidebar(false));
 
       document.querySelectorAll(".nav-tab").forEach(btn => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
       document.getElementById("op-date").value = state.date;
@@ -737,6 +923,12 @@
         }
       });
 
+      document.getElementById("btn-theme-toggle").addEventListener("click", () => {
+        const isDark = !document.documentElement.classList.contains("dark");
+        document.documentElement.classList.toggle("dark", isDark);
+        document.getElementById("theme-label").textContent = isDark ? "Claro" : "Escuro";
+      });
+
       const auditModal = document.getElementById("audit-modal");
       document.getElementById("btn-open-audit-modal").addEventListener("click", () => {
         const list = document.getElementById("audit-modal-list");
@@ -748,17 +940,11 @@
       document.getElementById("audit-modal-close").addEventListener("click", () => auditModal.classList.add("hidden"));
       document.getElementById("audit-modal-done").addEventListener("click", () => auditModal.classList.add("hidden"));
 
-      const teamModal = document.getElementById("team-modal");
-      document.getElementById("btn-open-team-modal")?.addEventListener("click", () => {
-        document.getElementById("team-modal-list").innerHTML = state.operators.map(o => `<div class="p-2 font-bold">${o}</div>`).join("");
-        teamModal.classList.remove("hidden");
-        teamModal.classList.add("flex");
-      });
-      document.getElementById("team-modal-close")?.addEventListener("click", () => teamModal.classList.add("hidden"));
-
+      renderOperatorsManage();
+      renderGradeManage();
+      renderSapManage();
       renderMaquinas();
       renderSimCards();
-      renderGradeTable();
       renderDashboard();
     }
 

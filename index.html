@@ -4228,7 +4228,7 @@
             item.unlocked = true;
           }
           item.status = nextStatus;
-          item.updatedBy = state.currentOperator;
+          item.updatedBy = actor;
           item.updatedAt = nowTime;
           pushAudit(om, `Status → ${nextStatus}${item.validatedBy ? " (por " + item.validatedBy + ")" : ""}`);
           syncToCloud();
@@ -4292,7 +4292,7 @@
         if (action === "apply-sug") {
           if (!requireOperator()) return;
           item.vl = btn.dataset.sug;
-          item.updatedBy = state.currentOperator;
+          item.updatedBy = state.currentUser?.username || state.currentOperator;
           item.updatedAt = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
           pushAudit(om, `Volume (VL) aplicado: ${item.vl}`);
           syncToCloud();
@@ -4394,6 +4394,7 @@
         const item = state.oms.find(x => x.om === om);
         if (!item) return;
         item[field] = el.value;
+        item.updatedBy = state.currentUser?.username || state.currentOperator;
         pushAudit(om, field === "colaboradorChip" ? `SIM Card atribuído a ${el.value || "ninguém"}` : `Status Chip → ${el.value}`);
         syncToCloud();
         renderAll();

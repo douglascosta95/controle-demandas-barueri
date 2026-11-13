@@ -1603,7 +1603,7 @@
         const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (parsed.pins) state.pins = parsed.pins;
+          // PINs de acesso são mantidos exclusivamente no cadastro privado do servidor.
           // Credenciais de acesso não são mais persistidas no navegador.
           if (Array.isArray(parsed.sapCatalog)) state.sapCatalog = parsed.sapCatalog;
           if (Array.isArray(parsed.gradeCatalog)) state.gradeCatalog = parsed.gradeCatalog;
@@ -1618,8 +1618,7 @@
     function saveLocalConfig() {
       try {
         localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({
-          pins: state.pins,
-          operators: state.operators,
+           operators: state.operators,
           sapCatalog: state.sapCatalog,
           gradeCatalog: state.gradeCatalog
         }));
@@ -1655,7 +1654,6 @@
         const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
         const cfgRef = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "config", "operator_pins");
         await fbFirestoreMod.setDoc(cfgRef, {
-          pins: state.pins,
           operators: state.operators,
           sapCatalog: state.sapCatalog,
           gradeCatalog: state.gradeCatalog,
@@ -1788,7 +1786,6 @@
       fbConfigUnsub = fbFirestoreMod.onSnapshot(cfgRef, (snap) => {
         if (!snap.exists()) return;
         const d = snap.data();
-        if (d.pins) state.pins = { ...state.pins, ...d.pins };
         if (Array.isArray(d.sapCatalog)) state.sapCatalog = d.sapCatalog;
         if (Array.isArray(d.gradeCatalog)) {
           state.gradeCatalog = d.gradeCatalog;
@@ -2749,18 +2746,11 @@
       if (teamCountLabel) teamCountLabel.textContent = state.operators.length;
 
       topSel.innerHTML = `<option value="">-- Escolher Nome --</option>` +
-        state.operators.map(op => {
-          const hasPin = state.pins[op] ? "🔒" : "🆕";
-          return `<option value="${op}" ${state.currentOperator === op ? "selected" : ""}>${hasPin} ${op}</option>`;
-        }).join("");
+        state.operators.map(op => `<option value="${op}" ${state.currentOperator === op ? "selected" : ""}>${op}</option>`).join("");
 
-      if (state.currentOperator) {
-        lockBadge.classList.remove("hidden");
-        btnPin.classList.remove("hidden");
-      } else {
-        lockBadge.classList.add("hidden");
-        btnPin.classList.add("hidden");
-      }
+      if (state.currentOperator) lockBadge.classList.remove("hidden");
+      else lockBadge.classList.add("hidden");
+      btnPin.classList.toggle("hidden", Boolean(state.currentUser) || !state.currentOperator);
 
       const maqCounts = {};
       const chipCounts = {};
@@ -4155,6 +4145,11 @@
       // Seleção de Operador + PIN
       document.getElementById("current-operator").addEventListener("change", (e) => {
         const chosen = e.target.value;
+        if (state.currentUser) {
+          state.currentOperator = chosen || "";
+          renderOperatorSelectors();
+          return;
+        }
         if (!chosen) {
           state.currentOperator = "";
           sessionStorage.removeItem("cd_barueri_op");
@@ -4165,6 +4160,10 @@
       });
 
       document.getElementById("btn-manage-pin").addEventListener("click", () => {
+        if (state.currentUser) {
+          showToast("O PIN da conta é gerenciado pelo painel de contas.");
+          return;
+        }
         if (state.currentOperator) openPinModal(state.currentOperator, "reset");
       });
       document.getElementById("pin-modal-close").addEventListener("click", () => closePinModal(true));

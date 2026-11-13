@@ -507,6 +507,17 @@
       auditLog: []
     };
 
+    
+    function toggleSidebar(forceOpen = null) {
+      const sb = document.getElementById("app-sidebar");
+      const bd = document.getElementById("sidebar-backdrop");
+      if (!sb || !bd) return;
+      const isClosed = sb.classList.contains("-translate-x-full");
+      const shouldOpen = forceOpen !== null ? forceOpen : isClosed;
+      sb.classList.toggle("-translate-x-full", !shouldOpen);
+      bd.classList.toggle("hidden", !shouldOpen);
+    }
+
     window.toggleBlock = function(id) {
       const el = document.getElementById(id);
       const arrow = document.getElementById("arrow-" + id.replace("block-", ""));

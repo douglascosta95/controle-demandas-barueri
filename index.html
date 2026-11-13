@@ -276,6 +276,33 @@
     @media(max-width:700px) { .app-shell { display:block; }.app-sidebar { position:sticky; top:0; z-index:25; min-height:0; padding:7px 9px; border-right:0; border-bottom:1px solid var(--border-main); display:flex; flex-direction:row; overflow-x:auto; gap:5px; }.sidebar-caption,.sidebar-footer { display:none; }.sidebar-link { width:auto; min-width:max-content; min-height:38px; padding:8px 10px; font-size:10px; }.sidebar-icon { font-size:14px; }.sidebar-badge { min-width:18px; }.page-heading { align-items:flex-start; }.page-title { font-size:21px; }.page-date { padding:7px 9px; }.quick-actions { grid-template-columns:repeat(2,minmax(0,1fr)); } }
     @media(max-width:420px) { .dashboard-kpis { gap:8px; }.dashboard-kpi { min-height:112px; padding:12px; }.kpi-value { font-size:25px; }.page-date { display:none; }.dashboard-panel { padding:14px; } }
 
+
+    /* Painel de TV / apresentação */
+    .tv-presentation{position:fixed;inset:0;z-index:9999;background:#080d1b;color:#f8fafc;display:flex;flex-direction:column;padding:clamp(16px,3vw,42px);overflow:auto}
+    .tv-topbar,.tv-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .tv-brand-lockup{display:flex;align-items:center;gap:12px}
+    .tv-brand-mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#34d399);display:grid;place-items:center;font-weight:950;color:#07111f;font-size:18px}
+    .tv-brand-name{font-size:clamp(17px,2vw,26px);font-weight:950;letter-spacing:.04em;color:#fff}
+    .tv-brand-name span{color:#a78bfa}.tv-brand-sub{font-size:10px;letter-spacing:.2em;color:#94a3b8;font-weight:800}
+    .tv-clock{font-variant-numeric:tabular-nums;color:#cbd5e1;font-size:clamp(13px,1.4vw,19px)}
+    .tv-slide{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;padding:clamp(18px,4vw,58px) 0}
+    .tv-slide-title{font-size:clamp(24px,3.2vw,48px);font-weight:900;letter-spacing:-.035em;margin-bottom:clamp(18px,3vw,38px)}
+    .tv-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(10px,1.8vw,24px)}
+    .tv-kpi{background:#111b31;border:1px solid #263550;border-radius:22px;padding:clamp(16px,2.6vw,34px);min-width:0}
+    .tv-kpi-label{font-size:clamp(11px,1.2vw,17px);font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#a5b4fc}
+    .tv-kpi-value{font-size:clamp(38px,7vw,100px);font-weight:900;line-height:1.1;margin-top:12px;font-variant-numeric:tabular-nums}
+    .tv-kpi-note{font-size:clamp(12px,1.2vw,17px);color:#94a3b8;margin-top:8px}
+    .tv-progress-track{height:clamp(18px,2.6vw,34px);background:#263550;border-radius:99px;overflow:hidden;margin:28px 0}
+    .tv-progress-fill{height:100%;background:linear-gradient(90deg,#8b5cf6,#34d399);border-radius:99px;transition:width .5s}
+    .tv-big-percent{font-size:clamp(64px,13vw,180px);font-weight:950;line-height:1;letter-spacing:-.06em}
+    .tv-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .tv-list-item{display:flex;justify-content:space-between;align-items:center;gap:16px;background:#111b31;border:1px solid #263550;border-radius:16px;padding:clamp(14px,2vw,26px);font-size:clamp(16px,2vw,28px)}
+    .tv-list-item strong{font-size:1.25em;font-variant-numeric:tabular-nums}
+    .tv-foot{color:#94a3b8;font-size:clamp(11px,1vw,14px)}
+    .tv-control-btn{border:1px solid #475569;background:#17233a;color:#f8fafc;border-radius:12px;padding:10px 15px;font-weight:800}
+    .tv-control-btn:hover{background:#293957}.tv-select{background:#17233a;color:#f8fafc;border:1px solid #475569;border-radius:10px;padding:9px}
+    @media(max-width:700px){.tv-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tv-list{grid-template-columns:1fr}.tv-slide{justify-content:flex-start;padding-top:28px}}
+
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -410,8 +437,27 @@
         <h2 id="page-title" class="page-title">Visão geral</h2>
         <p id="page-subtitle" class="page-subtitle">Acompanhe os principais indicadores e pontos de atenção da operação.</p>
       </div>
-      <div class="page-date"><span>DATA OPERACIONAL</span><strong id="dashboard-date-label">—</strong></div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <button type="button" id="btn-open-tv-mode" class="px-4 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-white text-xs font-extrabold shadow-sm">▣ Modo TV / Apresentação</button>
+        <div class="page-date"><span>DATA OPERACIONAL</span><strong id="dashboard-date-label">—</strong></div>
+      </div>
     </div>
+
+<section id="tv-presentation" class="tv-presentation hidden" aria-label="Painel de apresentação">
+      <div class="tv-topbar">
+        <div class="tv-brand-lockup"><div class="tv-brand-mark">A</div><div><div class="tv-brand-name">ALYA <span>|</span> MOBYAN</div><div class="tv-brand-sub">CONTROLE OPERACIONAL · CD BARUERI</div></div></div>
+        <div class="flex items-center gap-4"><div class="text-right"><div id="tv-clock" class="tv-clock">--:--:--</div><div id="tv-slide-counter" class="text-xs text-slate-400">SLIDE 1 DE 4</div></div><button type="button" id="btn-close-tv" class="tv-control-btn">✕ Sair (Esc)</button></div>
+      </div>
+      <div id="tv-slide-content" class="tv-slide"></div>
+      <div class="tv-controls border-t border-slate-700 pt-4">
+        <div class="flex items-center gap-2 flex-wrap">
+          <button type="button" id="btn-tv-prev" class="tv-control-btn">← Anterior</button><button type="button" id="btn-tv-next" class="tv-control-btn">Próximo →</button>
+          <label class="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" id="tv-auto-advance" checked class="accent-violet-500 w-4 h-4"> Avanço automático</label>
+          <label class="flex items-center gap-2 text-sm text-slate-300">Intervalo<select id="tv-slide-interval" class="tv-select"><option value="8000">8 segundos</option><option value="12000" selected>12 segundos</option><option value="20000">20 segundos</option><option value="30000">30 segundos</option></select></label>
+        </div>
+        <div class="tv-foot">Painel de acompanhamento · <span id="tv-updated-at">Atualizado agora</span></div>
+      </div>
+    </section>
 
     <!-- DASHBOARD INICIAL -->
     <section id="tab-overview" class="tab-panel space-y-5">
@@ -3823,6 +3869,56 @@
     }
 
 
+
+    let tvSlideIndex=0,tvAdvanceTimer=null,tvClockTimer=null,tvRefreshTimer=null;
+    function getTvMetrics(){
+      const active=state.oms.filter(o=>o.status!=="CANCELADA"),done=active.filter(o=>o.status==="VALIDADA").length;
+      const emergencies=active.filter(o=>o.isEmergencial||o.status==="EMERGENCIAL").length,divergent=active.filter(o=>o.status==="DIVERGENTE").length;
+      const unassigned=active.filter(o=>!o.colaborador&&!o.colaboradorChip).length,pct=active.length?Math.round(done/active.length*100):0;
+      const ranking=new Map(),models=new Map();
+      active.filter(o=>o.status==="VALIDADA").forEach(o=>{const n=o.validatedBy||o.colaborador||"Não identificado";ranking.set(n,(ranking.get(n)||0)+1);const model=o.modelo||"Não informado";models.set(model,(models.get(model)||0)+(Number(o.qtd)||0));});
+      return {active,done,pending:Math.max(0,active.length-done),emergencies,divergent,unassigned,pct,ranking:[...ranking].sort((a,b)=>b[1]-a[1]).slice(0,8),models:[...models].sort((a,b)=>b[1]-a[1]).slice(0,8)};
+    }
+    function renderTvSlide(){
+      const root=document.getElementById("tv-slide-content");if(!root)return;const m=getTvMetrics();
+      const date=state.date?new Date(state.date+"T12:00:00").toLocaleDateString("pt-BR"):"—";
+      const slides=[
+        '<div class="tv-slide-title">Resumo da operação · '+date+'</div><div class="tv-kpi-grid">'+
+        '<div class="tv-kpi"><div class="tv-kpi-label">Demandas ativas</div><div class="tv-kpi-value">'+m.active.length+'</div><div class="tv-kpi-note">OMs não canceladas</div></div>'+
+        '<div class="tv-kpi"><div class="tv-kpi-label">Concluídas</div><div class="tv-kpi-value text-emerald-400">'+m.done+'</div><div class="tv-kpi-note">'+m.pct+'% da operação</div></div>'+
+        '<div class="tv-kpi"><div class="tv-kpi-label">Pendentes</div><div class="tv-kpi-value text-amber-300">'+m.pending+'</div><div class="tv-kpi-note">Aguardando conclusão</div></div>'+
+        '<div class="tv-kpi"><div class="tv-kpi-label">Emergenciais</div><div class="tv-kpi-value text-rose-400">'+m.emergencies+'</div><div class="tv-kpi-note">Prioridade operacional</div></div></div>',
+        '<div class="tv-slide-title">Progresso de conclusão</div><div class="flex items-end justify-between gap-6 flex-wrap"><div><div class="tv-big-percent text-emerald-400">'+m.pct+'%</div><div class="text-xl md:text-3xl text-slate-300 mt-3">da operação concluída</div></div><div class="text-right"><div class="text-5xl md:text-7xl font-black">'+m.done+'<span class="text-3xl text-slate-400"> / '+m.active.length+'</span></div><div class="text-slate-400 text-lg mt-2">ordens validadas</div></div></div><div class="tv-progress-track"><div class="tv-progress-fill" style="width:'+m.pct+'%"></div></div><div class="flex justify-between text-lg md:text-2xl text-slate-300"><span>Concluídas: '+m.done+'</span><span>Pendentes: '+m.pending+'</span></div>',
+        '<div class="tv-slide-title">Pontos de atenção</div><div class="tv-list"><div class="tv-list-item"><span>🔴 OMs emergenciais</span><strong class="text-rose-400">'+m.emergencies+'</strong></div><div class="tv-list-item"><span>🟠 Demandas divergentes</span><strong class="text-amber-300">'+m.divergent+'</strong></div><div class="tv-list-item"><span>🟣 Sem responsável atribuído</span><strong class="text-violet-300">'+m.unassigned+'</strong></div><div class="tv-list-item"><span>📦 Demandas pendentes</span><strong>'+m.pending+'</strong></div></div>',
+        '<div class="tv-slide-title">Desempenho da equipe</div><div class="grid grid-cols-1 xl:grid-cols-2 gap-8"><div><div class="text-lg md:text-2xl font-extrabold text-violet-300 mb-4">Colaboradores · OMs validadas</div>'+
+        (m.ranking.length?m.ranking.map((r,i)=>'<div class="tv-list-item mb-3"><span>'+(i+1)+'. '+escapeSapHtml(r[0])+'</span><strong>'+r[1]+'</strong></div>').join(""):'<div class="text-slate-400 text-xl">Sem validações registradas.</div>')+
+        '</div><div><div class="text-lg md:text-2xl font-extrabold text-violet-300 mb-4">Modelos · Unidades validadas</div>'+
+        (m.models.length?m.models.map(r=>'<div class="tv-list-item mb-3"><span>'+escapeSapHtml(r[0])+'</span><strong>'+r[1]+'</strong></div>').join(""):'<div class="text-slate-400 text-xl">Sem dados disponíveis.</div>')+'</div></div>'
+      ];
+      root.innerHTML=slides[tvSlideIndex]||slides[0];
+      document.getElementById("tv-slide-counter").textContent="SLIDE "+(tvSlideIndex+1)+" DE "+slides.length;
+      document.getElementById("tv-updated-at").textContent="Atualizado às "+new Date().toLocaleTimeString("pt-BR");
+    }
+    function setTvAutoAdvance(){
+      if(tvAdvanceTimer){clearInterval(tvAdvanceTimer);tvAdvanceTimer=null;}
+      if(document.getElementById("tv-auto-advance").checked&&!document.getElementById("tv-presentation").classList.contains("hidden")){
+        const ms=Number(document.getElementById("tv-slide-interval").value)||12000;
+        tvAdvanceTimer=setInterval(()=>{tvSlideIndex=(tvSlideIndex+1)%4;renderTvSlide();},ms);
+      }
+    }
+    function openTvPresentation(){
+      if(!requireOperator())return;tvSlideIndex=0;const panel=document.getElementById("tv-presentation");panel.classList.remove("hidden");renderTvSlide();setTvAutoAdvance();
+      const clock=()=>{document.getElementById("tv-clock").textContent=new Date().toLocaleTimeString("pt-BR");};clock();tvClockTimer=setInterval(clock,1000);
+      tvRefreshTimer=setInterval(renderTvSlide,30000);
+      if(panel.requestFullscreen)panel.requestFullscreen().catch(()=>{});
+    }
+    function closeTvPresentation(){
+      document.getElementById("tv-presentation").classList.add("hidden");
+      [tvAdvanceTimer,tvClockTimer,tvRefreshTimer].forEach(t=>{if(t)clearInterval(t);});
+      tvAdvanceTimer=tvClockTimer=tvRefreshTimer=null;
+      if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});
+    }
+
     function renderDashboard() {
       const active = state.oms.filter(o => o.status !== "CANCELADA");
       const done = active.filter(o => o.status === "VALIDADA").length;
@@ -3882,6 +3978,13 @@
       const auditDateInput = document.getElementById("audit-date-filter");
       auditDateInput.value = state.date;
       document.getElementById("btn-open-audit").addEventListener("click", openAuditModal);
+      document.getElementById("btn-open-tv-mode").addEventListener("click",openTvPresentation);
+      document.getElementById("btn-close-tv").addEventListener("click",closeTvPresentation);
+      document.getElementById("btn-tv-prev").addEventListener("click",()=>{tvSlideIndex=(tvSlideIndex+3)%4;renderTvSlide();});
+      document.getElementById("btn-tv-next").addEventListener("click",()=>{tvSlideIndex=(tvSlideIndex+1)%4;renderTvSlide();});
+      document.getElementById("tv-auto-advance").addEventListener("change",setTvAutoAdvance);
+      document.getElementById("tv-slide-interval").addEventListener("change",setTvAutoAdvance);
+      document.addEventListener("keydown",e=>{if(document.getElementById("tv-presentation").classList.contains("hidden"))return;if(e.key==="ArrowRight"){tvSlideIndex=(tvSlideIndex+1)%4;renderTvSlide();}if(e.key==="ArrowLeft"){tvSlideIndex=(tvSlideIndex+3)%4;renderTvSlide();}if(e.key==="Escape")closeTvPresentation();});
       document.getElementById("btn-close-audit").addEventListener("click", closeAuditModal);
       document.getElementById("audit-modal").addEventListener("click", e => { if (e.target.id === "audit-modal") closeAuditModal(); });
       auditDateInput.addEventListener("change", () => {

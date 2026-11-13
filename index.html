@@ -2571,6 +2571,15 @@
     }
 
     async function handlePinSubmit() {
+      // Defesa adicional: mesmo que o modal legado permaneça aberto, ele nunca autentica
+      // nem altera PIN quando não existe uma sessão individual válida no estado da aplicação.
+      if (!state.currentUser) {
+        closePinModal(false);
+        showToast("O acesso por PIN legado foi desativado. Entre com seu usuário e PIN individual.");
+        const gate = document.getElementById("account-auth-gate");
+        if (gate) gate.classList.remove("hidden");
+        return;
+      }
       const p1 = document.getElementById("pin-input-1").value.trim();
       const p2 = document.getElementById("pin-input-2").value.trim();
       const errEl = document.getElementById("pin-error-msg");

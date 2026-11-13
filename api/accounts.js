@@ -46,6 +46,57 @@ module.exports = async (req, res) => {
       return reply(res, 200, { accounts });
     }
 
+    if (action === "migrateLegacy") {
+      if (actor.role !== "admin" || actor.username !== "ADM") {
+        const error = new Error("Somente a conta ADM principal pode executar a migração.");
+        error.status = 403;
+        throw error;
+      }
+      const legacyRef = db.doc("artifacts/cd-barueri-sp/public/data/config/operator_pins");
+      const legacySnap = await legacyRef.get();
+      if (!legacySnap.exists) return reply(res, 404, { error: "Cadastro legado não encontrado." });
+      const legacyData = legacySnap.data();
+      const legacyUsers = legacyData.users && typeof legacyData.users === "object" ? legacyData.users : {};
+      const migrated = [];
+      const skipped = [];
+      for (const [key, old] of Object.entries(legacyUsers)) {
+        if (!old || typeof old !== "object") continue;
+        const name = String(old.username || key).trim().toUpperCase();
+        if (!validUsername(name)) { skipped.push(name || key); continue; }
+        const ref = accountRef(name);
+        const current = await ref.get();
+        if (current.exists) { skipped.push(name); continue; }
+        const isPrimaryAdmin = name === "ADM";
+        const provisional = isPrimaryAdmin ? null : hashPin("0000");
+        const record = {
+          username: name,
+          role: isPrimaryAdmin ? "admin" : (["supervisor", "operator"].includes(old.role) ? old.role : "operator"),
+          active: isPrimaryAdmin ? true : old.active !== false,
+          operatorName: old.operatorName || null,
+          ...(isPrimaryAdmin
+            ? { pinSalt: old.pinSalt || "", pinHash: old.pinHash || "", pinConfigured: old.pinConfigured === true, mustChangePin: old.mustChangePin === true }
+            : { ...provisional, pinConfigured: true, mustChangePin: true }),
+          createdAt: old.createdAt || now,
+          updatedAt: now,
+          migratedFromLegacy: true
+        };
+        await ref.create(record);
+        migrated.push(name);
+      }
+      if (!migrated.includes("ADM")) {
+        const adminSnap = await accountRef("ADM").get();
+        if (!adminSnap.exists) {
+          return reply(res, 409, { error: "A conta ADM não foi encontrada no cadastro legado. Nenhuma conta antiga foi removida.", migrated, skipped });
+        }
+      }
+      await legacyRef.update({
+        users: admin.firestore.FieldValue.delete(),
+        accountsMigratedAt: now,
+        accountsMigratedBy: actor.username
+      });
+      return reply(res, 200, { ok: true, migrated, skipped, provisionalPin: "0000" });
+    }
+
     if (!validUsername(username)) return reply(res, 400, { error: "Nome de usuário inválido." });
     if (actor.role === "supervisor" && username === "ADM") {
       const error = new Error("Supervisor não pode alterar a conta ADM.");

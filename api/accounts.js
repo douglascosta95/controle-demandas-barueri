@@ -47,6 +47,10 @@ module.exports = async (req, res) => {
       return reply(res, 200, { accounts });
     }
 
+    if (process.env.VERCEL_ENV !== "production") {
+      return reply(res, 409, { error: "A gestão de contas fica somente leitura no Preview, pois ele compartilha o Firebase com a produção." });
+    }
+
     if (action === "migrateLegacy") {
       if (process.env.VERCEL_ENV !== "production") {
         return reply(res, 409, { error: "A migração definitiva está bloqueada no Preview para proteger os dados compartilhados com a produção." });

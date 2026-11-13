@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="530" height="92" viewBox="0 0 530 92">
+<rect x="1" y="1" width="528" height="90" rx="22" fill="#f8f6ff" stroke="#d8c9f5" stroke-width="2"/>
+<g fill="#35136f">
+<path d="M23 24 39 15 55 24 55 34 39 25 23 34Z"/>
+<path d="M23 58 39 49 55 58 55 68 39 59 23 68Z"/>
+<path d="M34 37 44 31 44 52 34 58Z"/>
+<path d="M15 42 25 36 39 44 39 55Z"/>
+<path d="M47 44 61 36 71 42 47 55Z"/>
+<text x="98" y="61" font-family="Arial,Helvetica,sans-serif" font-size="54" font-weight="700" letter-spacing="-3">alya</text>
+<rect x="258" y="12" width="2" height="68" fill="#d8c9f5"/>
+<text x="282" y="60" font-family="Arial,Helvetica,sans-serif" font-size="48" font-weight="400" letter-spacing="-2">Mobyan</text>
+<rect x="503" y="15" width="12" height="12" rx="2"/>
+</g></svg>

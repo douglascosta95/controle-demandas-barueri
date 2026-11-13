@@ -24,6 +24,7 @@ function accountRef(username) { return db().collection("cd_barueri_accounts").do
 
 function attemptRef(username) { return db().collection("cd_barueri_auth_attempts").doc(username); }
 async function checkLoginLock(username) {
+  if (process.env.VERCEL_ENV !== "production") return { locked: false };
   const ref = attemptRef(username);
   return db().runTransaction(async tx => {
     const snap = await tx.get(ref);

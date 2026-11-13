@@ -96,7 +96,6 @@
     .border-slate-200 { border-color: var(--border-main) !important; }
     .border-slate-300 { border-color: var(--border-input) !important; }
 
-    /* Correção total de legibilidade no Modo Escuro */
     html.dark select, html.dark option {
       background-color: #1d1a2b !important;
       color: #f3f0ff !important;
@@ -137,7 +136,6 @@
             <h1 class="text-sm sm:text-base font-extrabold tracking-tight">Controle Operacional de Demandas</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-purple-100 text-purple-900 dark:bg-purple-900/50 dark:text-purple-200 border border-purple-300 dark:border-purple-700">CD Barueri - SP</span>
             
-            <!-- Indicador Claro e Definitivo da Nuvem -->
             <span id="cloud-status-badge" class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
               <span id="cloud-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
               <span id="cloud-status-text">Conectado à Nuvem</span>
@@ -276,7 +274,7 @@
         <div>
           <input type="file" id="drp-file-home" accept=".xlsx,.xls,.csv" class="hidden" />
           <label for="drp-file-home" class="px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold shadow-xs transition cursor-pointer inline-flex items-center gap-1.5">
-            📥 Importar DRP (Início do Dia)
+            📥 Importar DRP (.xlsx)
           </label>
         </div>
       </div>
@@ -382,7 +380,7 @@
       <div class="bg-white p-4 rounded-xl border border-slate-200 dark:border-[#36304f] dark:bg-[#1d1a2b] flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 class="text-base font-bold text-slate-800 dark:text-purple-100">📺 Painel SLA & Modo Apresentação (TV)</h2>
-          <p class="text-xs text-slate-500 dark:text-purple-300">Ranking de produtividade e máquinas atendidas.</p>
+          <p class="text-xs text-slate-500 dark:text-purple-300">Ranking de produtividade separado por Aluguel e Insumos.</p>
         </div>
         <div class="flex items-center gap-3">
           <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer">
@@ -396,13 +394,15 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Ranking Aluguel -->
         <div class="bg-white p-5 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b] shadow-xs space-y-3">
-          <h3 class="text-xs font-extrabold uppercase text-purple-700 dark:text-purple-300">🏆 Ranking de Colaboradores (OMs Atendidas)</h3>
-          <div id="ranking-colab-list" class="space-y-2 text-xs"></div>
+          <h3 class="text-xs font-extrabold uppercase text-purple-700 dark:text-purple-300">🏆 Ranking de Aluguel (Máquinas Atendidas)</h3>
+          <div id="ranking-aluguel-list" class="space-y-2 text-xs"></div>
         </div>
+        <!-- Ranking Insumos -->
         <div class="bg-white p-5 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b] shadow-xs space-y-3">
-          <h3 class="text-xs font-extrabold uppercase text-emerald-700 dark:text-emerald-300">📦 Total de Máquinas Atendidas por Colaborador</h3>
-          <div id="ranking-maquinas-list" class="space-y-2 text-xs"></div>
+          <h3 class="text-xs font-extrabold uppercase text-fuchsia-700 dark:text-fuchsia-300">🏷️ Ranking de Insumos & Fracionamento</h3>
+          <div id="ranking-insumos-list" class="space-y-2 text-xs"></div>
         </div>
       </div>
     </section>
@@ -469,6 +469,21 @@
     </div>
   </div>
 
+  <!-- MODAL EQUIPE -->
+  <div id="team-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-[#1d1a2b] dark:border dark:border-[#36304f] rounded-2xl max-w-md w-full p-6 shadow-2xl border space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-900">Equipe CD Barueri - SP</span>
+        <button id="team-modal-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
+      </div>
+      <div class="flex gap-2">
+        <input type="text" id="new-operator-input" maxlength="25" placeholder="Nome do colaborador" class="flex-1 px-3 py-2 text-xs uppercase border rounded-xl dark:bg-[#13111c]" />
+        <button type="button" id="btn-add-operator" class="px-4 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold cursor-pointer">+ Adicionar</button>
+      </div>
+      <div class="border rounded-xl max-h-64 overflow-y-auto divide-y dark:divide-[#36304f]" id="team-modal-list"></div>
+    </div>
+  </div>
+
   <!-- MODAL PIN -->
   <div id="pin-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white dark:bg-[#1d1a2b] dark:border dark:border-[#36304f] rounded-2xl max-w-sm w-full p-6 shadow-2xl border space-y-4">
@@ -502,13 +517,13 @@
         { om: "1193092", destino: "AG 3412 SAO PAULO SP CORNER", modelo: "POS PAX S920", qtd: 10, tipo: "AG", colaborador: "BEATRIZ", status: "NOVA", transporte: "ALYA" },
         { om: "1193093", destino: "MG - DOMINGOS TRANSPORTES", modelo: "POS SUNMI P2", qtd: 15, tipo: "PA", colaborador: "BEATRIZ", status: "NOVA", transporte: "ALYA" }
       ],
+      insumosG1: [],
+      insumosG2: [],
       customGrades: [],
       customSaps: {},
       auditLog: []
     };
 
-    
-    
     window.switchTab = function(tabName) {
       document.querySelectorAll(".nav-tab").forEach(btn => {
         btn.classList.toggle("tab-active", btn.dataset.tab === tabName);
@@ -590,30 +605,241 @@
       `).join("");
     }
 
-    function renderOperatorSelectors() {
-      const topSel = document.getElementById("current-operator");
-      const lockBadge = document.getElementById("operator-lock-badge");
-      if (!topSel) return;
-
-      topSel.innerHTML = `<option value="">-- Escolher Nome --</option>` +
-        state.operators.map(op => `<option value="${op}">${op}</option>`).join("");
-
-      if (state.currentOperator) {
-        topSel.value = state.currentOperator;
-        lockBadge?.classList.remove("hidden");
-      } else {
-        lockBadge?.classList.add("hidden");
-      }
+    function renderTeamModalList() {
+      const container = document.getElementById("team-modal-list");
+      if (!container) return;
+      container.innerHTML = state.operators.map(op => `
+        <div class="flex items-center justify-between px-3.5 py-2.5 text-xs">
+          <span class="font-bold">${op}</span>
+          <button onclick="removeOperator('${op}')" class="text-rose-600 font-bold hover:underline">Remover</button>
+        </div>
+      `).join("");
     }
 
-    function openPinModal(opName) {
-      const modal = document.getElementById("pin-modal");
-      const p1 = document.getElementById("pin-input-1");
-      if (!modal) return;
-      if (p1) p1.value = "";
-      modal.classList.remove("hidden");
-      modal.classList.add("flex");
-      setTimeout(() => p1?.focus(), 50);
+    window.removeOperator = function(op) {
+      state.operators = state.operators.filter(o => o !== op);
+      renderTeamModalList();
+      showToast(`Colaborador ${op} removido.`);
+    };
+
+    function handleDrpUpload(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type: "array" });
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+          if (!rows.length) { showToast("Planilha vazia."); return; }
+          
+          state.oms = rows.map(r => {
+            const om = String(r["OM"] || r["om"] || "").trim();
+            const destino = String(r["Base"] || r["DESTINO"] || "").trim();
+            const modelo = String(r["ModeloBase"] || r["MODELO"] || "").trim();
+            const qtd = parseInt(r["Avanco"] || r["QTD"] || 1, 10) || 1;
+            const tipo = destino.toUpperCase().startsWith("AG") ? "AG" : "PA";
+            return { om, destino, modelo, qtd, tipo, colaborador: "BEATRIZ", status: "NOVA", transporte: "ALYA" };
+          }).filter(x => x.om && x.om !== "OM");
+
+          renderMaquinas();
+          renderDashboard();
+          showToast(`${state.oms.length} OMs do DRP carregadas com sucesso!`);
+        } catch (err) {
+          console.error(err);
+          showToast("Erro ao ler planilha DRP.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Insumos Upload & Fracionamento
+    function handleInsumosUpload(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type: "array" });
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+          if (!rows.length) { showToast("Planilha vazia."); return; }
+
+          state.insumosG1 = rows.map(r => {
+            const om = String(r["OM"] || r["om"] || "").trim();
+            const agencia = String(r["PA"] || r["AGÊNCIA"] || "").trim();
+            const tipo = agencia.toUpperCase().startsWith("AG") ? "AG" : "PA";
+            return {
+              om,
+              agencia,
+              tipo,
+              observacao: String(r["Observação"] || r["OBSERVAÇÃO"] || "").trim(),
+              quantidade: parseInt(r["Quantidade"] || r["QUANTIDADE"] || 1, 10) || 1,
+              transportadora: String(r["Transportadora"] || "ALYA").trim(),
+              status: "VALIDADA",
+              colaborador: "BEATRIZ"
+            };
+          }).filter(x => x.om && x.om !== "OM");
+
+          renderInsumosTables();
+          showToast(`${state.insumosG1.length} insumos carregados na Gaveta 1!`);
+        } catch (err) {
+          showToast("Erro ao ler planilha de insumos.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function processarFracionamentoItem(item) {
+      const obs = String(item.observacao || "").toUpperCase();
+      const isSim = obs.includes("SIM CARD") || obs.includes("CHIP");
+      if (!isSim) {
+        return [{
+          om: item.om,
+          codSap: state.customSaps[item.observacao.toUpperCase()] || "18529",
+          agencia: item.agencia,
+          modelo: item.observacao,
+          quantidade: item.quantidade,
+          vol: 1,
+          peso: Number((item.quantidade * 0.04).toFixed(2)),
+          operadora: "GERAL",
+          colaborador: item.colaborador
+        }];
+      }
+
+      const ops = ["VIVO", "CLARO", "TIM"];
+      let splits = [];
+      ops.forEach(op => {
+        if (obs.includes(op)) {
+          const m1 = obs.match(new RegExp(`(\d+(?:\.\d+)?)\s*%\s*(?:DE\s*)?${op}`));
+          const m2 = obs.match(new RegExp(`${op}\s*(?:[-:]\s*)?(\d+(?:\.\d+)?)\s*%`));
+          let pct = m1 ? parseFloat(m1[1])/100 : (m2 ? parseFloat(m2[1])/100 : 0);
+          if (pct > 0) splits.push({ operadora: op, pct });
+        }
+      });
+
+      if (!splits.length) {
+        const found = ops.filter(op => obs.includes(op));
+        if (found.length === 1) splits.push({ operadora: found[0], pct: 1.0 });
+        else if (found.length > 1) {
+          const eq = 1.0 / found.length;
+          found.forEach(op => splits.push({ operadora: op, pct: eq }));
+        } else {
+          splits.push({ operadora: "VIVO", pct: 1.0 });
+        }
+      }
+
+      const qTotal = Number(item.quantidade) || 0;
+      let novas = [];
+      splits.forEach((s, idx) => {
+        let qParcial = Math.round(qTotal * s.pct);
+        if (idx === splits.length - 1) {
+          qParcial = qTotal - novas.reduce((acc, cur) => acc + cur.quantidade, 0);
+        }
+        let modeloChip = obs.includes("APN") ? `SIM CARD APN - ${s.operadora}` : `SIM CARD - ${s.operadora}`;
+        novas.push({
+          om: item.om,
+          codSap: state.customSaps[modeloChip.toUpperCase()] || "19357",
+          agencia: item.agencia,
+          modelo: modeloChip,
+          quantidade: qParcial,
+          vol: 1,
+          peso: Number((qParcial * 0.04).toFixed(2)),
+          operadora: s.operadora,
+          colaborador: item.colaborador
+        });
+      });
+      return novas;
+    }
+
+    window.fracionarInsumoG1 = function(index) {
+      const item = state.insumosG1[index];
+      const gerados = processarFracionamentoItem(item);
+      state.insumosG1.splice(index, 1);
+      state.insumosG2.push(...gerados);
+      renderInsumosTables();
+      renderDashboard();
+      showToast(`OM ${item.om} fracionada com sucesso!`);
+    };
+
+    window.fracionarTodasEmLote = function() {
+      if (!state.insumosG1.length) { showToast("Gaveta 1 vazia."); return; }
+      while (state.insumosG1.length > 0) {
+        const item = state.insumosG1[0];
+        const gerados = processarFracionamentoItem(item);
+        state.insumosG1.shift();
+        state.insumosG2.push(...gerados);
+      }
+      renderInsumosTables();
+      renderDashboard();
+      showToast("Todas as OMs fracionadas para a Gaveta 2!");
+    };
+
+    window.copiarTodosParaOutlook = function() {
+      if (!state.insumosG2.length) { showToast("Nenhum item na Gaveta 2."); return; }
+      let texto = "OM	COD SAP	MODELO	AGÊNCIA	Quantidade	VOL	PESO
+";
+      state.insumosG2.forEach(o => {
+        texto += `${o.om}	${o.codSap}	${o.modelo}	${o.agencia}	${o.quantidade}	${o.vol}	${o.peso.toFixed(2).replace('.', ',')}
+`;
+      });
+      navigator.clipboard.writeText(texto).then(() => {
+        showToast("Dados copiados para o Outlook/Excel!");
+      }).catch(() => showToast("Erro ao copiar."));
+    };
+
+    function renderInsumosTables() {
+      const tb1 = document.getElementById("insumos-gaveta1-tbody");
+      const em1 = document.getElementById("insumos-gaveta1-empty");
+      if (tb1) {
+        if (!state.insumosG1.length) {
+          tb1.innerHTML = "";
+          em1?.classList.remove("hidden");
+          document.getElementById("count-gaveta1").textContent = "0 itens";
+        } else {
+          em1?.classList.add("hidden");
+          tb1.innerHTML = state.insumosG1.map((o, idx) => `
+            <tr class="hover:bg-slate-50 dark:hover:bg-[#262238]">
+              <td class="py-2.5 px-3 mono font-bold">${o.om}</td>
+              <td class="py-2.5 px-3 font-semibold">${o.agencia}</td>
+              <td class="py-2.5 px-3">${o.observacao}</td>
+              <td class="py-2.5 px-2.5 text-center mono font-bold">${o.quantidade}</td>
+              <td class="py-2.5 px-3">${o.transportadora}</td>
+              <td class="py-2.5 px-3">${o.status}</td>
+              <td class="py-2.5 px-3 font-semibold">${o.colaborador}</td>
+              <td class="py-2.5 px-3 text-right">
+                <button onclick="fracionarInsumoG1(${idx})" class="px-2.5 py-1 rounded bg-fuchsia-700 text-white font-bold cursor-pointer hover:bg-fuchsia-600">⚡ Fracionar</button>
+              </td>
+            </tr>
+          `).join("");
+          document.getElementById("count-gaveta1").textContent = `${state.insumosG1.length} itens`;
+        }
+      }
+
+      const tb2 = document.getElementById("insumos-gaveta2-tbody");
+      const em2 = document.getElementById("insumos-gaveta2-empty");
+      if (tb2) {
+        if (!state.insumosG2.length) {
+          tb2.innerHTML = "";
+          em2?.classList.remove("hidden");
+          document.getElementById("count-gaveta2").textContent = "0 fracionados";
+        } else {
+          em2?.classList.add("hidden");
+          tb2.innerHTML = state.insumosG2.map((o, idx) => `
+            <tr class="hover:bg-fuchsia-50/40 dark:hover:bg-[#262238]">
+              <td class="py-2.5 px-3 mono font-bold">${o.om}</td>
+              <td class="py-2.5 px-3 mono font-semibold">${o.codSap}</td>
+              <td class="py-2.5 px-3 font-bold text-fuchsia-900 dark:text-fuchsia-300">${o.modelo}</td>
+              <td class="py-2.5 px-3">${o.agencia}</td>
+              <td class="py-2.5 px-2.5 text-center mono font-bold">${o.quantidade}</td>
+              <td class="py-2.5 px-2.5 text-center mono font-bold">${o.vol}</td>
+              <td class="py-2.5 px-2.5 text-center mono font-bold">${o.peso.toFixed(2).replace('.', ',')} kg</td>
+              <td class="py-2.5 px-3 text-right font-semibold">${o.colaborador}</td>
+            </tr>
+          `).join("");
+          document.getElementById("count-gaveta2").textContent = `${state.insumosG2.length} fracionados`;
+        }
+      }
+
+      document.getElementById("badge-insumos").textContent = state.insumosG1.length + state.insumosG2.length;
     }
 
     function renderMaquinas() {
@@ -653,31 +879,41 @@
         return;
       }
       state.oms[idx].status = "VALIDADA";
-      pushAudit(state.oms[idx].om, "OM Validada");
+      state.oms[idx].colaborador = state.currentOperator;
+      pushAudit(state.oms[idx].om, "OM Aluguel Validada");
       renderMaquinas();
       renderDashboard();
       showToast("OM validada com sucesso!");
     };
 
     function renderDashboard() {
-      const colabMap = {};
-      const maqMap = {};
-
-      state.operators.forEach(op => { colabMap[op] = 0; maqMap[op] = 0; });
+      // Ranking Aluguel (efetivamente fizeram aluguel / máquinas)
+      const aluguelMap = {};
+      state.operators.forEach(op => { aluguelMap[op] = 0; });
       state.oms.forEach(o => {
         if (o.colaborador && o.status === "VALIDADA") {
-          colabMap[o.colaborador] = (colabMap[o.colaborador] || 0) + 1;
-          maqMap[o.colaborador] = (maqMap[o.colaborador] || 0) + (o.qtd || 0);
+          aluguelMap[o.colaborador] = (aluguelMap[o.colaborador] || 0) + (o.qtd || 0);
         }
       });
 
-      document.getElementById("ranking-colab-list").innerHTML = Object.entries(colabMap)
+      document.getElementById("ranking-aluguel-list").innerHTML = Object.entries(aluguelMap)
+        .filter(([op, qtd]) => qtd > 0)
         .sort((a,b) => b[1] - a[1])
-        .map(([op, count], i) => `<div class="flex justify-between p-2 rounded bg-slate-50 dark:bg-[#13111c]"><span>#${i+1} ${op}</span><strong class="text-purple-700 dark:text-purple-300">${count} OMs</strong></div>`).join("");
+        .map(([op, qtd], i) => `<div class="flex justify-between p-2 rounded bg-slate-50 dark:bg-[#13111c]"><span>#${i+1} ${op}</span><strong class="text-purple-700 dark:text-purple-300">${qtd} máquinas atendidas</strong></div>`).join("") || '<div class="text-slate-400 text-xs">Nenhum atendimento de aluguel validado ainda.</div>';
 
-      document.getElementById("ranking-maquinas-list").innerHTML = Object.entries(maqMap)
+      // Ranking Insumos
+      const insumosMap = {};
+      state.operators.forEach(op => { insumosMap[op] = 0; });
+      state.insumosG2.forEach(o => {
+        if (o.colaborador) {
+          insumosMap[o.colaborador] = (insumosMap[o.colaborador] || 0) + (o.quantidade || 0);
+        }
+      });
+
+      document.getElementById("ranking-insumos-list").innerHTML = Object.entries(insumosMap)
+        .filter(([op, qtd]) => qtd > 0)
         .sort((a,b) => b[1] - a[1])
-        .map(([op, qtd], i) => `<div class="flex justify-between p-2 rounded bg-slate-50 dark:bg-[#13111c]"><span>#${i+1} ${op}</span><strong class="text-emerald-700 dark:text-emerald-300">${qtd} máq.</strong></div>`).join("");
+        .map(([op, qtd], i) => `<div class="flex justify-between p-2 rounded bg-slate-50 dark:bg-[#13111c]"><span>#${i+1} ${op}</span><strong class="text-fuchsia-700 dark:text-fuchsia-300">${qtd} insumos/chips</strong></div>`).join("") || '<div class="text-slate-400 text-xs">Nenhum insumo fracionado ainda.</div>';
     }
 
     let tvInterval = null;
@@ -719,19 +955,18 @@
     }
 
     function init() {
-      // Evento explícito do menu lateral
       document.getElementById("btn-open-sidebar").addEventListener("click", () => toggleSidebar(true));
       document.getElementById("btn-close-sidebar").addEventListener("click", () => toggleSidebar(false));
       document.getElementById("sidebar-backdrop").addEventListener("click", () => toggleSidebar(false));
 
-      // Ouvintes dos botões de blocos do menu lateral
       document.getElementById("btn-block-aluguel")?.addEventListener("click", () => toggleBlock("block-aluguel"));
       document.getElementById("btn-block-outras")?.addEventListener("click", () => toggleBlock("block-outras"));
       document.getElementById("btn-block-config")?.addEventListener("click", () => toggleBlock("block-config"));
 
       document.getElementById("btn-theme-toggle").addEventListener("click", () => {
         const isDark = !document.documentElement.classList.contains("dark");
-        applyTheme(isDark);
+        document.documentElement.classList.toggle("dark", isDark);
+        document.getElementById("theme-label").textContent = isDark ? "Claro" : "Escuro";
       });
 
       document.querySelectorAll(".nav-tab").forEach(btn => {
@@ -748,7 +983,11 @@
         topSel.addEventListener("change", (e) => {
           state.currentOperator = e.target.value;
           sessionStorage.setItem("cd_barueri_op", state.currentOperator);
-          if (state.currentOperator) openPinModal(state.currentOperator);
+          if (state.currentOperator) {
+            const modal = document.getElementById("pin-modal");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+          }
         });
       }
 
@@ -756,6 +995,26 @@
       document.getElementById("btn-pin-submit")?.addEventListener("click", () => {
         document.getElementById("pin-modal").classList.add("hidden");
         showToast("Operador autenticado!");
+      });
+
+      // Gestão de Equipe Modal
+      const teamModal = document.getElementById("team-modal");
+      document.getElementById("btn-open-team-modal")?.addEventListener("click", () => {
+        renderTeamModalList();
+        teamModal.classList.remove("hidden");
+        teamModal.classList.add("flex");
+      });
+      document.getElementById("team-modal-close")?.addEventListener("click", () => teamModal.classList.add("hidden"));
+      document.getElementById("btn-add-operator")?.addEventListener("click", () => {
+        const input = document.getElementById("new-operator-input");
+        const val = input.value.trim().toUpperCase();
+        if (val && !state.operators.includes(val)) {
+          state.operators.push(val);
+          renderOperatorSelectors();
+          renderTeamModalList();
+          input.value = "";
+          showToast(`Colaborador ${val} adicionado!`);
+        }
       });
 
       const auditModal = document.getElementById("audit-modal");
@@ -767,7 +1026,26 @@
       document.getElementById("audit-modal-close").addEventListener("click", () => auditModal.classList.add("hidden"));
       document.getElementById("audit-modal-done").addEventListener("click", () => auditModal.classList.add("hidden"));
 
-      // Cadastros Grade
+      // Importar DRP Tela Inicial
+      document.getElementById("drp-file-home")?.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleDrpUpload(e.target.files[0]);
+          e.target.value = "";
+        }
+      });
+
+      // Importar Insumos
+      document.getElementById("insumos-file-input")?.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleInsumosUpload(e.target.files[0]);
+          e.target.value = "";
+        }
+      });
+
+      document.getElementById("btn-fracionar-todos-lote")?.addEventListener("click", fracionarTodasEmLote);
+      document.getElementById("btn-copiar-tudo-email")?.addEventListener("click", copiarTodosParaOutlook);
+
+      // Cadastros Grade & SAP
       document.getElementById("btn-save-grade")?.addEventListener("click", () => {
         const dest = document.getElementById("new-grade-dest").value.trim();
         const uf = document.getElementById("new-grade-uf").value.trim();
@@ -786,6 +1064,7 @@
         showToast(`Código SAP ${code} salvo!`);
       });
 
+      renderOperatorSelectors();
       renderMaquinas();
       renderGradeTable();
       renderDashboard();

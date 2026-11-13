@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - refactor/dashboard-navigation
+      - release/production-auth
   pull_request:
     branches:
       - main

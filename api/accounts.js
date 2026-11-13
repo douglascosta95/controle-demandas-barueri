@@ -65,8 +65,8 @@ module.exports = async (req, res) => {
         if (!validUsername(name)) { skipped.push(name || key); continue; }
         const ref = accountRef(name);
         const current = await ref.get();
-        if (current.exists) { skipped.push(name); continue; }
         const isPrimaryAdmin = name === "ADM";
+        if (current.exists && isPrimaryAdmin) { skipped.push(name); continue; }
         const provisional = isPrimaryAdmin ? null : hashPin("0000");
         const record = {
           username: name,
@@ -76,11 +76,12 @@ module.exports = async (req, res) => {
           ...(isPrimaryAdmin
             ? { pinSalt: old.pinSalt || "", pinHash: old.pinHash || "", pinConfigured: old.pinConfigured === true, mustChangePin: old.mustChangePin === true }
             : { ...provisional, pinConfigured: true, mustChangePin: true }),
-          createdAt: old.createdAt || now,
+          createdAt: (current.exists && current.data().createdAt) || old.createdAt || now,
           updatedAt: now,
           migratedFromLegacy: true
         };
-        await ref.create(record);
+        if (current.exists) await ref.set(record, { merge: true });
+        else await ref.create(record);
         migrated.push(name);
       }
       if (!migrated.includes("ADM")) {

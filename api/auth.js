@@ -1,4 +1,4 @@
-const { admin, getAdminApp } = require("./_lib/firebase-admin");
+const { admin, getAdminApp, requireIdentity } = require("./_lib/firebase-admin");
 
 function reply(res, status, body) {
   res.setHeader("Cache-Control", "no-store");
@@ -74,7 +74,7 @@ module.exports = async (req, res) => {
     if (action === "changePin") {
       const match = String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i);
       if (!match) return reply(res, 401, { error: "Sessão não informada." });
-      const decoded = await auth.verifyIdToken(match[1], true);
+      const decoded = await requireIdentity(req);
       const username = String(decoded.username || "").toUpperCase();
       if (!username || !validPin(body.currentPin) || !validPin(body.newPin) || body.newPin === "0000" || body.newPin !== body.confirmPin) {
         return reply(res, 400, { error: "Dados de alteração do PIN inválidos." });

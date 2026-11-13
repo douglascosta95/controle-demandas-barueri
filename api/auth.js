@@ -22,6 +22,36 @@ function db() { return admin.firestore(getAdminApp()); }
 function legacyRef() { return db().doc("artifacts/cd-barueri-sp/public/data/config/operator_pins"); }
 function accountRef(username) { return db().collection("cd_barueri_accounts").doc(username); }
 
+function attemptRef(username) { return db().collection("cd_barueri_auth_attempts").doc(username); }
+async function checkLoginLock(username) {
+  const ref = attemptRef(username);
+  return db().runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return { locked: false };
+    const data = snap.data();
+    const now = Date.now();
+    if (Number(data.lockedUntil || 0) > now) return { locked: true, retryAfterMs: Number(data.lockedUntil) - now };
+    if (now - Number(data.windowStart || 0) > 15 * 60 * 1000) {
+      tx.set(ref, { failedCount: 0, windowStart: now, lockedUntil: 0 }, { merge: true });
+    }
+    return { locked: false };
+  });
+}
+async function recordFailedLogin(username) {
+  const ref = attemptRef(username);
+  return db().runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    const now = Date.now();
+    const data = snap.exists ? snap.data() : {};
+    const windowStart = Number(data.windowStart || now);
+    const withinWindow = now - windowStart <= 15 * 60 * 1000;
+    const failedCount = (withinWindow ? Number(data.failedCount || 0) : 0) + 1;
+    const lockedUntil = failedCount >= 5 ? now + 15 * 60 * 1000 : 0;
+    tx.set(ref, { failedCount, windowStart: withinWindow ? windowStart : now, lockedUntil, updatedAt: new Date().toISOString() }, { merge: true });
+    return { locked: lockedUntil > 0 };
+  });
+}
+
 module.exports = async (req, res) => {
   if (req.method !== "POST") return reply(res, 405, { error: "Método não permitido." });
   try {
@@ -33,6 +63,8 @@ module.exports = async (req, res) => {
       const username = String(body.username || "").trim().toUpperCase();
       const pin = String(body.pin || "");
       if (!/^[A-Z0-9._-]{2,30}$/.test(username) || !validPin(pin)) return reply(res, 400, { error: "Usuário ou PIN inválido." });
+      const lock = await checkLoginLock(username);
+      if (lock.locked) return reply(res, 429, { error: "Muitas tentativas. Aguarde 15 minutos antes de tentar novamente." });
 
       const ref = accountRef(username);
       const snap = await ref.get();
@@ -57,7 +89,7 @@ module.exports = async (req, res) => {
           createdAt: old.createdAt || new Date().toISOString()
         };
       }
-      if (account.active === false) return reply(res, 403, { error: "Conta desativada." });
+      if (account.active === false) { await recordFailedLogin(username); return reply(res, 403, { error: "Conta desativada." }); }
       if (!["admin", "supervisor", "operator"].includes(account.role)) return reply(res, 403, { error: "Perfil inválido." });
 
       if (!account.pinConfigured || !account.pinHash || !account.pinSalt || account.mustChangePin) {
@@ -65,9 +97,11 @@ module.exports = async (req, res) => {
         if (!validPin(body.newPin) || body.newPin === "0000" || body.newPin !== body.confirmPin) return reply(res, 400, { error: "O novo PIN deve ter quatro dígitos, ser diferente de 0000 e estar confirmado." });
         Object.assign(account, hashPin(body.newPin), { pinConfigured: true, mustChangePin: false, updatedAt: new Date().toISOString() });
       } else if (!verifyPin(pin, account.pinSalt, account.pinHash)) {
+        await recordFailedLogin(username);
         return reply(res, 401, { error: "PIN incorreto." });
       }
 
+      await attemptRef(username).delete();
       await ref.set(account, { merge: true });
       const uid = "cdbarueri_" + username.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
       const customToken = await auth.createCustomToken(uid, { username, role: account.role, operatorName: account.operatorName || null });

@@ -102,7 +102,7 @@ module.exports = async (req, res) => {
       }
 
       await attemptRef(username).delete();
-      await ref.set(account, { merge: true });
+      if (process.env.VERCEL_ENV === "production") await ref.set(account, { merge: true });
       const uid = "cdbarueri_" + username.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
       const customToken = await auth.createCustomToken(uid, { username, role: account.role, operatorName: account.operatorName || null });
       return reply(res, 200, { customToken, user: { username, role: account.role, operatorName: account.operatorName || null, mustChangePin: false } });

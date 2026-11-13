@@ -907,7 +907,7 @@
         </div>
       </div>
 
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
+      <div id="grade-management-panel" class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
         <div><h3 class="text-sm font-bold text-slate-800">Cadastro de nova base</h3><p class="text-xs text-slate-500">Informe o destino/prestador. Os demais campos podem ficar em branco e ser completados depois.</p></div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <label class="text-xs font-semibold">Destino / Prestador *<input id="grade-dest-input" maxlength="160" type="text" placeholder="Nome da agência ou prestador" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"></label>
@@ -1787,6 +1787,8 @@
     function setAccountAdminControls() {
       const button = document.getElementById("btn-open-accounts-modal");
       if (button) button.classList.toggle("hidden", !canManageAccounts());
+      const gradePanel = document.getElementById("grade-management-panel");
+      if (gradePanel) gradePanel.classList.toggle("hidden", !canManageGrade());
     }
 
     function openAccountsModal() {
@@ -4440,6 +4442,7 @@
       state.currentOperator = "";
       state.currentUser = null;
       loadLocalConfig();
+      rebuildGradeLookup();
       const saved = loadLocalState(state.date);
       state.oms = saved ? saved.oms : buildFullDrpOms();
       state.auditLog = saved ? saved.auditLog : [];

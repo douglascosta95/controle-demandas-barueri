@@ -1879,6 +1879,7 @@
 
     // ==================== GESTÃO DE EQUIPE (ADICIONAR / REMOVER) ====================
     function openTeamModal() {
+      if (!requireOperator()) return;
       renderTeamModalList();
       const m = document.getElementById("team-modal");
       m.classList.remove("hidden");
@@ -2124,6 +2125,7 @@
     }
 
     async function handleInsumosFileUpload() {
+      if (!requireOperator()) return;
       const input = document.getElementById("insumos-file");
       const file = input.files && input.files[0];
       if (!file) return showToast("Selecione a planilha de Insumos primeiro.");
@@ -2155,6 +2157,7 @@
     }
 
     async function importInsumosRows(rows, sourceName) {
+      if (!requireOperator()) return;
       const existing = new Set(state.insumos.map(insumoFingerprint));
       const fresh = [];
       rows.forEach(item => {
@@ -2162,6 +2165,7 @@
         if (!existing.has(key)) { existing.add(key); fresh.push(item); }
       });
       state.insumos.push(...fresh);
+      if (fresh.length) pushAudit("INSUMOS", fresh.length + " linhas importadas de " + sourceName);
       await syncInsumosToCloud();
       renderInsumos();
       showToast(fresh.length + " linhas importadas de " + sourceName + "; " + (rows.length-fresh.length) + " duplicidades ignoradas.");
@@ -2230,6 +2234,7 @@
 
     let insumosFracionados = [];
     function fracionarInsumos() {
+      if (!requireOperator()) return;
       const output = [];
       state.insumos.forEach(item => {
         const shares = parseCarrierShares(item.observacao);
@@ -2313,6 +2318,7 @@
     }
 
     async function handleAddSapEntry() {
+      if (!requireOperator()) return;
       const name = document.getElementById("sap-name-input").value;
       const code = document.getElementById("sap-code-input").value;
       if (!name.trim() || !/^\\d+$/.test(code.trim())) {
@@ -2324,6 +2330,8 @@
         return;
       }
       await syncConfigToCloud();
+      pushAudit("CÓDIGOS SAP", "Código SAP cadastrado: " + name.trim() + " (" + code.trim() + ")");
+      await syncToCloud();
       document.getElementById("sap-name-input").value = "";
       document.getElementById("sap-code-input").value = "";
       renderSapCatalog();
@@ -2331,6 +2339,7 @@
     }
 
     async function handleSapBulkImport() {
+      if (!requireOperator()) return;
       const raw = document.getElementById("sap-bulk-input").value.trim();
       if (!raw) return showToast("Cole a relação de Corner/Agência e SAP.");
       let added = 0, invalid = 0, skipped = 0;
@@ -2347,18 +2356,25 @@
         else { state.sapCatalog.push({name, code}); added++; }
       });
       await syncConfigToCloud();
+      if (added) pushAudit("CÓDIGOS SAP", "Importação em lote: " + added + " novos códigos; " + skipped + " já existentes; " + invalid + " linhas inválidas.");
+      await syncToCloud();
       renderSapCatalog();
       showToast(`Importação concluída: ${added} novos, ${skipped} já existentes, ${invalid} linhas ignoradas.`);
     }
 
     async function removeSapEntry(index) {
+      if (!requireOperator()) return;
       if (!Number.isInteger(index) || !state.sapCatalog[index]) return;
+      const removed = state.sapCatalog[index];
       state.sapCatalog.splice(index, 1);
       await syncConfigToCloud();
+      pushAudit("CÓDIGOS SAP", "Código SAP removido: " + removed.name + " (" + removed.code + ")");
+      await syncToCloud();
       renderSapCatalog();
     }
 
     async function handleAddOperator() {
+      if (!requireOperator()) return;
       const input = document.getElementById("new-operator-input");
       const rawName = input.value.trim().toUpperCase().replace(/\s+/g, " ");
       if (!rawName) {
@@ -2381,6 +2397,7 @@
     }
 
     async function handleRemoveOperator(opName) {
+      if (!requireOperator()) return;
       if (state.operators.length <= 1) {
         showToast("É necessário manter pelo menos 1 operador na equipe.");
         return;
@@ -3539,6 +3556,7 @@
 
     // ==================== IMPORT DRP (.XLSX) ====================
     function handleDrpFileUpload(file) {
+      if (!requireOperator()) return;
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -4146,13 +4164,14 @@
         if (statusPinApproved) item.statusChangePinApproved = false;
 
         const nowTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        const actor = state.currentUser?.username || state.currentOperator;
 
         if (field === "vl") {
           const formatted = formatVL(el.value);
           item.vl = formatted;
           el.value = formatted ? parseInt(formatted, 10) : "";
           pushAudit(om, `Volume (VL) definido para ${formatted || "vazio"}`);
-          item.updatedBy = state.currentOperator;
+          item.updatedBy = actor;
           item.updatedAt = nowTime;
           syncToCloud();
           renderAll();
@@ -4184,7 +4203,7 @@
               isConfirm: true,
               onConfirm: () => {
                 item.status = "CANCELADA";
-                item.updatedBy = state.currentOperator;
+                item.updatedBy = actor;
                 item.updatedAt = nowTime;
                 pushAudit(om, "Status → CANCELADA (movida para aba OMs Canceladas)");
                 syncToCloud();
@@ -4203,7 +4222,7 @@
             item.isEmergencial = true;
           }
           if (nextStatus === "VALIDADA" || nextStatus === "SAPB1") {
-            item.validatedBy = state.currentOperator;
+            item.validatedBy = actor;
             item.unlocked = false; // Trava novamente após definir
           } else {
             item.unlocked = true;
@@ -4311,11 +4330,13 @@
       document.getElementById("comment-modal-close").addEventListener("click", closeCommentModal);
       document.getElementById("btn-comment-cancel").addEventListener("click", closeCommentModal);
       document.getElementById("btn-comment-save").addEventListener("click", () => {
+        if (!requireOperator()) return;
         const item = state.oms.find(x => x.om === state.editingCommentOm);
         if (!item) return;
         item.comment = document.getElementById("comment-textarea").value.trim();
         item.pinned = document.getElementById("comment-pin-checkbox").checked;
-        item.commentBy = state.currentOperator;
+        item.commentBy = state.currentUser?.username || state.currentOperator;
+        item.updatedBy = state.currentUser?.username || state.currentOperator;
         pushAudit(item.om, item.pinned ? "Fixada com destaque/comentário" : "Comentário atualizado");
         syncToCloud();
         renderAll();
@@ -4323,11 +4344,13 @@
         showToast(`Observação salva na OM ${item.om}!`);
       });
       document.getElementById("btn-comment-clear").addEventListener("click", () => {
+        if (!requireOperator()) return;
         const item = state.oms.find(x => x.om === state.editingCommentOm);
         if (!item) return;
         item.comment = "";
         item.pinned = false;
         item.commentBy = "";
+        item.updatedBy = state.currentUser?.username || state.currentOperator;
         pushAudit(item.om, "Comentário removido e desafixada");
         syncToCloud();
         renderAll();

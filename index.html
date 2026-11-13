@@ -3162,7 +3162,7 @@
       state.gradeCatalog.sort((a, b) => String(a[0]).localeCompare(String(b[0]), "pt-BR"));
       rebuildGradeLookup();
       pushAudit("BASE GRADE", (isEdit ? "Cadastro atualizado: " : "Nova base cadastrada: ") + values[0]);
-      await syncConfigToCloud();
+      await syncToCloud();
       clearGradeForm();
       renderGrade();
       populateDynamicFilters();

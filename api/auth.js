@@ -38,6 +38,9 @@ module.exports = async (req, res) => {
       const snap = await ref.get();
       let account = snap.exists ? snap.data() : null;
       if (!account) {
+        if (username !== "ADM") {
+          return reply(res, 403, { error: "A conta principal ainda precisa concluir a migração dos acessos. Solicite ao ADM que entre primeiro." });
+        }
         const oldSnap = await legacyRef().get();
         const oldData = oldSnap.exists ? oldSnap.data() : {};
         const old = oldData.users && oldData.users[username];

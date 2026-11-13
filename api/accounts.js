@@ -48,6 +48,9 @@ module.exports = async (req, res) => {
     }
 
     if (action === "migrateLegacy") {
+      if (process.env.VERCEL_ENV !== "production") {
+        return reply(res, 409, { error: "A migração definitiva está bloqueada no Preview para proteger os dados compartilhados com a produção." });
+      }
       if (actor.role !== "admin" || actor.username !== "ADM") {
         const error = new Error("Somente a conta ADM principal pode executar a migração.");
         error.status = 403;

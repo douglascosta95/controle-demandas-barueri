@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function hasValidAccount() {
+      return request.auth != null
+        && request.auth.token.username is string
+        && request.auth.token.role in ['admin', 'supervisor', 'operator']
+        && exists(/databases/$(database)/documents/cd_barueri_accounts/$(request.auth.token.username))
+        && get(/databases/$(database)/documents/cd_barueri_accounts/$(request.auth.token.username)).data.active == true
+        && get(/databases/$(database)/documents/cd_barueri_accounts/$(request.auth.token.username)).data.role == request.auth.token.role;
+    }
+
+    // Operational data: all authenticated operational profiles share the
+    // permissions agreed for this application.
+    match /artifacts/{appId}/public/data/{collection}/{document} {
+      allow read, write: if hasValidAccount()
+        && collection in ['config', 'demandas_dias', 'insumos_dias'];
+    }
+
+    // Account credentials are private and are accessed only by Firebase Admin
+    // from the server-side API. No browser client may read or write this path.
+    match /cd_barueri_accounts/{username} {
+      allow read, write: if false;
+    }
+
+    // Default deny for every other document.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

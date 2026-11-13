@@ -38,6 +38,7 @@ async function checkLoginLock(username) {
   });
 }
 async function recordFailedLogin(username) {
+  if (process.env.VERCEL_ENV !== "production") return { locked: false };
   const ref = attemptRef(username);
   return db().runTransaction(async tx => {
     const snap = await tx.get(ref);

@@ -1,6 +1,7 @@
 const { admin, getAdminApp, requireIdentity, sendError } = require("../_lib/firebase-admin");
 
 module.exports = async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: "Método não permitido." });
@@ -8,21 +9,29 @@ module.exports = async function handler(req, res) {
 
   try {
     const identity = await requireIdentity(req);
+    const username = String(identity.username || "").trim().toUpperCase();
     const db = admin.firestore(getAdminApp());
-    const userSnap = await db.collection("system_users").doc(identity.uid).get();
-    if (!userSnap.exists || userSnap.data().active !== true) {
-      return res.status(403).json({ error: "Usuário não cadastrado ou inativo." });
+    const accountSnap = await db.collection("cd_barueri_accounts").doc(username).get();
+
+    if (!accountSnap.exists) {
+      return res.status(403).json({ error: "Conta não cadastrada ou inativa." });
     }
 
-    const user = userSnap.data();
+    const account = accountSnap.data();
+    if (account.active === false || account.role !== identity.role) {
+      return res.status(403).json({ error: "Conta não cadastrada ou inativa." });
+    }
+
     return res.status(200).json({
       uid: identity.uid,
-      name: user.name || identity.name || "",
-      role: identity.role || "operator",
+      username,
+      name: account.operatorName || username,
+      role: account.role,
+      operatorName: account.operatorName || null,
       permissions: identity.permissions || {},
       modules: Array.isArray(identity.modules) ? identity.modules : [],
       active: true,
-      mustChangePassword: user.mustChangePassword === true
+      mustChangePin: account.mustChangePin === true
     });
   } catch (error) {
     return sendError(res, error);

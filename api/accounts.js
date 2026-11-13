@@ -58,6 +58,9 @@ module.exports = async (req, res) => {
       if (!legacySnap.exists) return reply(res, 404, { error: "Cadastro legado não encontrado." });
       const legacyData = legacySnap.data();
       const legacyUsers = legacyData.users && typeof legacyData.users === "object" ? legacyData.users : {};
+      const backupRef = db.collection("cd_barueri_account_migration_backups").doc("legacy-accounts-v1");
+      const backupSnap = await backupRef.get();
+      if (!backupSnap.exists) await backupRef.create({ users: legacyUsers, sourcePath: "artifacts/cd-barueri-sp/public/data/config/operator_pins", createdAt: now, createdBy: actor.username });
       const migrated = [];
       const skipped = [];
       for (const [key, old] of Object.entries(legacyUsers)) {

@@ -134,6 +134,7 @@ module.exports = async (req, res) => {
     const current = snap.data();
 
     if (action === "resetPin") {
+      if (username === "ADM") return reply(res, 400, { error: "A conta ADM principal não pode ter o PIN redefinido por aqui." });
       await ref.set({ ...hashPin("0000"), pinConfigured: true, mustChangePin: true, updatedAt: now }, { merge: true });
       return reply(res, 200, { ok: true, username, provisionalPin: "0000", mustChangePin: true });
     }
@@ -144,8 +145,8 @@ module.exports = async (req, res) => {
     }
     if (action === "update") {
       const role = String(body.role || current.role);
-      if (!["admin", "supervisor", "operator"].includes(role)) return reply(res, 400, { error: "Perfil inválido." });
-      if (username === "ADM" && (role !== "admin" || body.active === false)) return reply(res, 400, { error: "A conta ADM principal deve permanecer ativa e com perfil ADM." });
+      if (username === "ADM") return reply(res, 400, { error: "A conta ADM principal não pode ser alterada por esta operação." });
+      if (!["supervisor", "operator"].includes(role)) return reply(res, 400, { error: "Perfil inválido para esta conta." });
       const update = {
         role,
         operatorName: typeof body.operatorName === "string" && body.operatorName.trim() ? body.operatorName.trim() : null,

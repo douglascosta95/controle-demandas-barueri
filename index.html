@@ -96,7 +96,7 @@
     .border-slate-200 { border-color: var(--border-main) !important; }
     .border-slate-300 { border-color: var(--border-input) !important; }
 
-    /* Correção definitiva para selects e options no modo escuro não ficarem ilegíveis */
+    /* Correção total de legibilidade no Modo Escuro */
     html.dark select, html.dark option {
       background-color: #1d1a2b !important;
       color: #f3f0ff !important;
@@ -137,9 +137,10 @@
             <h1 class="text-sm sm:text-base font-extrabold tracking-tight">Controle Operacional de Demandas</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-purple-100 text-purple-900 dark:bg-purple-900/50 dark:text-purple-200 border border-purple-300 dark:border-purple-700">CD Barueri - SP</span>
             
+            <!-- Indicador Claro e Definitivo da Nuvem -->
             <span id="cloud-status-badge" class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span>Modo Operacional Local/Nuvem</span>
+              <span id="cloud-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span id="cloud-status-text">Conectado à Nuvem</span>
             </span>
           </div>
           <p class="text-[11px] text-purple-700/80 dark:text-purple-300/80 font-medium">Operação Logística • Máquinas • SIM Cards • Modo TV</p>
@@ -468,21 +469,6 @@
     </div>
   </div>
 
-  <!-- MODAL EQUIPE -->
-  <div id="team-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-    <div class="bg-white dark:bg-[#1d1a2b] dark:border dark:border-[#36304f] rounded-2xl max-w-md w-full p-6 shadow-2xl border space-y-4">
-      <div class="flex items-center justify-between">
-        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-900">Equipe CD Barueri - SP</span>
-        <button id="team-modal-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
-      </div>
-      <div class="flex gap-2">
-        <input type="text" id="new-operator-input" maxlength="25" placeholder="Nome do colaborador" class="flex-1 px-3 py-2 text-xs uppercase border rounded-xl dark:bg-[#13111c]" />
-        <button type="button" id="btn-add-operator" class="px-4 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold cursor-pointer">+ Adicionar</button>
-      </div>
-      <div class="border rounded-xl max-h-64 overflow-y-auto divide-y dark:divide-[#36304f]" id="team-modal-list"></div>
-    </div>
-  </div>
-
   <!-- MODAL PIN -->
   <div id="pin-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white dark:bg-[#1d1a2b] dark:border dark:border-[#36304f] rounded-2xl max-w-sm w-full p-6 shadow-2xl border space-y-4">
@@ -699,12 +685,12 @@
     }
 
     function init() {
-      // Correção do Botão Sidebar
+      // Evento explícito do menu lateral
       document.getElementById("btn-open-sidebar").addEventListener("click", () => toggleSidebar(true));
       document.getElementById("btn-close-sidebar").addEventListener("click", () => toggleSidebar(false));
       document.getElementById("sidebar-backdrop").addEventListener("click", () => toggleSidebar(false));
 
-      // Botões de blocos do menu lateral
+      // Ouvintes dos botões de blocos do menu lateral
       document.getElementById("btn-block-aluguel")?.addEventListener("click", () => toggleBlock("block-aluguel"));
       document.getElementById("btn-block-outras")?.addEventListener("click", () => toggleBlock("block-outras"));
       document.getElementById("btn-block-config")?.addEventListener("click", () => toggleBlock("block-config"));

@@ -56,6 +56,9 @@ async function recordFailedLogin(username) {
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return reply(res, 405, { error: "Método não permitido." });
+  if (process.env.VERCEL_ENV !== "production") {
+    return reply(res, 409, { error: "A autenticação fica bloqueada fora de Production para impedir acesso ao Firebase compartilhado." });
+  }
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
     const action = body.action || "login";

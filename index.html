@@ -1758,7 +1758,7 @@
       }
     }
 
-    async function connectAuthenticatedCloud(customToken) {
+    async function connectAuthenticatedCloud(customToken, username) {
       if (!fbAuthMod || !fbAuth || !state.cloudDb || !customToken) {
         throw new Error("Conexão Firebase não inicializada. Atualize a página e tente novamente.");
       }
@@ -1773,6 +1773,10 @@
         return;
       }
       await fbAuthMod.signInWithCustomToken(fbAuth, customToken);
+      if (username === "ADM") {
+        // Migrate before reading the legacy public config, which may still contain old account hashes.
+        await authenticatedApi("/api/accounts", { action: "migrateLegacy" });
+      }
       state.cloudConnected = true;
       badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5";
       dot.className = "w-2 h-2 rounded-full bg-emerald-500";
@@ -2038,7 +2042,7 @@
           throw new Error(result.error || "Não foi possível validar o acesso.");
         }
 
-        await connectAuthenticatedCloud(result.customToken);
+        await connectAuthenticatedCloud(result.customToken, username);
         const authenticatedUser = result.user;
         state.currentUser = {
           username: authenticatedUser.username,
@@ -2049,13 +2053,6 @@
           ? authenticatedUser.operatorName : (username === "ADM" ? "ADM" : "");
         sessionStorage.setItem("cd_barueri_account", username);
 
-        if (username === "ADM" && !isPreviewDeployment) {
-          try {
-            await authenticatedApi("/api/accounts", { action: "migrateLegacy" });
-          } catch (migrationError) {
-            console.warn("Migração de contas legadas:", migrationError);
-          }
-        }
         if (["admin", "supervisor"].includes(state.currentUser.role) && !isPreviewDeployment) {
           try {
             const accountData = await authenticatedApi("/api/accounts", { action: "list" });

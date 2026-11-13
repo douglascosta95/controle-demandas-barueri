@@ -23,6 +23,7 @@ function cleanAccount(data) {
   };
 }
 function validUsername(value) { return /^[A-Z0-9._-]{2,30}$/.test(value); }
+function accountRef(username) { return admin.firestore(getAdminApp()).collection("cd_barueri_accounts").doc(username); }
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return reply(res, 405, { error: "Método não permitido." });

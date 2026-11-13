@@ -280,7 +280,7 @@
     /* Painel de TV / apresentação */
     .tv-presentation{position:fixed;inset:0;z-index:9999;background:#080d1b;color:#f8fafc;display:flex;flex-direction:column;padding:clamp(16px,3vw,42px);overflow:auto}
     .tv-topbar,.tv-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-    .tv-brand-lockup{display:flex;align-items:center;gap:12px}
+    .tv-brand-lockup{display:flex;flex-direction:column;align-items:flex-start;gap:6px}.tv-brand-logo{display:block;width:min(265px,42vw);height:auto;border-radius:13px}
     .tv-brand-mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#34d399);display:grid;place-items:center;font-weight:950;color:#07111f;font-size:18px}
     .tv-brand-name{font-size:clamp(17px,2vw,26px);font-weight:950;letter-spacing:.04em;color:#fff}
     .tv-brand-name span{color:#a78bfa}.tv-brand-sub{font-size:10px;letter-spacing:.2em;color:#94a3b8;font-weight:800}
@@ -421,10 +421,10 @@
     <div class="max-w-[1600px] mx-auto px-4 py-1.5 flex items-center justify-between gap-4">
       <div class="flex items-center gap-2 min-w-0">
         <span class="px-2 py-0.5 rounded-md bg-purple-700 text-white font-bold text-[10px] uppercase tracking-wider">Ao Vivo</span>
-        <span class="font-medium opacity-80">Histórico de atividades</span>
+        <span class="font-medium opacity-80">Visão ao Vivo · Atividades da equipe</span>
         <span id="audit-feed" class="text-[11px] opacity-70">Consulte as alterações da equipe.</span>
       </div>
-      <button type="button" id="btn-open-audit" class="shrink-0 px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-[11px] font-bold shadow-sm">Ver alterações ↗</button>
+      <button type="button" id="btn-open-audit" class="shrink-0 px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-[11px] font-bold shadow-sm">Abrir visão ao vivo ↗</button>
     </div>
   </div>
 
@@ -445,7 +445,7 @@
 
 <section id="tv-presentation" class="tv-presentation hidden" aria-label="Painel de apresentação">
       <div class="tv-topbar">
-        <div class="tv-brand-lockup"><div class="tv-brand-mark">A</div><div><div class="tv-brand-name">ALYA <span>|</span> MOBYAN</div><div class="tv-brand-sub">CONTROLE OPERACIONAL · CD BARUERI</div></div></div>
+        <div class="tv-brand-lockup"><svg class="tv-brand-logo" viewBox="0 0 265 46" role="img" aria-label="Alya | Mobyan"><rect x=".5" y=".5" width="264" height="45" rx="13" fill="#faf8ff" stroke="#d9cafa"/><g fill="#32166f"><path d="M27 8 34 12 27 16 20 12Z M27 18 34 22 27 26 20 22Z M15 14 22 18 15 22 8 18Z M39 14 46 18 39 22 32 18Z M27 28 34 32 27 36 20 32Z M15 24 22 28 15 32 8 28Z M39 24 46 28 39 32 32 28Z"/><text x="51" y="31" font-family="Arial,sans-serif" font-size="28" font-weight="800" letter-spacing="-1.5">alya</text><path d="M126 7v32" stroke="#c8b8e8" stroke-width="2"/><text x="141" y="31" font-family="Arial,sans-serif" font-size="27" font-weight="500" letter-spacing="-1">Mobyan</text><rect x="244" y="8" width="8" height="8" rx="1"/></g></svg><div class="tv-brand-sub">CONTROLE OPERACIONAL · CD BARUERI</div></div>
         <div class="flex items-center gap-4"><div class="text-right"><div id="tv-clock" class="tv-clock">--:--:--</div><div id="tv-slide-counter" class="text-xs text-slate-400">SLIDE 1 DE 4</div></div><button type="button" id="btn-close-tv" class="tv-control-btn">✕ Sair (Esc)</button></div>
       </div>
       <div id="tv-slide-content" class="tv-slide"></div>
@@ -1276,9 +1276,9 @@
 
   <!-- ==================== MODAL: PAINEL DE ATIVIDADES ==================== -->
   <div id="audit-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-sm hidden items-center justify-center z-[60] p-3 sm:p-5">
-    <div class="w-full max-w-7xl max-h-[92vh] overflow-hidden rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col">
+    <div class="w-full max-w-6xl h-full max-h-screen ml-auto overflow-hidden rounded-l-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col">
       <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
-        <div><div class="text-[10px] font-bold tracking-widest text-purple-600 dark:text-purple-300 uppercase">Rastreamento operacional</div><h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Painel de atividades</h3><p class="text-xs text-slate-500 dark:text-slate-400">Alterações registradas por colaborador, com atualização em tempo real.</p></div>
+        <div><div class="text-[10px] font-bold tracking-widest text-purple-600 dark:text-purple-300 uppercase">Rastreamento operacional</div><h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Visão ao Vivo</h3><p class="text-xs text-slate-500 dark:text-slate-400">Somente pessoas que realizaram alterações, com a atividade mais recente primeiro.</p></div>
         <button type="button" id="btn-close-audit" class="w-9 h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-2xl text-slate-500" aria-label="Fechar">&times;</button>
       </div>
       <div class="px-5 py-3 flex flex-wrap items-end gap-3 border-b border-slate-200 dark:border-slate-800">
@@ -2643,16 +2643,16 @@
         if (!grouped.has(who)) grouped.set(who, []);
         grouped.get(who).push(item);
       });
-      const people = [...grouped.entries()].sort((a,b) => a[0].localeCompare(b[0], "pt-BR"));
+      const people = [...grouped.entries()].map(([who, items]) => ({ who, items, latest: Math.max(...items.map(item => item.timestamp ? new Date(item.timestamp).getTime() : 0)) })).filter(person => person.items.length > 0).sort((a,b) => b.latest-a.latest);
       const total = entries.length;
-      summary.textContent = `${total} alteração(ões) · ${people.length} colaborador(es) com atividade`;
+      summary.textContent = `${total} alteração(ões) · ${people.length} pessoa(s) com atividade · mais recentes primeiro`;
       if (!people.length) {
         wrap.innerHTML = '<div class="text-center py-16"><div class="text-3xl mb-3">🗂️</div><p class="font-bold text-slate-700 dark:text-slate-200">Nenhuma alteração nesta data</p><p class="text-xs text-slate-500 mt-1">Quando alguém realizar uma ação, ela aparecerá aqui.</p></div>';
         return;
       }
-      wrap.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">${people.map(([who, items]) => `
+      wrap.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">${people.map(({who, items, latest}) => `
         <section class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 overflow-hidden min-w-0">
-          <header class="px-4 py-3 bg-purple-50 dark:bg-purple-950/50 border-b border-purple-100 dark:border-purple-900 flex items-center justify-between gap-2"><div class="font-extrabold text-sm text-purple-950 dark:text-purple-100 truncate">${escapeSapHtml(who)}</div><span class="shrink-0 text-[10px] font-bold px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">${items.length} ação(ões)</span></header>
+          <header class="px-4 py-3 bg-purple-50 dark:bg-purple-950/50 border-b border-purple-100 dark:border-purple-900 flex items-center justify-between gap-2"><div class="font-extrabold text-sm text-purple-950 dark:text-purple-100 truncate">${escapeSapHtml(who)}</div><span class="shrink-0 text-[10px] font-bold px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">${items.length} ação(ões)</span><span class="text-[9px] text-slate-500">Última: ${latest ? new Date(latest).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "--:--"}</span></header>
           <div class="p-3 space-y-2 max-h-[55vh] overflow-y-auto">${items.map(item => {
             const time = item.timestamp ? new Date(item.timestamp).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit",second:"2-digit"}) : (item.time || "--:--");
             return `<article class="rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3"><div class="flex items-center justify-between gap-2 mb-1"><span class="text-[10px] font-bold text-purple-700 dark:text-purple-300 mono">${escapeSapHtml(time)}</span><span class="text-[10px] text-slate-500 dark:text-slate-400 truncate">OM ${escapeSapHtml(item.om || "—")}</span></div><p class="text-xs leading-relaxed text-slate-700 dark:text-slate-200 break-words">${escapeSapHtml(item.actionText || "Alteração registrada")}</p></article>`;

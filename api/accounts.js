@@ -38,7 +38,7 @@ module.exports = async (req, res) => {
     const action = String(body.action || "");
     const username = String(body.username || "").trim().toUpperCase();
     const db = admin.firestore(getAdminApp());
-    const ref = db.collection("cd_barueri_accounts").doc(username);
+    const ref = validUsername(username) ? db.collection("cd_barueri_accounts").doc(username) : null;
     const now = new Date().toISOString();
 
     if (action === "list") {

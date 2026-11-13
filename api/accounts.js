@@ -103,6 +103,7 @@ module.exports = async (req, res) => {
       }
       await legacyRef.update({
         users: admin.firestore.FieldValue.delete(),
+        pins: admin.firestore.FieldValue.delete(),
         accountsMigratedAt: now,
         accountsMigratedBy: actor.username
       });

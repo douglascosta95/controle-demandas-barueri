@@ -1876,7 +1876,6 @@
       if (!/^[A-Z0-9._-]{2,30}$/.test(username)) return showToast("Use um usuário de 2 a 30 caracteres.");
       if (username === "ADM" || state.users[username]) return showToast("Esse usuário já existe ou é reservado.");
       if (![USER_ROLES.OPERATOR, USER_ROLES.SUPERVISOR].includes(role)) return showToast("Perfil inválido.");
-      if (role === USER_ROLES.OPERATOR && !operatorName) return showToast("Vincule o Operador a um colaborador operacional.");
       if (operatorName && !state.operators.includes(operatorName)) return showToast("Colaborador operacional não encontrado.");
       try {
         const result = await authenticatedApi("/api/accounts", { action: "create", username, role, operatorName });

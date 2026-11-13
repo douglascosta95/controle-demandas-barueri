@@ -3,7 +3,12 @@ const { admin, getAdminApp, requireIdentity, sendError } = require("../_lib/fire
 const APP_ID = process.env.CD_FIREBASE_APP_ID || "cd-barueri-sp";
 const MODULE_KEY = "emergenciais";
 
+function accountUid(username) {
+  return "cdbarueri_" + String(username).toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+}
+
 module.exports = async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Método não permitido." });
@@ -13,48 +18,37 @@ module.exports = async function handler(req, res) {
     const actor = await requireIdentity(req);
     const app = getAdminApp();
     const db = admin.firestore(app);
-    const actorSnap = await db.collection("system_users").doc(actor.uid).get();
+    const actorUsername = String(actor.username || "").trim().toUpperCase();
+    const actorRef = db.collection("cd_barueri_accounts").doc(actorUsername);
+    const actorSnap = await actorRef.get();
 
-    if (!actorSnap.exists || actorSnap.data().active !== true) {
+    if (!actorSnap.exists || actorSnap.data().active === false) {
       return res.status(403).json({ error: "Usuário não cadastrado ou inativo." });
     }
 
-    const actorProfile = actorSnap.data();
-    const role = actor.role;
-    const canDelegate = role === "admin" ||
-      (role === "supervisor" &&
-       actor.permissions?.[MODULE_KEY]?.delegate === true);
-
-    if (!canDelegate) {
-      return res.status(403).json({ error: "Sem permissão para delegar OMs emergenciais." });
-    }
-
-    const body = req.body || {};
+    const actorAccount = actorSnap.data();
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
     const date = String(body.date || "");
     const om = String(body.om || "").trim();
-    const targetUid = String(body.targetUid || "").trim();
+    const targetUsername = String(body.targetUsername || "").trim().toUpperCase();
     const reason = String(body.reason || "").trim();
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !om || !targetUid || !reason) {
-      return res.status(400).json({ error: "Informe data, OM, operador destinatário e motivo." });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !om ||
+        !/^[A-Z0-9._-]{2,30}$/.test(targetUsername) || !reason) {
+      return res.status(400).json({ error: "Informe data, OM, usuário destinatário e motivo." });
     }
-    if (targetUid === actor.uid) {
+    if (targetUsername === actorUsername) {
       return res.status(400).json({ error: "A delegação deve ser destinada a outro usuário." });
     }
 
-    const targetRef = db.collection("system_users").doc(targetUid);
+    const targetRef = db.collection("cd_barueri_accounts").doc(targetUsername);
     const targetSnap = await targetRef.get();
-    if (!targetSnap.exists) {
-      return res.status(404).json({ error: "Operador destinatário não encontrado." });
-    }
-    const target = targetSnap.data();
-    const targetAuth = await admin.auth(app).getUser(targetUid);
-    const targetModules = Array.isArray(targetAuth.customClaims?.modules)
-      ? targetAuth.customClaims.modules : [];
-    if (target.active !== true || !targetModules.includes(MODULE_KEY)) {
-      return res.status(403).json({ error: "Destinatário inativo ou não habilitado para Emergenciais." });
+    if (!targetSnap.exists || targetSnap.data().active === false) {
+      return res.status(404).json({ error: "Usuário destinatário não encontrado ou inativo." });
     }
 
+    const target = targetSnap.data();
+    const targetUid = accountUid(targetUsername);
     const dayRef = db.collection("artifacts").doc(APP_ID)
       .collection("public").doc("data")
       .collection("demandas_dias").doc(date);
@@ -87,39 +81,46 @@ module.exports = async function handler(req, res) {
       const previousUid = item.assignedToUid || null;
       const previousName = item.assignedToNameSnapshot || item.colaborador || null;
       const now = admin.firestore.Timestamp.now();
+      const actorName = actorAccount.operatorName || actorUsername;
+      const targetName = target.operatorName || targetUsername;
       const event = {
         action: previousUid || previousName ? "reassigned" : "assigned",
         module: MODULE_KEY,
         om,
         actorUid: actor.uid,
-        actorNameSnapshot: actorProfile.name || actor.name || "",
+        actorUsername,
+        actorNameSnapshot: actorName,
         previousTargetUid: previousUid,
         previousTargetNameSnapshot: previousName,
         targetUid,
-        targetNameSnapshot: target.name || "",
+        targetUsername,
+        targetNameSnapshot: targetName,
         reason,
         timestamp: now
       };
 
-      item.colaborador = target.name || item.colaborador || "";
+      item.colaborador = targetName;
       item.assignedToUid = targetUid;
-      item.assignedToNameSnapshot = target.name || "";
+      item.assignedToUsername = targetUsername;
+      item.assignedToNameSnapshot = targetName;
       item.assignmentHistory = [
         ...(Array.isArray(item.assignmentHistory) ? item.assignmentHistory : []),
         event
       ];
-      item.updatedBy = actorProfile.name || actor.name || actor.uid;
+      item.updatedBy = actorName;
       item.updatedAt = now.toDate().toISOString();
       oms[index] = item;
 
       const auditLog = Array.isArray(data.auditLog) ? [...data.auditLog] : [];
       auditLog.unshift({
-        who: actorProfile.name || actor.name || actor.uid,
+        who: actorName,
         actorUid: actor.uid,
+        actorUsername,
         om,
-        actionText: `OM Emergencial delegada para ${target.name || targetUid}. Motivo: ${reason}`,
+        actionText: "OM Emergencial delegada para " + targetName + ". Motivo: " + reason,
         module: MODULE_KEY,
         targetUid,
+        targetUsername,
         timestamp: now.toDate().toISOString(),
         date
       });
@@ -130,7 +131,7 @@ module.exports = async function handler(req, res) {
         updatedAt: now.toDate().toISOString()
       });
 
-      return { om, targetUid, targetName: target.name || "", previousTargetUid: previousUid };
+      return { om, targetUsername, targetName, previousTargetUid: previousUid };
     });
 
     return res.status(200).json({ ok: true, delegation: result });

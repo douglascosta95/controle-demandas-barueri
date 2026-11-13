@@ -790,11 +790,9 @@
 
     window.copiarTodosParaOutlook = function() {
       if (!state.insumosG2.length) { showToast("Nenhum item na Gaveta 2."); return; }
-      let texto = "OM	COD SAP	MODELO	AGÊNCIA	Quantidade	VOL	PESO
-";
+      let texto = "OM\tCOD SAP\tMODELO\tAGÊNCIA\tQuantidade\tVOL\tPESO\n";
       state.insumosG2.forEach(o => {
-        texto += `${o.om}	${o.codSap}	${o.modelo}	${o.agencia}	${o.quantidade}	${o.vol}	${o.peso.toFixed(2).replace('.', ',')}
-`;
+        texto += `${o.om}\t${o.codSap}\t${o.modelo}\t${o.agencia}\t${o.quantidade}\t${o.vol}\t${o.peso.toFixed(2).replace('.', ',')}\n`;
       });
       navigator.clipboard.writeText(texto).then(() => {
         showToast("Dados copiados para o Outlook/Excel!");

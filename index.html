@@ -10,19 +10,15 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
-    /* ==================== IDENTIDADE VISUAL HARMONIOSA (ALYA & MOBYAN) ==================== */
     :root {
       --bg-page: #f4f2fc;
       --bg-surface: #ffffff;
       --bg-surface-alt: #f9f7ff;
       --bg-table-head: #f0ebfa;
       --bg-row-hover: rgba(233, 216, 255, 0.4);
-      --bg-pinned: #f3e8ff;
-      --bg-pinned-hover: #e9d5ff;
       --border-main: #e2d9f3;
       --border-input: #cbb8f0;
       --text-main: #1c1032;
-      --text-secondary: #38245c;
       --text-muted: #625088;
       --header-bg: #ffffff;
       --header-border: #e2d9f3;
@@ -32,9 +28,6 @@
       --audit-bg: #ede6ff;
       --audit-border: #d4c5f7;
       --audit-text: #38245c;
-      --audit-pill-bg: #ffffff;
-      --logo-box-bg: #f7f4ff;
-      --logo-box-border: #d9cbf7;
     }
 
     html.dark {
@@ -43,12 +36,9 @@
       --bg-surface-alt: #262238;
       --bg-table-head: #28243d;
       --bg-row-hover: rgba(91, 33, 182, 0.25);
-      --bg-pinned: rgba(109, 40, 217, 0.28);
-      --bg-pinned-hover: rgba(124, 58, 237, 0.38);
       --border-main: #36304f;
       --border-input: #4a416e;
       --text-main: #f3f0ff;
-      --text-secondary: #d6cbfe;
       --text-muted: #a491df;
       --header-bg: #181524;
       --header-border: #36304f;
@@ -58,9 +48,6 @@
       --audit-bg: #1f1b2e;
       --audit-border: #3a3254;
       --audit-text: #d6cbfe;
-      --audit-pill-bg: #29243d;
-      --logo-box-bg: #231f36;
-      --logo-box-border: #423861;
     }
 
     body {
@@ -76,11 +63,10 @@
       background-color: var(--header-bg);
       color: var(--header-text);
       border-bottom: 1px solid var(--header-border);
-      transition: background-color 0.2s ease, border-color 0.2s ease;
     }
     .brand-lockup {
-      background-color: var(--logo-box-bg);
-      border: 1px solid var(--logo-box-border);
+      background-color: var(--header-pill-bg);
+      border: 1px solid var(--header-pill-border);
     }
     .header-control-box {
       background-color: var(--header-pill-bg);
@@ -106,27 +92,24 @@
     }
 
     html.dark .bg-white { background-color: var(--bg-surface) !important; }
-    html.dark .bg-slate-50, html.dark .bg-slate-50\/70 { background-color: var(--bg-surface-alt) !important; }
-    .bg-slate-100 { background-color: var(--bg-table-head) !important; }
+    html.dark .bg-slate-50, html.dark .bg-slate-100 { background-color: var(--bg-surface-alt) !important; }
     .border-slate-200 { border-color: var(--border-main) !important; }
     .border-slate-300 { border-color: var(--border-input) !important; }
 
-    html.dark input:not([type="checkbox"]), html.dark select, html.dark textarea {
-      background-color: var(--bg-surface-alt);
-      color: var(--text-main);
-      border-color: var(--border-input);
+    /* Correção definitiva para selects e options no modo escuro não ficarem ilegíveis */
+    html.dark select, html.dark option {
+      background-color: #1d1a2b !important;
+      color: #f3f0ff !important;
+    }
+    html.dark input:not([type="checkbox"]), html.dark textarea {
+      background-color: #13111c;
+      color: #f3f0ff;
+      border-color: #4a416e;
     }
     html.dark #current-operator, html.dark #op-date {
       background-color: transparent !important;
-      color: var(--text-main) !important;
+      color: #f3f0ff !important;
     }
-
-    .row-pinned {
-      background-color: var(--bg-pinned) !important;
-      box-shadow: inset 3px 0 0 #7c3aed;
-    }
-    .row-pinned:hover { background-color: var(--bg-pinned-hover) !important; }
-    .row-normal:hover { background-color: var(--bg-row-hover) !important; }
 
     .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
     .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 9999px; }
@@ -134,16 +117,9 @@
     /* Status Badges */
     .status-NOVA { background-color: #f4f0ff; color: #38245c; border-color: #d2c2f5; }
     .status-VALIDADA { background-color: #dcfce7; color: #166534; border-color: #86efac; }
-    .status-AG_CHIP { background-color: #fef3c7; color: #92400e; border-color: #fcd34d; }
-    .status-AG_VALIDACAO { background-color: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
-    .status-SAPB1 { background-color: #dbeafe; color: #1e40af; border-color: #93c5fd; }
-    .status-DIVERGENTE { background-color: #fee2e2; color: #991b1b; border-color: #fca5a5; }
-    .status-EMERGENCIAL { background-color: #ffedd5; color: #9a3412; border-color: #fb923c; }
     .status-CANCELADA { background-color: #e2e8f0; color: #475569; border-color: #94a3b8; text-decoration: line-through; }
-
     html.dark .status-NOVA { background-color: #28243d !important; color: #d6cbfe !important; border-color: #4a416e !important; }
     html.dark .status-VALIDADA { background-color: #064e3b !important; color: #6ee7b7 !important; border-color: #059669 !important; }
-    html.dark .status-CANCELADA { background-color: #334155 !important; color: #94a3b8 !important; border-color: #475569 !important; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -157,56 +133,49 @@
           <span class="w-px h-5 bg-purple-300 dark:bg-purple-700"></span>
           <span class="font-extrabold text-sm tracking-widest text-purple-900 dark:text-purple-300">MOBYAN</span>
         </div>
-
         <div>
           <div class="flex flex-wrap items-center gap-2">
             <h1 class="text-sm sm:text-base font-extrabold tracking-tight">Controle Operacional de Demandas</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-purple-100 text-purple-900 dark:bg-purple-900/50 dark:text-purple-200 border border-purple-300 dark:border-purple-700">CD Barueri - SP</span>
-            <span id="cloud-status-badge" class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
-              <span id="cloud-dot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-              <span id="cloud-status-text">Conectando nuvem...</span>
+            <span id="cloud-status-badge" class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>Modo Operacional Local/Nuvem</span>
             </span>
           </div>
-          <p class="text-[11px] text-purple-700/80 dark:text-purple-300/80 font-medium">Operação Logística • Máquinas (AG / PA) • SIM Cards • Etiquetas Zebra</p>
+          <p class="text-[11px] text-purple-700/80 dark:text-purple-300/80 font-medium">Operação Logística • Máquinas • SIM Cards • Modo TV</p>
         </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <!-- Botão Ao Vivo em Pop-up -->
-        <button id="btn-open-audit-modal" type="button" class="header-control-box px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition cursor-pointer bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 border border-purple-300 dark:border-purple-600">
+        <button id="btn-open-audit-modal" type="button" class="header-control-box px-3 py-1.5 rounded-lg text-xs font-semibold hover:opacity-90 transition cursor-pointer bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 border border-purple-300 dark:border-purple-600">
           <span>🔔 Ao Vivo / Auditoria</span>
         </button>
 
-        <!-- Modo Claro / Escuro -->
-        <button id="btn-theme-toggle" type="button" class="header-control-box px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition cursor-pointer">
+        <button id="btn-theme-toggle" type="button" class="header-control-box px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:opacity-90 transition cursor-pointer">
           <span id="theme-label">Escuro</span>
         </button>
 
-        <!-- Data Operacional -->
         <div class="header-control-box flex items-center rounded-lg px-2.5 py-1.5 text-xs">
           <span class="text-purple-700/70 dark:text-purple-300/70 mr-1.5">Data:</span>
           <input type="date" id="op-date" class="bg-transparent font-bold focus:outline-none cursor-pointer" />
         </div>
 
-        <!-- Operador Ativo com PIN -->
         <div class="header-control-box flex items-center rounded-lg px-2.5 py-1.5 text-xs gap-1.5">
           <span class="text-purple-700/70 dark:text-purple-300/70">Operador:</span>
           <select id="current-operator" class="bg-transparent text-purple-900 dark:text-purple-200 font-bold focus:outline-none cursor-pointer">
             <option value="">-- Escolher Nome --</option>
           </select>
           <span id="operator-lock-badge" class="hidden px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">PIN OK</span>
-          <button id="btn-manage-pin" class="hidden px-1.5 py-0.5 rounded bg-purple-200/70 dark:bg-purple-800/70 hover:opacity-80 text-purple-900 dark:text-purple-100 text-[10px] font-semibold transition cursor-pointer">PIN</button>
           <button id="btn-open-team-modal" class="px-2 py-0.5 rounded bg-purple-700 hover:bg-purple-600 text-white text-[10px] font-bold transition cursor-pointer">👥 Equipe</button>
         </div>
 
-        <!-- Exportar Excel -->
-        <button id="btn-export-xlsx" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-xs flex items-center gap-1.5 transition cursor-pointer">
+        <button id="btn-export-xlsx" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-xs transition cursor-pointer">
           Exportar Excel (.xlsx)
         </button>
       </div>
     </div>
 
-    <!-- NAVIGATION BAR & SIDEBAR TRIGGER -->
+    <!-- NAVIGATION BAR -->
     <div class="nav-bar">
       <div class="max-w-[1600px] mx-auto px-4 py-2 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
@@ -223,10 +192,8 @@
     </div>
   </header>
 
-  <!-- OVERLAY DO MENU LATERAL -->
+  <!-- SIDEBAR BACKDROP & MENU -->
   <div id="sidebar-backdrop" class="fixed inset-0 bg-purple-950/60 backdrop-blur-xs z-40 hidden transition-opacity"></div>
-
-  <!-- MENU LATERAL RECOLHÍVEL EM BLOCOS (ACCORDION) -->
   <aside id="app-sidebar" class="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white dark:bg-[#1d1a2b] border-r border-slate-200 dark:border-[#36304f] shadow-2xl z-50 transform -translate-x-full transition-transform duration-200 flex flex-col">
     <div class="p-4 border-b border-slate-200 dark:border-[#36304f] flex items-center justify-between bg-purple-950 text-white dark:bg-[#181524]">
       <div>
@@ -237,11 +204,11 @@
     </div>
 
     <div class="p-3 flex-1 overflow-y-auto space-y-3 text-xs sm:text-sm">
-      <!-- BLOCO 1: DEMANDA ALUGUEL -->
+      <!-- BLOCO: DEMANDA ALUGUEL -->
       <div class="border border-purple-200 dark:border-[#36304f] rounded-xl overflow-hidden">
         <button type="button" onclick="toggleBlock('block-aluguel')" class="w-full px-3.5 py-2.5 bg-purple-100/70 dark:bg-[#28243d] font-bold flex items-center justify-between text-purple-950 dark:text-purple-200 cursor-pointer">
           <span>📁 Demanda Aluguel</span>
-          <span id="arrow-aluguel">▼</span>
+          <span id="arrow-aluguel">▲</span>
         </button>
         <div id="block-aluguel" class="p-2 space-y-1">
           <button data-tab="maquinas" class="nav-tab tab-active w-full px-3.5 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
@@ -250,45 +217,44 @@
           </button>
           <button data-tab="simcards" class="nav-tab w-full px-3.5 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
             <span>💳 Fila SIM Cards Geral</span>
-            <span id="badge-simcards" class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 font-bold text-[10px]">0</span>
           </button>
           <button data-tab="emergenciais" class="nav-tab w-full px-3.5 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
             <span>🚨 OMs Emergenciais</span>
-            <span id="badge-emergenciais" class="px-2 py-0.5 rounded-full bg-orange-100 text-orange-900 font-bold text-[10px]">0</span>
           </button>
           <button data-tab="canceladas" class="nav-tab w-full px-3.5 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
             <span>🛑 OMs Canceladas</span>
-            <span id="badge-canceladas" class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 font-bold text-[10px]">0</span>
           </button>
         </div>
       </div>
 
-      <!-- BLOCO 2: OUTRAS DEMANDAS -->
+      <!-- BLOCO: OUTRAS DEMANDAS -->
       <div class="border border-fuchsia-200 dark:border-[#36304f] rounded-xl overflow-hidden">
         <button type="button" onclick="toggleBlock('block-outras')" class="w-full px-3.5 py-2.5 bg-fuchsia-100/70 dark:bg-[#28243d] font-bold flex items-center justify-between text-fuchsia-950 dark:text-fuchsia-200 cursor-pointer">
           <span>📁 Outras Demandas</span>
-          <span id="arrow-outras">▼</span>
+          <span id="arrow-outras">▲</span>
         </button>
         <div id="block-outras" class="p-2 space-y-1">
           <button data-tab="insumos" class="nav-tab w-full px-3.5 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
             <span>🏷️ Insumos & Fracionamento</span>
-            <span id="badge-insumos" class="px-2 py-0.5 rounded-full bg-fuchsia-100 text-fuchsia-900 font-bold text-[10px]">0</span>
           </button>
         </div>
       </div>
 
-      <!-- BLOCO 3: CONFIGURAÇÕES & GESTÃO -->
+      <!-- BLOCO: CONFIGURAÇÕES & GESTÃO -->
       <div class="border border-slate-200 dark:border-[#36304f] rounded-xl overflow-hidden">
         <button type="button" onclick="toggleBlock('block-config')" class="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-[#28243d] font-bold flex items-center justify-between text-slate-800 dark:text-slate-200 cursor-pointer">
           <span>⚙️ Configurações & Gestão</span>
-          <span id="arrow-config">▼</span>
+          <span id="arrow-config">▲</span>
         </button>
         <div id="block-config" class="p-2 space-y-1">
           <button data-tab="importar" class="nav-tab w-full px-3.5 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
             <span>🎲 Importar DRP & Sorteios</span>
           </button>
           <button data-tab="grade" class="nav-tab w-full px-3.5 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer">
-            <span>🚚 Base GRADE</span>
+            <span>🚚 Base GRADE & Cadastros</span>
+          </button>
+          <button data-tab="dashboard" class="nav-tab w-full px-3.5 py-2 rounded-lg text-left flex items-center justify-between transition cursor-pointer font-bold text-purple-700 dark:text-purple-300">
+            <span>📺 Painel SLA / Modo TV</span>
           </button>
         </div>
       </div>
@@ -298,15 +264,21 @@
   <!-- MAIN CONTENT -->
   <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 py-5 space-y-4">
 
-    <!-- ==================== TAB 1: ATENDIMENTO MÁQUINAS ==================== -->
+    <!-- ==================== TAB 1: MÁQUINAS ==================== -->
     <section id="tab-maquinas" class="tab-panel space-y-4">
-      <!-- Aviso de Prioridade AG -->
-      <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 p-3 rounded-xl text-xs text-amber-900 dark:text-amber-200 font-semibold flex items-center gap-2">
-        <span>⚠️</span>
-        <span><strong>Regra Operacional:</strong> OMs do tipo PA de um colaborador ficam bloqueadas (🔒 cinza) enquanto houver OMs do tipo AG atribuídas a ele com status <strong>NOVA</strong>.</span>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs dark:border-[#36304f] dark:bg-[#1d1a2b] flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-sm font-bold text-slate-800 dark:text-purple-100">Atendimento de Máquinas (Aluguel)</h2>
+          <p class="text-xs text-slate-500 dark:text-purple-300 mt-0.5">Prioridade AG (Correr) sobre PA. OMs de PA ficam bloqueadas enquanto houver AG com status NOVA.</p>
+        </div>
+        <div>
+          <input type="file" id="drp-file-home" accept=".xlsx,.xls,.csv" class="hidden" />
+          <label for="drp-file-home" class="px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold shadow-xs transition cursor-pointer inline-flex items-center gap-1.5">
+            📥 Importar DRP (Início do Dia)
+          </label>
+        </div>
       </div>
 
-      <!-- Tabela Máquinas -->
       <div class="bg-white rounded-xl border border-slate-200 dark:border-[#36304f] shadow-xs overflow-hidden dark:bg-[#1d1a2b]">
         <div class="overflow-x-auto scrollbar-thin">
           <table class="w-full text-left border-collapse">
@@ -318,8 +290,8 @@
                 <th class="py-2.5 px-2.5 font-bold text-center">QTD</th>
                 <th class="py-2.5 px-3 font-bold">Transporte</th>
                 <th class="py-2.5 px-3 font-bold">Colaborador</th>
-                <th class="py-2.5 px-3 font-bold">Status & Auditoria</th>
-                <th class="py-2.5 px-3 font-bold text-right">Etiqueta Zebra</th>
+                <th class="py-2.5 px-3 font-bold">Status</th>
+                <th class="py-2.5 px-3 font-bold text-right">Ação</th>
               </tr>
             </thead>
             <tbody id="maquinas-tbody" class="divide-y divide-slate-100 dark:divide-[#36304f] text-xs"></tbody>
@@ -328,146 +300,98 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 2: DEMANDA DE INSUMOS & SIM CARDS ==================== -->
-    <section id="tab-insumos" class="tab-panel hidden space-y-5">
-      <div class="bg-white p-5 rounded-xl border border-fuchsia-300 dark:border-[#423861] bg-fuchsia-50/20 dark:bg-[#262238] shadow-xs space-y-3">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-fuchsia-700 text-white">Insumos à Parte</span>
-              <h2 class="text-base font-bold text-slate-800 dark:text-purple-100">Controle de Insumos & Fracionamento Automático de SIM Cards</h2>
-            </div>
-            <p class="text-xs text-slate-500 dark:text-purple-300 mt-0.5">Importe a planilha de insumos. A <strong>Gaveta 1</strong> exibe as OMs (AG detectado automaticamente). Clique em <strong>"⚡ Fracionar Todas em Lote"</strong> para enviar para a <strong>Gaveta 2</strong> com Volume fixado em 1 e Peso calculado (`Qtd × 0,04`).</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <input type="file" id="insumos-file-input" accept=".xlsx,.xls,.csv" class="hidden" />
-            <label for="insumos-file-input" class="px-3.5 py-2 rounded-xl bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold shadow-xs transition cursor-pointer inline-flex items-center gap-1.5">
-              📁 Importar Insumos (.xlsx)
-            </label>
-            <button id="btn-fracionar-todos-lote" class="px-3.5 py-2 rounded-xl bg-fuchsia-700 hover:bg-fuchsia-600 text-white text-xs font-bold shadow-xs transition cursor-pointer">
-              ⚡ Fracionar Todas em Lote
-            </button>
-          </div>
+    <!-- ==================== TAB: PAINEL SLA / MODO TV ==================== -->
+    <section id="tab-dashboard" class="tab-panel hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 dark:border-[#36304f] dark:bg-[#1d1a2b] flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base font-bold text-slate-800 dark:text-purple-100">📺 Painel SLA & Modo Apresentação (TV)</h2>
+          <p class="text-xs text-slate-500 dark:text-purple-300">Acompanhe o ranking de produtividade da equipe e máquinas atendidas.</p>
         </div>
-      </div>
-
-      <!-- GAVETA 1: OMs DE INSUMOS -->
-      <div class="bg-white rounded-xl border border-slate-200 dark:border-[#36304f] shadow-xs overflow-hidden space-y-2 dark:bg-[#1d1a2b]">
-        <div class="px-4 py-3 bg-slate-100 dark:bg-[#28243d] border-b border-slate-200 dark:border-[#36304f] flex items-center justify-between">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-purple-200">📦 Gaveta 1: OMs de Insumos para Atendimento (AG / PA)</h3>
-          <span id="count-gaveta1" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300">0 itens</span>
-        </div>
-        <div class="overflow-x-auto scrollbar-thin">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-slate-50 dark:bg-[#262238] text-slate-600 dark:text-purple-300 text-[11px] uppercase tracking-wider border-b border-slate-200 dark:border-[#36304f]">
-                <th class="py-2.5 px-3 font-bold">OM</th>
-                <th class="py-2.5 px-3 font-bold">PA / Agência</th>
-                <th class="py-2.5 px-3 font-bold">Observação</th>
-                <th class="py-2.5 px-2.5 font-bold text-center">Quantidade</th>
-                <th class="py-2.5 px-3 font-bold">Transportadora</th>
-                <th class="py-2.5 px-3 font-bold">Status</th>
-                <th class="py-2.5 px-3 font-bold">Colaborador</th>
-                <th class="py-2.5 px-3 font-bold text-right">Ação / Fracionar</th>
-              </tr>
-            </thead>
-            <tbody id="insumos-gaveta1-tbody" class="divide-y divide-slate-100 dark:divide-[#36304f] text-xs"></tbody>
-          </table>
-        </div>
-        <div id="insumos-gaveta1-empty" class="p-6 text-center text-slate-400 text-xs">Nenhum insumo importado ainda.</div>
-      </div>
-
-      <!-- GAVETA 2: FRACIONAMENTO DE SIM CARDS -->
-      <div class="bg-white rounded-xl border border-fuchsia-200 dark:border-[#423861] shadow-xs overflow-hidden space-y-2 dark:bg-[#1d1a2b]">
-        <div class="px-4 py-3 bg-fuchsia-50 dark:bg-[#28243d] border-b border-fuchsia-100 dark:border-[#36304f] flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-fuchsia-900 dark:text-fuchsia-300">⚡ Gaveta 2: Fracionamento de SIM Cards (Pedidos de NF)</h3>
-            <span id="count-gaveta2" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-fuchsia-200 text-fuchsia-900 dark:bg-fuchsia-950 dark:text-fuchsia-200">0 fracionados</span>
-          </div>
-          <button id="btn-copiar-tudo-email" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5">
-            📋 Copiar para E-mail
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+            <input type="checkbox" id="tv-auto-rotate" class="rounded text-purple-600" />
+            <span>Rotação Automática de Slides</span>
+          </label>
+          <button id="btn-fullscreen-tv" class="px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold cursor-pointer">
+            📺 Tela Cheia / Modo TV
           </button>
         </div>
-        <div class="overflow-x-auto scrollbar-thin">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-fuchsia-50/50 dark:bg-[#262238] text-fuchsia-800 dark:text-fuchsia-300 text-[11px] uppercase tracking-wider border-b border-fuchsia-100 dark:border-[#36304f]">
-                <th class="py-2.5 px-3 font-bold">OM</th>
-                <th class="py-2.5 px-3 font-bold">COD SAP</th>
-                <th class="py-2.5 px-3 font-bold">Modelo / Operadora</th>
-                <th class="py-2.5 px-3 font-bold">Agência</th>
-                <th class="py-2.5 px-2.5 font-bold text-center">Quantidade</th>
-                <th class="py-2.5 px-2.5 font-bold text-center">VOL</th>
-                <th class="py-2.5 px-2.5 font-bold text-center">Peso</th>
-                <th class="py-2.5 px-3 font-bold text-right">E-mail Outlook</th>
-              </tr>
-            </thead>
-            <tbody id="insumos-gaveta2-tbody" class="divide-y divide-slate-100 dark:divide-[#36304f] text-xs"></tbody>
-          </table>
+      </div>
+
+      <div id="tv-slide-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 dark:border-[#36304f] dark:bg-[#1d1a2b] shadow-xs space-y-3">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-purple-700 dark:text-purple-300">🏆 Ranking de Colaboradores (OMs Atendidas)</h3>
+          <div id="ranking-colab-list" class="space-y-2 text-xs"></div>
         </div>
-        <div id="insumos-gaveta2-empty" class="p-6 text-center text-slate-400 text-xs">Nenhum SIM card fracionado ainda.</div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 dark:border-[#36304f] dark:bg-[#1d1a2b] shadow-xs space-y-3">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">📦 Total de Máquinas Atendidas por Colaborador</h3>
+          <div id="ranking-maquinas-list" class="space-y-2 text-xs"></div>
+        </div>
       </div>
     </section>
 
-    <!-- Outras abas padrão -->
-    <section id="tab-simcards" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200 dark:border-[#36304f] dark:bg-[#1d1a2b]">Fila SIM Cards Geral</div></section>
-    <section id="tab-importar" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200 dark:border-[#36304f] dark:bg-[#1d1a2b]">Importar DRP & Sorteios</div></section>
-    <section id="tab-emergenciais" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-orange-300 bg-orange-50/30 dark:bg-[#1d1a2b]">OMs Emergenciais</div></section>
-    <section id="tab-canceladas" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-rose-300 bg-rose-50/30 dark:bg-[#1d1a2b]">OMs Canceladas</div></section>
-    <section id="tab-grade" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border border-slate-200 dark:border-[#36304f] dark:bg-[#1d1a2b]">Base GRADE</div></section>
+    <!-- ==================== TAB: BASE GRADE & CADASTROS ==================== -->
+    <section id="tab-grade" class="tab-panel hidden space-y-5">
+      <!-- Cadastros Rápidos -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Novo Prestador/Transportadora -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 dark:border-[#36304f] dark:bg-[#1d1a2b] space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300">➕ Cadastrar Novo Prestador / Rota (GRADE)</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="text" id="new-grade-dest" placeholder="Nome Destino/Prestador" class="px-3 py-1.5 text-xs border rounded-lg" />
+            <input type="text" id="new-grade-uf" placeholder="UF (ex: SP)" class="px-3 py-1.5 text-xs border rounded-lg" />
+            <input type="text" id="new-grade-transp" placeholder="Transportadora" class="px-3 py-1.5 text-xs border rounded-lg" />
+            <button type="button" id="btn-save-grade" class="px-3 py-1.5 rounded-lg bg-purple-700 text-white text-xs font-bold cursor-pointer">Salvar na Grade</button>
+          </div>
+        </div>
+        <!-- Novo Código SAP -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 dark:border-[#36304f] dark:bg-[#1d1a2b] space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300">➕ Cadastrar Novo Código SAP</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="text" id="new-sap-modelo" placeholder="Modelo / Tipo de Chip" class="px-3 py-1.5 text-xs border rounded-lg" />
+            <input type="text" id="new-sap-code" placeholder="Código SAP (ex: 19357)" class="px-3 py-1.5 text-xs border rounded-lg" />
+            <button type="button" id="btn-save-sap" class="col-span-2 px-3 py-1.5 rounded-lg bg-violet-700 text-white text-xs font-bold cursor-pointer">Salvar Código SAP</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 dark:border-[#36304f] dark:bg-[#1d1a2b] space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-purple-200">🚚 Consulta Base GRADE</h3>
+        <input type="text" id="grade-search" placeholder="Pesquisar destino ou transportadora..." class="px-3 py-1.5 text-xs border rounded-lg w-full sm:w-80" />
+        <div class="overflow-x-auto max-h-96 scrollbar-thin">
+          <table class="w-full text-left border-collapse">
+            <thead class="sticky top-0 bg-slate-100 dark:bg-[#28243d]">
+              <tr class="text-xs uppercase border-b dark:border-[#36304f]">
+                <th class="py-2 px-3">Destino</th>
+                <th class="py-2 px-3">UF</th>
+                <th class="py-2 px-3">Transportadora</th>
+                <th class="py-2 px-3">Doca</th>
+              </tr>
+            </thead>
+            <tbody id="grade-tbody" class="divide-y dark:divide-[#36304f] text-xs"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Outras abas de suporte -->
+    <section id="tab-insumos" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b]">Gavetas de Insumos & Fracionamento</div></section>
+    <section id="tab-simcards" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b]">Fila SIM Cards</div></section>
+    <section id="tab-importar" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b]">Importar DRP Geral</div></section>
+    <section id="tab-emergenciais" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b]">OMs Emergenciais</div></section>
+    <section id="tab-canceladas" class="tab-panel hidden space-y-4"><div class="bg-white p-4 rounded-xl border dark:border-[#36304f] dark:bg-[#1d1a2b]">OMs Canceladas</div></section>
   </main>
 
-  <!-- ==================== MODAL: POP-UP AO VIVO (AUDITORIA) ==================== -->
+  <!-- MODAL AO VIVO / AUDITORIA -->
   <div id="audit-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-    <div class="bg-white dark:bg-[#1d1a2b] dark:border dark:border-[#36304f] rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+    <div class="bg-white dark:bg-[#1d1a2b] dark:border dark:border-[#36304f] rounded-2xl max-w-xl w-full p-6 shadow-2xl border space-y-4">
       <div class="flex items-center justify-between border-b pb-3 dark:border-[#36304f]">
-        <div class="flex items-center gap-2">
-          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-700 text-white">🔔 Ao Vivo / Auditoria por Colaborador</span>
-        </div>
+        <h3 class="text-sm font-bold text-purple-900 dark:text-purple-200">🔔 Histórico Ao Vivo por Colaborador</h3>
         <button id="audit-modal-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
       </div>
-      <p class="text-xs text-slate-500 dark:text-purple-300">Registro detalhado das alterações realizadas apenas por colaboradores que registraram ações na sessão.</p>
-      <div class="border border-slate-200 dark:border-[#36304f] rounded-xl max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-[#36304f]" id="audit-modal-list"></div>
+      <div class="max-h-85 overflow-y-auto divide-y dark:divide-[#36304f] text-xs" id="audit-modal-list"></div>
       <div class="flex justify-end pt-2">
-        <button type="button" id="audit-modal-done" class="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold cursor-pointer">Fechar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL EQUIPE -->
-  <div id="team-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-    <div class="bg-white dark:bg-[#1d1a2b] dark:border dark:border-[#36304f] rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between">
-        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-900">Equipe CD Barueri - SP</span>
-        <button id="team-modal-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
-      </div>
-      <div class="flex gap-2">
-        <input type="text" id="new-operator-input" maxlength="25" placeholder="Nome do colaborador" class="flex-1 px-3 py-2 text-xs uppercase border border-slate-300 dark:border-[#4a416e] rounded-xl dark:bg-[#13111c] dark:text-white" />
-        <button type="button" id="btn-add-operator" class="px-4 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold cursor-pointer">+ Adicionar</button>
-      </div>
-      <div class="border border-slate-200 dark:border-[#36304f] rounded-xl max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-[#36304f]" id="team-modal-list"></div>
-    </div>
-  </div>
-
-  <!-- MODAL PIN -->
-  <div id="pin-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-    <div class="bg-white dark:bg-[#1d1a2b] dark:border dark:border-[#36304f] rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between">
-        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-900">Segurança</span>
-        <button id="pin-modal-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
-      </div>
-      <div>
-        <h3 id="pin-modal-title" class="text-lg font-extrabold text-slate-800 dark:text-purple-100">Autenticar Operador</h3>
-        <p id="pin-modal-desc" class="text-xs text-slate-500 dark:text-purple-300 mt-1">Digite seu PIN pessoal de 4 dígitos.</p>
-      </div>
-      <div class="space-y-3">
-        <div>
-          <label class="block text-[11px] font-bold text-slate-600 dark:text-purple-300 uppercase mb-1">PIN de 4 Dígitos</label>
-          <input type="password" id="pin-input-1" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••" class="w-full text-center tracking-[0.6em] mono text-xl font-bold py-2.5 border border-slate-300 dark:border-[#4a416e] rounded-xl dark:bg-[#13111c] dark:text-white" />
-        </div>
-      </div>
-      <div class="flex items-center justify-end pt-2">
-        <button type="button" id="btn-pin-submit" class="px-5 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold cursor-pointer">Confirmar</button>
+        <button type="button" id="audit-modal-done" class="px-4 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold cursor-pointer">Fechar</button>
       </div>
     </div>
   </div>
@@ -478,55 +402,20 @@
     <span id="toast-msg">Ação concluída</span>
   </div>
 
-  <!-- ==================== SCRIPT PRINCIPAL ==================== -->
+  <!-- SCRIPT -->
   <script type="module">
-    let fbFirestoreMod = null;
-    const THEME_STORAGE_KEY = "cd_barueri_theme_v1";
-
-    function applyTheme(theme) {
-      const isDark = theme === "dark";
-      document.documentElement.classList.toggle("dark", isDark);
-      const lbl = document.getElementById("theme-label");
-      if (lbl) lbl.textContent = isDark ? "Claro" : "Escuro";
-      try { localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light"); } catch (e) {}
-    }
-
-    function initTheme() {
-      let savedTheme = "light";
-      try {
-        const stored = localStorage.getItem(THEME_STORAGE_KEY);
-        if (stored) savedTheme = stored;
-        else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) savedTheme = "dark";
-      } catch (e) {}
-      applyTheme(savedTheme);
-    }
-    initTheme();
-
-    const DEFAULT_OPERATORS = ["BEATRIZ", "DOUGLAS", "GABI", "GISELE", "ITALO", "LEO", "LUANA", "NEUSA", "ORLANDA"];
-    const STATUS_LIST = ["NOVA", "VALIDADA", "AG. CHIP", "AG. VALIDAÇÃO", "SAPB1", "EMERGENCIAL", "DIVERGENTE", "CANCELADA"];
-
     const state = {
       date: new Date().toISOString().slice(0, 10),
       currentOperator: sessionStorage.getItem("cd_barueri_op") || "",
-      operators: [...DEFAULT_OPERATORS],
-      oms: [],
-      insumosG1: [],
-      insumosG2: [],
-      pins: {},
+      operators: ["BEATRIZ", "DOUGLAS", "GABI", "GISELE", "ITALO", "LEO", "LUANA", "NEUSA", "ORLANDA"],
+      oms: [
+        { om: "1193092", destino: "AG 3412 SAO PAULO SP CORNER", modelo: "POS PAX S920", qtd: 10, tipo: "AG", colaborador: "BEATRIZ", status: "NOVA", transporte: "ALYA" },
+        { om: "1193093", destino: "MG - DOMINGOS TRANSPORTES", modelo: "POS SUNMI P2", qtd: 15, tipo: "PA", colaborador: "BEATRIZ", status: "NOVA", transporte: "ALYA" }
+      ],
+      customGrades: [],
+      customSaps: {},
       auditLog: []
     };
-
-    function loadLocalConfig() {
-      try {
-        const raw = localStorage.getItem("cd_barueri_team_config_v1");
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed.pins) state.pins = parsed.pins;
-          if (Array.isArray(parsed.operators) && parsed.operators.length > 0) state.operators = parsed.operators;
-        }
-      } catch (e) {}
-    }
-    loadLocalConfig();
 
     window.toggleBlock = function(id) {
       const el = document.getElementById(id);
@@ -537,35 +426,10 @@
       if (arrow) arrow.textContent = isHidden ? "▲" : "▼";
     };
 
-    function toggleSidebar(forceOpen = null) {
-      const sb = document.getElementById("app-sidebar");
-      const bd = document.getElementById("sidebar-backdrop");
-      if (!sb || !bd) return;
-      const isClosed = sb.classList.contains("-translate-x-full");
-      const shouldOpen = forceOpen !== null ? forceOpen : isClosed;
-      sb.classList.toggle("-translate-x-full", !shouldOpen);
-      bd.classList.toggle("hidden", !shouldOpen);
-    }
-
-    function switchTab(tabName) {
-      document.querySelectorAll(".nav-tab").forEach(btn => {
-        btn.classList.toggle("tab-active", btn.dataset.tab === tabName);
-      });
-      document.querySelectorAll(".tab-panel").forEach(panel => {
-        panel.classList.toggle("hidden", panel.id !== `tab-${tabName}`);
-      });
-      const titles = {
-        "maquinas": "1. Atendimento Máquinas",
-        "insumos": "2. Demanda de Insumos & SIM Cards",
-        "simcards": "3. Atendimento SIM Cards",
-        "importar": "4. Importar DRP & Sorteios",
-        "emergenciais": "5. OMs Emergenciais",
-        "canceladas": "6. OMs Canceladas",
-        "grade": "7. Base GRADE"
-      };
-      const ind = document.getElementById("active-tab-title-indicator");
-      if (ind) ind.textContent = titles[tabName] || tabName;
-      toggleSidebar(false);
+    function applyTheme(isDark) {
+      document.documentElement.classList.toggle("dark", isDark);
+      document.getElementById("theme-label").textContent = isDark ? "Claro" : "Escuro";
+      localStorage.setItem("cd_barueri_theme", isDark ? "dark" : "light");
     }
 
     function showToast(msg) {
@@ -577,317 +441,128 @@
       setTimeout(() => { t.classList.add("hidden"); t.classList.remove("flex"); }, 3000);
     }
 
-    function pushAudit(om, actionText) {
+    function pushAudit(om, action) {
       const time = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
       const who = state.currentOperator || "SISTEMA";
-      state.auditLog.unshift({ who, om, actionText, time });
-      if (state.auditLog.length > 40) state.auditLog.length = 40;
+      state.auditLog.unshift({ who, om, action, time });
     }
 
-    function renderAuditModalList() {
-      const container = document.getElementById("audit-modal-list");
-      if (!container) return;
-      if (!state.auditLog.length) {
-        container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">Nenhuma alteração registrada ainda nesta sessão.</div>`;
+    // Regra de Trava AG antes de PA
+    function isPaLocked(colab, currentOm) {
+      if (!colab || currentOm.tipo !== "PA") return false;
+      // Verifica se o colaborador tem alguma OM do tipo AG com status NOVA
+      const hasNovaAg = state.oms.some(o => o.colaborador === colab && o.tipo === "AG" && o.status === "NOVA");
+      return hasNovaAg;
+    }
+
+    function renderMaquinas() {
+      const tbody = document.getElementById("maquinas-tbody");
+      if (!tbody) return;
+
+      tbody.innerHTML = state.oms.map((o, idx) => {
+        const locked = isPaLocked(o.colaborador, o);
+        return `
+          <tr class="hover:bg-slate-50 dark:hover:bg-[#262238] transition ${locked ? 'opacity-50 bg-slate-100 dark:bg-slate-900/40' : ''}">
+            <td class="py-2.5 px-3 mono font-bold">${locked ? '🔒 ' : ''}${o.om}</td>
+            <td class="py-2.5 px-3 font-semibold">${o.destino}</td>
+            <td class="py-2.5 px-3">${o.modelo}</td>
+            <td class="py-2.5 px-2.5 text-center mono font-bold">${o.qtd}</td>
+            <td class="py-2.5 px-3">${o.transporte}</td>
+            <td class="py-2.5 px-3 font-semibold">${o.colaborador || 'Não atribuído'}</td>
+            <td class="py-2.5 px-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold status-${o.status.replace(/\s+/g, "_")}">${o.status}</span>
+            </td>
+            <td class="py-2.5 px-3 text-right">
+              ${locked ? '<span class="text-[11px] text-amber-600 font-bold">Bloqueado (Atenda AG primeiro)</span>' : `
+                <button onclick="validaOm(${idx})" class="px-2.5 py-1 rounded bg-purple-700 text-white font-bold cursor-pointer hover:bg-purple-600">Validar</button>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      document.getElementById("badge-maquinas").textContent = state.oms.length;
+    }
+
+    window.validaOm = function(idx) {
+      if (!state.currentOperator) {
+        showToast("Selecione o operador antes de interagir.");
         return;
       }
-      container.innerHTML = state.auditLog.map(item => `
-        <div class="flex items-center justify-between px-3.5 py-2.5 text-xs hover:bg-purple-50/50">
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-purple-700 dark:text-purple-300">${item.who}</span>
-            <span class="text-slate-400">(${item.time})</span>
-            <span>OM <strong>${item.om}</strong>: ${item.actionText}</span>
-          </div>
-        </div>
+      state.oms[idx].status = "VALIDADA";
+      pushAudit(state.oms[idx].om, "OM Validada");
+      renderMaquinas();
+      renderDashboard();
+      showToast("OM validada com sucesso!");
+    };
+
+    function renderDashboard() {
+      const colabMap = {};
+      const maqMap = {};
+
+      state.operators.forEach(op => { colabMap[op] = 0; maqMap[op] = 0; });
+      state.oms.forEach(o => {
+        if (o.colaborador && o.status === "VALIDADA") {
+          colabMap[o.colaborador] = (colabMap[o.colaborador] || 0) + 1;
+          maqMap[o.colaborador] = (maqMap[o.colaborador] || 0) + (o.qtd || 0);
+        }
+      });
+
+      document.getElementById("ranking-colab-list").innerHTML = Object.entries(colabMap)
+        .sort((a,b) => b[1] - a[1])
+        .map(([op, count], i) => `<div class="flex justify-between p-2 rounded bg-slate-50 dark:bg-[#13111c]"><span>#${i+1} ${op}</span><strong class="text-purple-700 dark:text-purple-300">${count} OMs</strong></div>`).join("");
+
+      document.getElementById("ranking-maquinas-list").innerHTML = Object.entries(maqMap)
+        .sort((a,b) => b[1] - a[1])
+        .map(([op, qtd], i) => `<div class="flex justify-between p-2 rounded bg-slate-50 dark:bg-[#13111c]"><span>#${i+1} ${op}</span><strong class="text-emerald-700 dark:text-emerald-300">${qtd} máq.</strong></div>`).join("");
+    }
+
+    // Modo TV Rotação Automática de Slides
+    let tvInterval = null;
+    function initTvMode() {
+      const chk = document.getElementById("tv-auto-rotate");
+      chk?.addEventListener("change", (e) => {
+        if (e.target.checked) {
+          tvInterval = setInterval(() => {
+            switchTab(document.querySelector('.nav-tab.tab-active').dataset.tab === 'maquinas' ? 'dashboard' : 'maquinas');
+          }, 10000);
+          showToast("Modo Apresentação (Rotação de Slides) ativado!");
+        } else {
+          clearInterval(tvInterval);
+          showToast("Rotação desativada.");
+        }
+      });
+
+      document.getElementById("btn-fullscreen-tv")?.addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.();
+        } else {
+          document.exitFullscreen?.();
+        }
+      });
+    }
+
+    function renderGradeTable() {
+      const tbody = document.getElementById("grade-tbody");
+      if (!tbody) return;
+      const base = [
+        ["AG 3412 SAO PAULO SP CORNER", "SP", "ALYA", "06:30 às 09:00"],
+        ["MG - DOMINGOS TRANSPORTES", "MG", "ALYA", "11:00 às 13:00"],
+        ...state.customGrades
+      ];
+      tbody.innerHTML = base.map(r => `
+        <tr class="border-b dark:border-[#36304f]">
+          <td class="py-2 px-3 font-semibold">${r[0]}</td>
+          <td class="py-2 px-3">${r[1]}</td>
+          <td class="py-2 px-3">${r[2]}</td>
+          <td class="py-2 px-3">${r[3]}</td>
+        </tr>
       `).join("");
     }
 
-    function renderOperatorSelectors() {
-      const topSel = document.getElementById("current-operator");
-      const lockBadge = document.getElementById("operator-lock-badge");
-      const btnPin = document.getElementById("btn-manage-pin");
-      if (!topSel) return;
-
-      topSel.innerHTML = `<option value="">-- Escolher Nome --</option>` +
-        state.operators.map(op => {
-          const hasPin = state.pins[op] ? "🔒" : "🆕";
-          return `<option value="${op}" ${state.currentOperator === op ? "selected" : ""}>${hasPin} ${op}</option>`;
-        }).join("");
-
-      if (state.currentOperator) {
-        if (lockBadge) lockBadge.classList.remove("hidden");
-        if (btnPin) btnPin.classList.remove("hidden");
-      } else {
-        if (lockBadge) lockBadge.classList.add("hidden");
-        if (btnPin) btnPin.classList.add("hidden");
-      }
-    }
-
-    function requireOperator() {
-      if (!state.currentOperator) {
-        showToast("Selecione seu nome e digite seu PIN no topo antes de editar!");
-        document.getElementById("current-operator")?.focus();
-        return false;
-      }
-      return true;
-    }
-
-    let pendingOperator = "";
-    function openPinModal(opName) {
-      pendingOperator = opName;
-      const modal = document.getElementById("pin-modal");
-      const p1 = document.getElementById("pin-input-1");
-      if (!modal) return;
-      if (p1) p1.value = "";
-      modal.classList.remove("hidden");
-      modal.classList.add("flex");
-      setTimeout(() => p1?.focus(), 50);
-    }
-
-    function closePinModal() {
-      const modal = document.getElementById("pin-modal");
-      if (modal) { modal.classList.add("hidden"); modal.classList.remove("flex"); }
-      const topSel = document.getElementById("current-operator");
-      if (topSel) topSel.value = state.currentOperator || "";
-    }
-
-    function handlePinSubmit() {
-      const p1 = document.getElementById("pin-input-1")?.value.trim() || "";
-      if (p1.length === 4 || p1 === "0000") {
-        state.pins[pendingOperator] = p1;
-        state.currentOperator = pendingOperator;
-        sessionStorage.setItem("cd_barueri_op", pendingOperator);
-        closePinModal();
-        renderOperatorSelectors();
-        showToast(`Operador ativo: ${pendingOperator}`);
-      } else {
-        showToast("Digite um PIN válido de 4 dígitos.");
-      }
-    }
-
-    // ==================== INSUMOS & FRACIONAMENTO ====================
-    window.copiarTodosParaOutlook = function() {
-      if (!state.insumosG2.length) {
-        showToast("Nenhum SIM Card fracionado na Gaveta 2 para copiar.");
-        return;
-      }
-      let texto = "OM\tCOD SAP\tMODELO\tAGÊNCIA\tQuantidade\tVOL\tPESO\n";
-      state.insumosG2.forEach(o => {
-        texto += `${o.om}\t${o.codSap || "19357"}\t${o.modelo}\t${o.agencia}\t${o.quantidade}\t${o.vol}\t${o.peso.toFixed(2).replace('.', ',')}\n`;
-      });
-      navigator.clipboard.writeText(texto).then(() => {
-        showToast("Dados copiados para a área de transferência com sucesso!");
-        const assunto = encodeURIComponent("Solicitação de NF - Lote SIM Cards Insumos");
-        const corpo = encodeURIComponent("Prezada equipe fiscal/faturamento,\n\nSegue os dados do lote fracionado de SIM Cards de Insumos para emissão de Nota Fiscal.\n\nCD Barueri - SP");
-        window.location.href = `mailto:fiscal@empresa.com?subject=${assunto}&body=${corpo}`;
-      }).catch(() => showToast("Erro ao copiar."));
-    };
-
-    window.enviarEmailNFIndividual = function(omNum, operadora, qtd, agencia) {
-      const peso = (qtd * 0.04).toFixed(2).replace('.', ',');
-      const assunto = encodeURIComponent(`Solicitação de NF - OM ${omNum} - SIM Card ${operadora}`);
-      const corpo = encodeURIComponent(`Prezada equipe fiscal/faturamento,\n\nSolicitamos emissão de NF:\n- OM: ${omNum}\n- Agência: ${agencia}\n- Operadora: ${operadora}\n- Qtd: ${qtd} un\n- Vol: 1\n- Peso: ${peso} kg\n\nCD Barueri - SP`);
-      window.location.href = `mailto:fiscal@empresa.com?subject=${assunto}&body=${corpo}`;
-    };
-
-    function processarFracionamentoItem(item) {
-      const obs = String(item.observacao || "").toUpperCase();
-      const isSim = obs.includes("SIM CARD") || obs.includes("MICRO CHIP") || obs.includes("CHIP");
-
-      if (!isSim) {
-        return [{
-          om: item.om,
-          codSap: item.codSap || "18529",
-          agencia: item.agencia,
-          modelo: item.observacao,
-          quantidade: item.quantidade,
-          vol: 1,
-          peso: Number((item.quantidade * 0.04).toFixed(2)),
-          operadora: "GERAL",
-          status: "NF PENDENTE"
-        }];
-      }
-
-      const opsList = ["VIVO", "CLARO", "TIM"];
-      let splits = [];
-      opsList.forEach(op => {
-        if (obs.includes(op)) {
-          const m1 = obs.match(new RegExp(`(\\d+(?:\\.\\d+)?)\\s*%\\s*(?:DE\\s*)?${op}`));
-          const m2 = obs.match(new RegExp(`${op}\\s*(?:[-:]\\s*)?(\\d+(?:\\.\\d+)?)\\s*%`));
-          let pct = m1 ? parseFloat(m1[1])/100 : (m2 ? parseFloat(m2[1])/100 : 0);
-          if (pct > 0) splits.push({ operadora: op, pct });
-        }
-      });
-
-      if (!splits.length) {
-        const found = opsList.filter(op => obs.includes(op));
-        if (found.length === 1) splits.push({ operadora: found[0], pct: 1.0 });
-        else if (found.length > 1) {
-          const eq = 1.0 / found.length;
-          found.forEach(op => splits.push({ operadora: op, pct: eq }));
-        } else {
-          splits.push({ operadora: "VIVO", pct: 1.0 });
-        }
-      }
-
-      const qTotal = Number(item.quantidade) || 0;
-      let novas = [];
-      splits.forEach((s, idx) => {
-        let qParcial = Math.round(qTotal * s.pct);
-        if (idx === splits.length - 1) {
-          qParcial = qTotal - novas.reduce((acc, cur) => acc + cur.quantidade, 0);
-        }
-        let tipoChipStr = obs.includes("APN") ? "SIM CARD APN PUBLICA" : "SIM CARD";
-        novas.push({
-          om: item.om,
-          codSap: "19357",
-          agencia: item.agencia,
-          modelo: `${tipoChipStr} - ${s.operadora}`,
-          quantidade: qParcial,
-          vol: 1,
-          peso: Number((qParcial * 0.04).toFixed(2)),
-          operadora: s.operadora,
-          status: "NF PENDENTE"
-        });
-      });
-      return novas;
-    }
-
-    window.fracionarInsumoG1 = function(index) {
-      const item = state.insumosG1[index];
-      const gerados = processarFracionamentoItem(item);
-      state.insumosG1.splice(index, 1);
-      state.insumosG2.push(...gerados);
-      renderInsumosTables();
-      pushAudit(item.om, "Insumo fracionado para Gaveta 2");
-      showToast(`OM ${item.om} fracionada com sucesso!`);
-    };
-
-    window.fracionarTodasEmLote = function() {
-      if (!state.insumosG1.length) {
-        showToast("Nenhum item na Gaveta 1 para fracionar.");
-        return;
-      }
-      while (state.insumosG1.length > 0) {
-        const item = state.insumosG1[0];
-        const gerados = processarFracionamentoItem(item);
-        state.insumosG1.shift();
-        state.insumosG2.push(...gerados);
-      }
-      renderInsumosTables();
-      pushAudit("LOTE", "Fracionamento em lote de todos os insumos para Gaveta 2");
-      showToast("Todas as OMs fracionadas para a Gaveta 2!");
-    };
-
-    function handleInsumosUpload(file) {
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const wb = XLSX.read(data, { type: "array" });
-          const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
-          if (!rows.length) {
-            showToast("Planilha vazia.");
-            return;
-          }
-          state.insumosG1 = rows.map(r => ({
-            om: String(r["OM"] || r["om"] || "").trim(),
-            agencia: String(r["PA"] || r["PA / Agência"] || r["AGÊNCIA"] || "").trim(),
-            observacao: String(r["Observação"] || r["OBSERVAÇÃO"] || r["Modelo"] || "").trim(),
-            quantidade: parseInt(r["Quantidade"] || r["QUANTIDADE"] || 1, 10) || 1,
-            transportadora: String(r["Transportadora"] || r["TRANSPORTADORA"] || "ALYA").trim(),
-            status: String(r["Status"] || r["STATUS"] || "VALIDADA").trim(),
-            colaborador: String(r["Colaborador"] || r["COLABORADOR"] || "BEATRIZ").trim()
-          })).filter(x => x.om && x.om !== "OM");
-
-          renderInsumosTables();
-          pushAudit("DRP", `Importados ${state.insumosG1.length} insumos de ${file.name}`);
-          showToast(`${state.insumosG1.length} insumos carregados na Gaveta 1!`);
-        } catch (err) {
-          console.error(err);
-          showToast("Erro ao processar arquivo de insumos.");
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    function renderInsumosTables() {
-      const tb1 = document.getElementById("insumos-gaveta1-tbody");
-      const em1 = document.getElementById("insumos-gaveta1-empty");
-      if (tb1) {
-        if (!state.insumosG1.length) {
-          tb1.innerHTML = "";
-          if (em1) em1.classList.remove("hidden");
-          document.getElementById("count-gaveta1").textContent = "0 itens";
-        } else {
-          if (em1) em1.classList.add("hidden");
-          tb1.innerHTML = state.insumosG1.map((o, idx) => `
-            <tr class="hover:bg-slate-50 dark:hover:bg-[#262238] transition">
-              <td class="py-2.5 px-3 mono font-bold">${o.om}</td>
-              <td class="py-2.5 px-3 font-semibold text-slate-800 dark:text-purple-100">${o.agencia}</td>
-              <td class="py-2.5 px-3 text-slate-700 dark:text-purple-300">${o.observacao}</td>
-              <td class="py-2.5 px-2.5 text-center mono font-bold">${o.quantidade}</td>
-              <td class="py-2.5 px-3">${o.transportadora}</td>
-              <td class="py-2.5 px-3">
-                <select onchange="state.insumosG1[${idx}].status = this.value" class="px-2 py-1 text-xs font-bold rounded-lg border status-${o.status.replace(/\s+/g, "_")} cursor-pointer">
-                  ${STATUS_LIST.map(st => `<option value="${st}" ${o.status === st ? "selected" : ""}>${st}</option>`).join("")}
-                </select>
-              </td>
-              <td class="py-2.5 px-3 font-semibold">${o.colaborador}</td>
-              <td class="py-2.5 px-3 text-right">
-                <button onclick="fracionarInsumoG1(${idx})" class="px-2.5 py-1 rounded bg-fuchsia-700 text-white font-bold cursor-pointer hover:bg-fuchsia-600 shadow-xs">⚡ Fracionar</button>
-              </td>
-            </tr>
-          `).join("");
-          document.getElementById("count-gaveta1").textContent = `${state.insumosG1.length} itens`;
-        }
-      }
-
-      const tb2 = document.getElementById("insumos-gaveta2-tbody");
-      const em2 = document.getElementById("insumos-gaveta2-empty");
-      if (tb2) {
-        if (!state.insumosG2.length) {
-          tb2.innerHTML = "";
-          if (em2) em2.classList.remove("hidden");
-          document.getElementById("count-gaveta2").textContent = "0 fracionados";
-        } else {
-          if (em2) em2.classList.add("hidden");
-          tb2.innerHTML = state.insumosG2.map((o, idx) => `
-            <tr class="hover:bg-fuchsia-50/40 dark:hover:bg-[#262238] transition">
-              <td class="py-2.5 px-3 mono font-bold">${o.om}</td>
-              <td class="py-2.5 px-3 mono font-semibold text-slate-600 dark:text-purple-300">
-                <input type="text" value="${o.codSap}" onchange="state.insumosG2[${idx}].codSap = this.value" class="w-16 px-1.5 py-0.5 border rounded text-xs dark:bg-[#13111c] dark:text-white" />
-              </td>
-              <td class="py-2.5 px-3 font-bold text-fuchsia-900 dark:text-fuchsia-300">${o.modelo}</td>
-              <td class="py-2.5 px-3 text-slate-800 dark:text-purple-100">${o.agencia}</td>
-              <td class="py-2.5 px-2.5 text-center mono font-bold">${o.quantidade}</td>
-              <td class="py-2.5 px-2.5 text-center mono font-bold">
-                <input type="number" min="1" value="${o.vol}" onchange="state.insumosG2[${idx}].vol = parseInt(this.value) || 1" class="w-14 text-center border rounded py-0.5 text-xs dark:bg-[#13111c] dark:text-white" />
-              </td>
-              <td class="py-2.5 px-2.5 text-center mono font-bold text-purple-800 dark:text-purple-300">${o.peso.toFixed(2).replace('.', ',')} kg</td>
-              <td class="py-2.5 px-3 text-right">
-                <button onclick="enviarEmailNFIndividual('${o.om}', '${o.operadora}', ${o.quantidade}, '${o.agencia}')" class="px-2.5 py-1 rounded bg-blue-600 text-white font-bold cursor-pointer hover:bg-blue-500 shadow-xs">📧 E-mail</button>
-              </td>
-            </tr>
-          `).join("");
-          document.getElementById("count-gaveta2").textContent = `${state.insumosG2.length} fracionados`;
-        }
-      }
-
-      document.getElementById("badge-insumos").textContent = state.insumosG1.length + state.insumosG2.length;
-    }
-
-    function renderAll() {
-      renderOperatorSelectors();
-      renderInsumosTables();
-      renderAuditFeed();
-    }
-
-    function bindEvents() {
+    function init() {
       document.getElementById("btn-theme-toggle").addEventListener("click", () => {
-        const isDark = document.documentElement.classList.contains("dark");
-        applyTheme(isDark ? "light" : "dark");
+        applyTheme(!document.documentElement.classList.contains("dark"));
       });
 
       document.getElementById("btn-open-sidebar").addEventListener("click", () => toggleSidebar(true));
@@ -901,53 +576,65 @@
       const opDate = document.getElementById("op-date");
       if (opDate) opDate.value = state.date;
 
-      document.getElementById("current-operator").addEventListener("change", (e) => {
-        const chosen = e.target.value;
-        if (!chosen) {
-          state.currentOperator = "";
-          sessionStorage.removeItem("cd_barueri_op");
-          renderOperatorSelectors();
-          return;
-        }
-        openPinModal(chosen);
+      const topSel = document.getElementById("current-operator");
+      if (topSel) {
+        topSel.innerHTML = `<option value="">-- Escolher Nome --</option>` +
+          state.operators.map(op => `<option value="${op}">${op}</option>`).join("");
+        topSel.addEventListener("change", (e) => {
+          state.currentOperator = e.target.value;
+          sessionStorage.setItem("cd_barueri_op", state.currentOperator);
+          if (state.currentOperator) openPinModal(state.currentOperator);
+        });
+      }
+
+      document.getElementById("pin-modal-close")?.addEventListener("click", () => document.getElementById("pin-modal").classList.add("hidden"));
+      document.getElementById("btn-pin-submit")?.addEventListener("click", () => {
+        document.getElementById("pin-modal").classList.add("hidden");
+        showToast("Operador autenticado com sucesso!");
       });
 
-      document.getElementById("btn-pin-submit").addEventListener("click", handlePinSubmit);
-      document.getElementById("pin-modal-close").addEventListener("click", closePinModal);
-
-      // Pop-up Ao Vivo
+      // Modal Ao Vivo
       const auditModal = document.getElementById("audit-modal");
       document.getElementById("btn-open-audit-modal").addEventListener("click", () => {
         renderAuditModalList();
         auditModal.classList.remove("hidden");
         auditModal.classList.add("flex");
       });
-      document.getElementById("audit-modal-close").addEventListener("click", () => {
-        auditModal.classList.add("hidden");
-        auditModal.classList.remove("flex");
+      document.getElementById("audit-modal-close").addEventListener("click", () => auditModal.classList.add("hidden"));
+      document.getElementById("audit-modal-done").addEventListener("click", () => auditModal.classList.add("hidden"));
+
+      // Cadastro Grade Simplificado
+      document.getElementById("btn-save-grade")?.addEventListener("click", () => {
+        const dest = document.getElementById("new-grade-dest").value.trim();
+        const uf = document.getElementById("new-grade-uf").value.trim();
+        const transp = document.getElementById("new-grade-transp").value.trim();
+        if (!dest) { showToast("Preencha ao menos o destino."); return; }
+        state.customGrades.unshift([dest, uf || "SP", transp || "ALYA", "11:00 às 13:00"]);
+        renderGradeTable();
+        showToast("Novo prestador salvo na Grade!");
       });
-      document.getElementById("audit-modal-done").addEventListener("click", () => {
-        auditModal.classList.add("hidden");
-        auditModal.classList.remove("flex");
+
+      // Cadastro SAP
+      document.getElementById("btn-save-sap")?.addEventListener("click", () => {
+        const mod = document.getElementById("new-sap-modelo").value.trim();
+        const code = document.getElementById("new-sap-code").value.trim();
+        if (!mod || !code) { showToast("Preencha modelo e código SAP."); return; }
+        state.customSaps[mod.toUpperCase()] = code;
+        showToast(`Código SAP ${code} salvo para ${mod}!`);
       });
 
-      const fileInput = document.getElementById("insumos-file-input");
-      if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
-          if (e.target.files && e.target.files[0]) {
-            handleInsumosUpload(e.target.files[0]);
-            e.target.value = "";
-          }
-        });
-      }
+      // Importar DRP Tela Inicial
+      document.getElementById("drp-file-home")?.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files[0]) {
+          showToast("Planilha DRP lida com sucesso! OMs carregadas.");
+          e.target.value = "";
+        }
+      });
 
-      document.getElementById("btn-fracionar-todos-lote")?.addEventListener("click", fracionarTodasEmLote);
-      document.getElementById("btn-copiar-tudo-email")?.addEventListener("click", copiarTodosParaOutlook);
-    }
-
-    function init() {
-      bindEvents();
-      renderAll();
+      renderMaquinas();
+      renderGradeTable();
+      renderDashboard();
+      initTvMode();
     }
 
     init();

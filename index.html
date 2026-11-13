@@ -445,7 +445,7 @@
 
 <section id="tv-presentation" class="tv-presentation hidden" aria-label="Painel de apresentação">
       <div class="tv-topbar">
-        <div class="tv-brand-lockup"><svg class="tv-brand-logo" viewBox="0 0 265 46" role="img" aria-label="Alya | Mobyan"><rect x=".5" y=".5" width="264" height="45" rx="13" fill="#faf8ff" stroke="#d9cafa"/><g fill="#32166f"><path d="M27 8 34 12 27 16 20 12Z M27 18 34 22 27 26 20 22Z M15 14 22 18 15 22 8 18Z M39 14 46 18 39 22 32 18Z M27 28 34 32 27 36 20 32Z M15 24 22 28 15 32 8 28Z M39 24 46 28 39 32 32 28Z"/><text x="51" y="31" font-family="Arial,sans-serif" font-size="28" font-weight="800" letter-spacing="-1.5">alya</text><path d="M126 7v32" stroke="#c8b8e8" stroke-width="2"/><text x="141" y="31" font-family="Arial,sans-serif" font-size="27" font-weight="500" letter-spacing="-1">Mobyan</text><rect x="244" y="8" width="8" height="8" rx="1"/></g></svg><div class="tv-brand-sub">CONTROLE OPERACIONAL · CD BARUERI</div></div>
+        <div class="tv-brand-lockup"><img class="tv-brand-logo" src="./assets/alya-mobyan-logo.svg" alt="Alya | Mobyan"><div class="tv-brand-sub">CONTROLE OPERACIONAL · CD BARUERI</div></div>
         <div class="flex items-center gap-4"><div class="text-right"><div id="tv-clock" class="tv-clock">--:--:--</div><div id="tv-slide-counter" class="text-xs text-slate-400">SLIDE 1 DE 4</div></div><button type="button" id="btn-close-tv" class="tv-control-btn">✕ Sair (Esc)</button></div>
       </div>
       <div id="tv-slide-content" class="tv-slide"></div>
@@ -2638,8 +2638,11 @@
         return tb - ta;
       });
       const grouped = new Map();
-      entries.forEach(item => {
-        const who = String(item.who || "SISTEMA");
+      entries.filter(item => {
+        const who = String(item.who || "").trim();
+        return who && who.toUpperCase() !== "SISTEMA" && String(item.actionText || "").trim();
+      }).forEach(item => {
+        const who = String(item.who).trim();
         if (!grouped.has(who)) grouped.set(who, []);
         grouped.get(who).push(item);
       });

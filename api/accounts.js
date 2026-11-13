@@ -27,6 +27,9 @@ function accountRef(username) { return admin.firestore(getAdminApp()).collection
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return reply(res, 405, { error: "Método não permitido." });
+  if (process.env.VERCEL_ENV !== "production") {
+    return reply(res, 409, { error: "A gestão de contas fica bloqueada fora de Production porque Preview compartilha o Firebase com a produção." });
+  }
   try {
     const actor = await requireIdentity(req);
     if (!["admin", "supervisor"].includes(actor.role)) {
@@ -52,22 +55,61 @@ module.exports = async (req, res) => {
     }
 
     if (action === "migrateLegacy") {
-      if (process.env.VERCEL_ENV !== "production") {
-        return reply(res, 409, { error: "A migração definitiva está bloqueada no Preview para proteger os dados compartilhados com a produção." });
-      }
       if (actor.role !== "admin" || actor.username !== "ADM") {
         const error = new Error("Somente a conta ADM principal pode executar a migração.");
         error.status = 403;
         throw error;
       }
+
       const legacyRef = db.doc("artifacts/cd-barueri-sp/public/data/config/operator_pins");
       const legacySnap = await legacyRef.get();
       if (!legacySnap.exists) return reply(res, 404, { error: "Cadastro legado não encontrado." });
       const legacyData = legacySnap.data();
       const legacyUsers = legacyData.users && typeof legacyData.users === "object" ? legacyData.users : {};
+      const legacyPins = legacyData.pins === undefined ? {} : legacyData.pins;
       const backupRef = db.collection("cd_barueri_account_migration_backups").doc("legacy-accounts-v1");
+
+      // Canonical hash lets us validate the complete backup without exposing legacy PIN data.
+      const canonical = value => {
+        if (Array.isArray(value)) return value.map(canonical);
+        if (value && typeof value === "object") {
+          return Object.keys(value).sort().reduce((out, key) => {
+            out[key] = canonical(value[key]);
+            return out;
+          }, {});
+        }
+        return value;
+      };
+      const backupPayload = { users: legacyUsers, pins: legacyPins };
+      const payloadText = JSON.stringify(canonical(backupPayload));
+      const payloadSha256 = crypto.createHash("sha256").update(payloadText).digest("hex");
+      if (Buffer.byteLength(payloadText, "utf8") > 900 * 1024) {
+        return reply(res, 413, { error: "O cadastro legado excede o limite seguro para um único documento de backup. Nenhum dado foi alterado; é necessário planejar backup particionado." });
+      }
+
       const backupSnap = await backupRef.get();
-      if (!backupSnap.exists) await backupRef.create({ users: legacyUsers, sourcePath: "artifacts/cd-barueri-sp/public/data/config/operator_pins", createdAt: now, createdBy: actor.username });
+      if (!backupSnap.exists) {
+        await backupRef.create({
+          ...backupPayload,
+          schemaVersion: 2,
+          payloadSha256,
+          sourcePath: "artifacts/cd-barueri-sp/public/data/config/operator_pins",
+          createdAt: now,
+          createdBy: actor.username
+        });
+      }
+
+      const verifiedBackupSnap = await backupRef.get();
+      const backup = verifiedBackupSnap.exists ? verifiedBackupSnap.data() : null;
+      if (!backup || backup.schemaVersion !== 2 || !backup.users || typeof backup.users !== "object" || !Object.prototype.hasOwnProperty.call(backup, "pins")) {
+        return reply(res, 409, { error: "Backup legado incompleto ou em formato antigo. Nenhuma migração ou limpeza foi executada; é necessário criar e validar um backup completo de usuários e PINs." });
+      }
+      const storedPayloadText = JSON.stringify(canonical({ users: backup.users, pins: backup.pins }));
+      const storedHash = crypto.createHash("sha256").update(storedPayloadText).digest("hex");
+      if (storedHash !== backup.payloadSha256 || storedHash !== payloadSha256) {
+        return reply(res, 409, { error: "A integridade ou correspondência do backup legado não foi confirmada. Nenhuma conta foi migrada e nenhum dado legado foi removido." });
+      }
+
       const migrated = [];
       const skipped = [];
       for (const [key, old] of Object.entries(legacyUsers)) {
@@ -76,8 +118,11 @@ module.exports = async (req, res) => {
         if (!validUsername(name)) { skipped.push(name || key); continue; }
         const ref = accountRef(name);
         const current = await ref.get();
+
+        // Idempotency: never overwrite an account that already exists, especially its PIN hash/salt.
+        if (current.exists) { skipped.push(name); continue; }
+
         const isPrimaryAdmin = name === "ADM";
-        if (current.exists && isPrimaryAdmin) { skipped.push(name); continue; }
         const provisional = isPrimaryAdmin ? null : hashPin("0000");
         const record = {
           username: name,
@@ -87,20 +132,20 @@ module.exports = async (req, res) => {
           ...(isPrimaryAdmin
             ? { pinSalt: old.pinSalt || "", pinHash: old.pinHash || "", pinConfigured: old.pinConfigured === true, mustChangePin: old.mustChangePin === true }
             : { ...provisional, pinConfigured: true, mustChangePin: true }),
-          createdAt: (current.exists && current.data().createdAt) || old.createdAt || now,
+          createdAt: old.createdAt || now,
           updatedAt: now,
           migratedFromLegacy: true
         };
-        if (current.exists) await ref.set(record, { merge: true });
-        else await ref.create(record);
+        await ref.create(record);
         migrated.push(name);
       }
-      if (!migrated.includes("ADM")) {
-        const adminSnap = await accountRef("ADM").get();
-        if (!adminSnap.exists) {
-          return reply(res, 409, { error: "A conta ADM não foi encontrada no cadastro legado. Nenhuma conta antiga foi removida.", migrated, skipped });
-        }
+
+      const adminSnap = await accountRef("ADM").get();
+      if (!adminSnap.exists) {
+        return reply(res, 409, { error: "A conta ADM não foi encontrada no cadastro legado nem no cadastro privado. Nenhum dado legado foi removido.", migrated, skipped });
       }
+
+      // Cleanup only after a complete, integrity-checked backup and confirmed ADM account.
       await legacyRef.update({
         users: admin.firestore.FieldValue.delete(),
         pins: admin.firestore.FieldValue.delete(),

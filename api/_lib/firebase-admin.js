@@ -37,6 +37,19 @@ async function requireIdentity(req) {
   const app = getAdminApp();
   try {
     const decoded = await admin.auth(app).verifyIdToken(match[1], true);
+    const username = String(decoded.username || "").trim().toUpperCase();
+    const role = String(decoded.role || "");
+    if (!username || !["admin", "supervisor", "operator"].includes(role)) {
+      const error = new Error("Sessão sem identidade ou perfil válido.");
+      error.status = 401;
+      throw error;
+    }
+    const accountSnap = await admin.firestore(app).collection("cd_barueri_accounts").doc(username).get();
+    if (!accountSnap.exists || accountSnap.data().active === false || accountSnap.data().role !== role) {
+      const error = new Error("Conta desativada ou perfil atualizado. Entre novamente.");
+      error.status = 401;
+      throw error;
+    }
     return decoded;
   } catch {
     const error = new Error("Sessão inválida ou expirada.");

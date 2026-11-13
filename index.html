@@ -1300,6 +1300,9 @@
     // Importações do Firebase carregadas dinamicamente dentro de initCloudSync()
     // para que o painel NUNCA trave mesmo se a rede bloquear gstatic.com ou abrir via file://
     let fbFirestoreMod = null;
+    let fbAuthMod = null;
+    let fbAuth = null;
+    let fbConfigUnsub = null;
 
     // ==================== THEME (LIGHT / DARK MODE) ====================
     const THEME_STORAGE_KEY = "cd_barueri_theme_v1";
@@ -1600,7 +1603,7 @@
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed.pins) state.pins = parsed.pins;
-          state.users = normalizeUserAccounts(parsed.users || state.users);
+          // Credenciais de acesso não são mais persistidas no navegador.
           if (Array.isArray(parsed.sapCatalog)) state.sapCatalog = parsed.sapCatalog;
           if (Array.isArray(parsed.gradeCatalog)) state.gradeCatalog = parsed.gradeCatalog;
           if (Array.isArray(parsed.operators) && parsed.operators.length > 0) {
@@ -1615,7 +1618,6 @@
       try {
         localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({
           pins: state.pins,
-          users: state.users,
           operators: state.operators,
           sapCatalog: state.sapCatalog,
           gradeCatalog: state.gradeCatalog
@@ -1653,7 +1655,6 @@
         const cfgRef = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "config", "operator_pins");
         await fbFirestoreMod.setDoc(cfgRef, {
           pins: state.pins,
-          users: state.users,
           operators: state.operators,
           sapCatalog: state.sapCatalog,
           gradeCatalog: state.gradeCatalog,
@@ -1710,7 +1711,6 @@
       const badge = document.getElementById("cloud-status-badge");
       const dot = document.getElementById("cloud-dot");
       const txt = document.getElementById("cloud-status-text");
-
       let cfg = null;
       try {
         if (typeof __firebase_config !== "undefined" && __firebase_config) {
@@ -1718,9 +1718,7 @@
         } else if (FIREBASE_CONFIG_VERCEL && FIREBASE_CONFIG_VERCEL.apiKey && !FIREBASE_CONFIG_VERCEL.apiKey.includes("COLE_SUA")) {
           cfg = FIREBASE_CONFIG_VERCEL;
         }
-      } catch (e) {
-        cfg = null;
-      }
+      } catch (e) { cfg = null; }
 
       if (!cfg || !cfg.apiKey) {
         badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 flex items-center gap-1.5";
@@ -1729,100 +1727,93 @@
         return;
       }
 
-      // Watchdog de segurança: se em 4 segundos não conectar, libera o status como Modo Local
-      const watchdog = setTimeout(() => {
-        if (!state.cloudConnected) {
-          badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5 cursor-pointer";
-          dot.className = "w-2 h-2 rounded-full bg-amber-500";
-          txt.textContent = "Modo Local (Offline)";
-        }
-      }, 4000);
-
       try {
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3800));
-        const connectPromise = (async () => {
-          const [appMod, authMod, fsMod] = await Promise.all([
-            import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"),
-            import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"),
-            import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js")
-          ]);
-          fbFirestoreMod = fsMod;
-          const app = appMod.initializeApp(cfg);
-          const auth = authMod.getAuth(app);
-          const db = fsMod.getFirestore(app);
-
-          if (typeof __initial_auth_token !== "undefined" && __initial_auth_token) {
-            await authMod.signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await authMod.signInAnonymously(auth);
-          }
-          return db;
-        })();
-
-        const db = await Promise.race([connectPromise, timeoutPromise]);
-        clearTimeout(watchdog);
-
-        state.cloudDb = db;
-        state.cloudConnected = true;
-
-        badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5";
-        dot.className = "w-2 h-2 rounded-full bg-emerald-500";
-        txt.textContent = "Nuvem Sincronizada";
-
-        const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
-        const cfgRef = fbFirestoreMod.doc(db, "artifacts", appId, "public", "data", "config", "operator_pins");
-        fbFirestoreMod.onSnapshot(cfgRef, (snap) => {
-          if (snap.exists()) {
-            const d = snap.data();
-            if (d.pins) state.pins = { ...state.pins, ...d.pins };
-            if (d.users && typeof d.users === "object") {
-              state.users = normalizeUserAccounts({ ...state.users, ...d.users });
-            }
-            if (Array.isArray(d.sapCatalog)) state.sapCatalog = d.sapCatalog;
-            if (Array.isArray(d.gradeCatalog)) {
-              state.gradeCatalog = d.gradeCatalog;
-              rebuildGradeLookup();
-              renderGrade();
-              populateDynamicFilters();
-            }
-            if (Array.isArray(d.operators) && d.operators.length > 0) {
-              const prevSet = new Set(state.operators);
-              state.operators = d.operators;
-              d.operators.forEach(op => {
-                if (!prevSet.has(op)) state.selectedMaqOperators.add(op);
-              });
-              for (const op of Array.from(state.selectedMaqOperators)) {
-                if (!d.operators.includes(op)) state.selectedMaqOperators.delete(op);
-              }
-              for (const op of Array.from(state.selectedChipOperators)) {
-                if (!d.operators.includes(op)) state.selectedChipOperators.delete(op);
-              }
-              if (state.currentOperator && !d.operators.includes(state.currentOperator)) {
-                state.currentOperator = "";
-                sessionStorage.removeItem("cd_barueri_op");
-              }
-            } else {
-              syncConfigToCloud();
-            }
-            saveLocalConfig();
-            renderAll();
-            renderTeamModalList();
-            renderSapCatalog();
-          } else {
-            syncConfigToCloud();
-          }
-        });
-
-        subscribeCloudDay(state.date);
-        subscribeCloudInsumos(state.insumosDate);
-      } catch (err) {
-        clearTimeout(watchdog);
-        console.warn("Fallback local ativado:", err);
-        badge.title = "Motivo: " + (err && err.message ? err.message : "Sem resposta da nuvem");
-        badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5 cursor-pointer";
+        const [appMod, authMod, fsMod] = await Promise.all([
+          import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"),
+          import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js")
+        ]);
+        fbFirestoreMod = fsMod;
+        fbAuthMod = authMod;
+        const app = appMod.getApps().length ? appMod.getApp() : appMod.initializeApp(cfg);
+        fbAuth = authMod.getAuth(app);
+        state.cloudDb = fsMod.getFirestore(app);
+        badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5";
         dot.className = "w-2 h-2 rounded-full bg-amber-500";
-        txt.textContent = "Modo Local (Offline)";
+        txt.textContent = "Aguardando login";
+      } catch (err) {
+        console.warn("Firebase indisponível:", err);
+        badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5";
+        dot.className = "w-2 h-2 rounded-full bg-amber-500";
+        txt.textContent = "Nuvem indisponível";
+        badge.title = err.message || "Falha ao inicializar Firebase";
       }
+    }
+
+    async function connectAuthenticatedCloud(customToken) {
+      if (!fbAuthMod || !fbAuth || !state.cloudDb || !customToken) {
+        throw new Error("Conexão Firebase não inicializada. Atualize a página e tente novamente.");
+      }
+      await fbAuthMod.signInWithCustomToken(fbAuth, customToken);
+      state.cloudConnected = true;
+
+      const badge = document.getElementById("cloud-status-badge");
+      const dot = document.getElementById("cloud-dot");
+      const txt = document.getElementById("cloud-status-text");
+      badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5";
+      dot.className = "w-2 h-2 rounded-full bg-emerald-500";
+      txt.textContent = "Nuvem autenticada";
+
+      const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
+      if (fbConfigUnsub) fbConfigUnsub();
+      const cfgRef = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "config", "operator_pins");
+      fbConfigUnsub = fbFirestoreMod.onSnapshot(cfgRef, (snap) => {
+        if (!snap.exists()) return;
+        const d = snap.data();
+        if (d.pins) state.pins = { ...state.pins, ...d.pins };
+        if (Array.isArray(d.sapCatalog)) state.sapCatalog = d.sapCatalog;
+        if (Array.isArray(d.gradeCatalog)) {
+          state.gradeCatalog = d.gradeCatalog;
+          rebuildGradeLookup();
+          renderGrade();
+          populateDynamicFilters();
+        }
+        if (Array.isArray(d.operators) && d.operators.length > 0) {
+          const prevSet = new Set(state.operators);
+          state.operators = d.operators;
+          d.operators.forEach(op => { if (!prevSet.has(op)) state.selectedMaqOperators.add(op); });
+          for (const op of Array.from(state.selectedMaqOperators)) if (!d.operators.includes(op)) state.selectedMaqOperators.delete(op);
+          for (const op of Array.from(state.selectedChipOperators)) if (!d.operators.includes(op)) state.selectedChipOperators.delete(op);
+          if (state.currentOperator && !d.operators.includes(state.currentOperator)) {
+            state.currentOperator = "";
+            sessionStorage.removeItem("cd_barueri_op");
+          }
+        }
+        saveLocalConfig();
+        renderAll();
+        renderTeamModalList();
+        renderSapCatalog();
+      }, err => console.warn("Snapshot da configuração:", err));
+
+      subscribeCloudDay(state.date);
+      subscribeCloudInsumos(state.insumosDate);
+    }
+
+    async function authenticatedApi(path, payload) {
+      if (!fbAuth?.currentUser) throw new Error("Sua sessão não está autenticada. Entre novamente.");
+      const token = await fbAuth.currentUser.getIdToken();
+      const response = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+        body: JSON.stringify(payload || {})
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(data.error || "Não foi possível concluir a solicitação.");
+        error.status = response.status;
+        throw error;
+      }
+      return data;
     }
 
     // ==================== GESTÃO DE CONTAS (ADM E SUPERVISOR) ====================
@@ -1882,22 +1873,20 @@
       const username = document.getElementById("account-new-username").value.trim().toUpperCase();
       const role = document.getElementById("account-new-role").value;
       const operatorName = document.getElementById("account-new-operator").value || null;
-      if (!/^[A-Z0-9._-]{2,30}$/.test(username)) return showToast("Use um usuário de 2 a 30 caracteres: letras, números, ponto, hífen ou underline.");
+      if (!/^[A-Z0-9._-]{2,30}$/.test(username)) return showToast("Use um usuário de 2 a 30 caracteres.");
       if (username === "ADM" || state.users[username]) return showToast("Esse usuário já existe ou é reservado.");
       if (![USER_ROLES.OPERATOR, USER_ROLES.SUPERVISOR].includes(role)) return showToast("Perfil inválido.");
       if (role === USER_ROLES.OPERATOR && !operatorName) return showToast("Vincule o Operador a um colaborador operacional.");
       if (operatorName && !state.operators.includes(operatorName)) return showToast("Colaborador operacional não encontrado.");
-      state.users[username] = {
-        username, role, active: true, operatorName, mustChangePin: true,
-        pinConfigured: false, pinSalt: "", pinHash: "",
-        createdAt: new Date().toISOString(), updatedAt: null
-      };
-      await syncConfigToCloud();
-      pushAudit("CONTAS", `Conta ${username} criada com perfil ${role === USER_ROLES.SUPERVISOR ? "Supervisor" : "Operador"}${operatorName ? " vinculada a " + operatorName : ""}.`);
-      await syncToCloud();
-      document.getElementById("account-new-username").value = "";
-      renderAccountsList();
-      showToast("Conta criada. Primeiro acesso com PIN provisório 0000.");
+      try {
+        const result = await authenticatedApi("/api/accounts", { action: "create", username, role, operatorName });
+        state.users[username] = normalizeUserAccounts({ [username]: result.account })[username];
+        pushAudit("CONTAS", "Conta " + username + " criada com PIN provisório 0000 por " + state.currentUser.username + ".");
+        await syncToCloud();
+        document.getElementById("account-new-username").value = "";
+        renderAccountsList();
+        showToast("Conta criada. Primeiro acesso com PIN provisório 0000.");
+      } catch (error) { showToast(error.message || "Falha ao criar conta."); }
     }
 
     async function handleAccountAdminAction(event) {
@@ -1907,20 +1896,23 @@
       const username = resetButton?.dataset.accountReset || toggleButton?.dataset.accountToggle;
       if (!username || !state.users[username] || username === "ADM") return;
       const user = state.users[username];
-      if (resetButton) {
-        if (!confirm("Redefinir o PIN de " + username + "? A pessoa deverá usar 0000 e cadastrar um novo PIN no próximo acesso.")) return;
-        state.users[username] = { ...user, pinConfigured: false, pinSalt: "", pinHash: "", mustChangePin: true, updatedAt: new Date().toISOString() };
-        pushAudit("CONTAS", `PIN da conta ${username} redefinido por ${state.currentUser.username}.`);
-      } else if (toggleButton) {
-        const nextActive = !user.active;
-        if (!confirm((nextActive ? "Ativar" : "Desativar") + " a conta " + username + "?")) return;
-        state.users[username] = { ...user, active: nextActive, updatedAt: new Date().toISOString() };
-        pushAudit("CONTAS", `Conta ${username} ${nextActive ? "ativada" : "desativada"} por ${state.currentUser.username}.`);
-      }
-      await syncConfigToCloud();
-      await syncToCloud();
-      renderAccountsList();
-      showToast("Conta atualizada.");
+      try {
+        if (resetButton) {
+          if (!confirm("Redefinir o PIN de " + username + "? A pessoa deverá usar 0000 e cadastrar um novo PIN no próximo acesso.")) return;
+          await authenticatedApi("/api/accounts", { action: "resetPin", username });
+          state.users[username] = { ...user, pinConfigured: true, pinSalt: "", pinHash: "", mustChangePin: true, updatedAt: new Date().toISOString() };
+          pushAudit("CONTAS", "PIN da conta " + username + " redefinido por " + state.currentUser.username + ".");
+        } else if (toggleButton) {
+          const nextActive = !user.active;
+          if (!confirm((nextActive ? "Ativar" : "Desativar") + " a conta " + username + "?")) return;
+          await authenticatedApi("/api/accounts", { action: "setActive", username, active: nextActive });
+          state.users[username] = { ...user, active: nextActive, updatedAt: new Date().toISOString() };
+          pushAudit("CONTAS", "Conta " + username + " " + (nextActive ? "ativada" : "desativada") + " por " + state.currentUser.username + ".");
+        }
+        await syncToCloud();
+        renderAccountsList();
+        showToast("Conta atualizada.");
+      } catch (error) { showToast(error.message || "Falha ao atualizar conta."); }
     }
 
     // ==================== GESTÃO DE EQUIPE (ADICIONAR / REMOVER) ====================
@@ -1995,19 +1987,9 @@
       const description = document.getElementById("account-auth-description");
       const confirmWrap = document.getElementById("account-pin-confirm-wrap");
       const button = document.getElementById("btn-account-auth");
-      const usernameInput = document.getElementById("account-username");
-      const username = (usernameInput.value || "ADM").trim().toUpperCase();
-      const user = state.users[username];
-      accountAuthMode = user && !user.pinConfigured ? "bootstrap" : "login";
-      if (accountAuthMode === "bootstrap") {
-        description.textContent = "Primeiro acesso: informe o PIN provisório 0000 e crie seu PIN pessoal.";
-        confirmWrap.classList.remove("hidden");
-        button.textContent = "Criar PIN e entrar";
-      } else {
-        description.textContent = "Entre com sua conta e PIN individual.";
-        confirmWrap.classList.add("hidden");
-        button.textContent = "Entrar";
-      }
+      description.textContent = "Entre com seu usuário e PIN individual. No primeiro acesso, use 0000 e cadastre um novo PIN.";
+      confirmWrap.classList.add("hidden");
+      button.textContent = "Entrar";
       document.getElementById("account-pin-1").value = "";
       document.getElementById("account-pin-2").value = "";
       document.getElementById("account-pin-3").value = "";
@@ -2020,46 +2002,81 @@
       const pin2 = document.getElementById("account-pin-2").value.trim();
       const pin3 = document.getElementById("account-pin-3").value.trim();
       const button = document.getElementById("btn-account-auth");
+      const confirmWrap = document.getElementById("account-pin-confirm-wrap");
       document.getElementById("account-auth-error").classList.add("hidden");
       if (!/^[A-Z0-9._-]{2,30}$/.test(username)) return setAccountAuthError("Informe um usuário válido.");
       if (!/^\d{4}$/.test(pin)) return setAccountAuthError("O PIN deve conter exatamente 4 números.");
-      const user = state.users[username];
-      if (!user || user.active === false) return setAccountAuthError("Usuário não encontrado ou desativado.");
       button.disabled = true;
       button.textContent = "Verificando...";
       try {
-        if (!user.pinConfigured || !user.pinHash || !user.pinSalt) {
-          if (pin !== TEMP_INITIAL_PIN) return setAccountAuthError("Conta ainda não configurada. Verifique o usuário e a senha provisória.");
-          if (!/^\d{4}$/.test(pin2) || pin2 === TEMP_INITIAL_PIN) return setAccountAuthError("O novo PIN deve ter 4 números e ser diferente de 0000.");
-          if (!/^\d{4}$/.test(pin3) || pin2 !== pin3) return setAccountAuthError("Os dois campos do novo PIN devem ser iguais e conter 4 números.");
-          const result = await hashAccountPin(pin2);
-          state.users[username] = { ...user, pinSalt: result.salt, pinHash: result.hash, pinConfigured: true, mustChangePin: false, updatedAt: new Date().toISOString() };
-          await syncConfigToCloud();
-        } else {
-          const result = await hashAccountPin(pin, user.pinSalt);
-          if (result.hash !== user.pinHash) return setAccountAuthError("PIN incorreto.");
+        const response = await fetch("/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "login", username, pin, newPin: pin2, confirmPin: pin3 })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          if (response.status === 400 && /novo PIN|PIN provisório|confirmado/i.test(result.error || "")) {
+            confirmWrap.classList.remove("hidden");
+            document.getElementById("account-auth-description").textContent = "Primeiro acesso ou PIN redefinido: use 0000 e informe um novo PIN pessoal nos dois campos.";
+            button.textContent = "Criar PIN e entrar";
+            return setAccountAuthError(result.error || "Informe e confirme seu novo PIN.");
+          }
+          throw new Error(result.error || "Não foi possível validar o acesso.");
         }
-        const authenticatedUser = state.users[username];
-        state.currentUser = { username, role: authenticatedUser.role, operatorName: authenticatedUser.operatorName || null };
+
+        await connectAuthenticatedCloud(result.customToken);
+        const authenticatedUser = result.user;
+        state.currentUser = {
+          username: authenticatedUser.username,
+          role: authenticatedUser.role,
+          operatorName: authenticatedUser.operatorName || null
+        };
         state.currentOperator = authenticatedUser.operatorName && state.operators.includes(authenticatedUser.operatorName)
           ? authenticatedUser.operatorName : (username === "ADM" ? "ADM" : "");
         sessionStorage.setItem("cd_barueri_account", username);
+
+        if (username === "ADM") {
+          try {
+            await authenticatedApi("/api/accounts", { action: "migrateLegacy" });
+          } catch (migrationError) {
+            console.warn("Migração de contas legadas:", migrationError);
+          }
+        }
+        if (["admin", "supervisor"].includes(state.currentUser.role)) {
+          try {
+            const accountData = await authenticatedApi("/api/accounts", { action: "list" });
+            state.users = normalizeUserAccounts(Object.fromEntries(accountData.accounts.map(account => [account.username, account])));
+            renderAccountsList();
+          } catch (accountError) {
+            console.warn("Não foi possível carregar a lista de contas:", accountError);
+          }
+        } else {
+          state.users = normalizeUserAccounts({ [username]: authenticatedUser });
+        }
+
         document.getElementById("account-auth-gate").classList.add("hidden");
         renderOperatorSelectors();
         setAccountAdminControls();
-        showToast(`Acesso liberado — perfil ${authenticatedUser.role === "admin" ? "ADM" : authenticatedUser.role === "supervisor" ? "Supervisor" : "Operador"}.`);
+        renderAll();
+        showToast("Acesso liberado — perfil " + (authenticatedUser.role === "admin" ? "ADM" : authenticatedUser.role === "supervisor" ? "Supervisor" : "Operador") + ".");
       } catch (error) {
         console.error("Falha no acesso por conta:", error);
         setAccountAuthError(error.message || "Não foi possível validar o acesso.");
       } finally {
         button.disabled = false;
-        button.textContent = accountAuthMode === "bootstrap" ? "Criar PIN e entrar" : "Entrar";
+        button.textContent = confirmWrap.classList.contains("hidden") ? "Entrar" : "Criar PIN e entrar";
       }
     }
 
     function logoutAccount() {
       state.currentUser = null;
       state.currentOperator = "";
+      state.cloudConnected = false;
+      if (fbConfigUnsub) { fbConfigUnsub(); fbConfigUnsub = null; }
+      if (state.cloudUnsub) { state.cloudUnsub(); state.cloudUnsub = null; }
+      if (state.insumosCloudUnsub) { state.insumosCloudUnsub(); state.insumosCloudUnsub = null; }
+      if (fbAuthMod && fbAuth) fbAuthMod.signOut(fbAuth).catch(err => console.warn("Falha ao encerrar sessão Firebase:", err));
       sessionStorage.removeItem("cd_barueri_account");
       sessionStorage.removeItem("cd_barueri_op");
       showAccountAuth();

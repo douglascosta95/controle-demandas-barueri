@@ -3120,7 +3120,8 @@
     let editingGradeIndex = null;
 
     function canManageGrade() {
-      return Boolean(state.currentUser && [USER_ROLES.ADMIN, USER_ROLES.SUPERVISOR].includes(state.currentUser.role));
+      // A Base GRADE é um cadastro operacional compartilhado: qualquer usuário autenticado pode mantê-la.
+      return Boolean(state.currentUser);
     }
 
     function clearGradeForm() {
@@ -3134,7 +3135,7 @@
     }
 
     function editGradeEntry(index) {
-      if (!canManageGrade()) return showToast("Apenas ADM e Supervisor podem editar a Base GRADE.");
+      if (!canManageGrade()) return showToast("Faça login para editar a Base GRADE.");
       const row = state.gradeCatalog[index];
       if (!row) return;
       editingGradeIndex = index;
@@ -3147,7 +3148,7 @@
     }
 
     async function saveGradeEntry() {
-      if (!canManageGrade()) return showToast("Apenas ADM e Supervisor podem cadastrar bases.");
+      if (!canManageGrade()) return showToast("Faça login para cadastrar bases.");
       const values = ["grade-dest-input", "grade-ct-input", "grade-uf-input", "grade-region-input", "grade-transp-input", "grade-dock-input"].map(id => document.getElementById(id).value.trim());
       values[2] = values[2].toUpperCase();
       values[0] = values[0].replace(/\\s+/g, " ");

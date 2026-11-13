@@ -631,22 +631,37 @@
           const wb = XLSX.read(data, { type: "array" });
           const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
           if (!rows.length) { showToast("Planilha vazia."); return; }
-          
+
           state.oms = rows.map(r => {
-            const om = String(r["OM"] || r["om"] || "").trim();
-            const destino = String(r["Base"] || r["DESTINO"] || "").trim();
-            const modelo = String(r["ModeloBase"] || r["MODELO"] || "").trim();
-            const qtd = parseInt(r["Avanco"] || r["QTD"] || 1, 10) || 1;
+            const keys = Object.keys(r);
+            const findKey = (candidates) => keys.find(k => candidates.includes(k.trim().toUpperCase())) || "";
+            
+            const omKey = findKey(["OM", "ORDEM", "NUMERO_OM"]);
+            const baseKey = findKey(["BASE", "DESTINO", "LOCAL", "CLIENTE"]);
+            const modKey = findKey(["MODELOBASE", "MODELO", "EQUIPAMENTO"]);
+            const avKey = findKey(["AVANCO", "QTD", "QUANTIDADE", "VOLUME"]);
+
+            const om = String(r[omKey] || r["OM"] || r["om"] || "").trim();
+            const destino = String(r[baseKey] || r["Base"] || r["DESTINO"] || "DESTINO NÃO INFORMADO").trim();
+            const modelo = String(r[modKey] || r["ModeloBase"] || r["MODELO"] || "POS").trim();
+            const qtd = parseInt(r[avKey] || r["Avanco"] || r["QTD"] || 1, 10) || 1;
             const tipo = destino.toUpperCase().startsWith("AG") ? "AG" : "PA";
+
             return { om, destino, modelo, qtd, tipo, colaborador: "BEATRIZ", status: "NOVA", transporte: "ALYA" };
-          }).filter(x => x.om && x.om !== "OM");
+          }).filter(x => x.om && x.om !== "OM" && x.om !== "0");
+
+          if (!state.oms.length) {
+            showToast("Nenhuma OM válida encontrada. Verifique as colunas.");
+            return;
+          }
 
           renderMaquinas();
           renderDashboard();
+          pushAudit("DRP", `Importadas ${state.oms.length} OMs do arquivo ${file.name}`);
           showToast(`${state.oms.length} OMs do DRP carregadas com sucesso!`);
         } catch (err) {
           console.error(err);
-          showToast("Erro ao ler planilha DRP.");
+          showToast("Erro ao processar arquivo DRP.");
         }
       };
       reader.readAsArrayBuffer(file);

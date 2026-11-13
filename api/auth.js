@@ -89,7 +89,7 @@ module.exports = async (req, res) => {
           createdAt: old.createdAt || new Date().toISOString()
         };
       }
-      if (account.active === false) { await recordFailedLogin(username); return reply(res, 403, { error: "Conta desativada." }); }
+      if (account.active === false) { if (process.env.VERCEL_ENV === "production") await recordFailedLogin(username); return reply(res, 403, { error: "Conta desativada." }); }
       if (!["admin", "supervisor", "operator"].includes(account.role)) return reply(res, 403, { error: "Perfil inválido." });
 
       if (!account.pinConfigured || !account.pinHash || !account.pinSalt || account.mustChangePin) {
@@ -101,7 +101,7 @@ module.exports = async (req, res) => {
         return reply(res, 401, { error: "PIN incorreto." });
       }
 
-      await attemptRef(username).delete();
+      if (process.env.VERCEL_ENV === "production") await attemptRef(username).delete();
       if (process.env.VERCEL_ENV === "production") await ref.set(account, { merge: true });
       const uid = "cdbarueri_" + username.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
       const customToken = await auth.createCustomToken(uid, { username, role: account.role, operatorName: account.operatorName || null });
@@ -109,6 +109,7 @@ module.exports = async (req, res) => {
     }
 
     if (action === "changePin") {
+      if (process.env.VERCEL_ENV !== "production") return reply(res, 409, { error: "A alteração de PIN fica bloqueada no Preview para proteger as contas reais." });
       const match = String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i);
       if (!match) return reply(res, 401, { error: "Sessão não informada." });
       const decoded = await requireIdentity(req);

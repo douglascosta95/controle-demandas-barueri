@@ -508,6 +508,29 @@
     };
 
     
+    
+    window.switchTab = function(tabName) {
+      document.querySelectorAll(".nav-tab").forEach(btn => {
+        btn.classList.toggle("tab-active", btn.dataset.tab === tabName);
+      });
+      document.querySelectorAll(".tab-panel").forEach(panel => {
+        panel.classList.toggle("hidden", panel.id !== `tab-${tabName}`);
+      });
+      const titles = {
+        "maquinas": "1. Atendimento Máquinas",
+        "insumos": "2. Demanda de Insumos & SIM Cards",
+        "simcards": "3. Fila SIM Cards Geral",
+        "importar": "4. Importar DRP & Sorteios",
+        "emergenciais": "5. OMs Emergenciais",
+        "canceladas": "6. OMs Canceladas",
+        "grade": "7. Base GRADE & Cadastros",
+        "dashboard": "📺 Painel SLA / Modo TV"
+      };
+      const ind = document.getElementById("active-tab-title-indicator");
+      if (ind) ind.textContent = titles[tabName] || tabName;
+      toggleSidebar(false);
+    };
+
     function toggleSidebar(forceOpen = null) {
       const sb = document.getElementById("app-sidebar");
       const bd = document.getElementById("sidebar-backdrop");

@@ -4707,7 +4707,8 @@
           item.assignedToNameSnapshot = targetName;
           item.updatedBy = actor;
           item.updatedAt = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-          pushAudit(item.om, "Delegação emergencial confirmada pelo servidor para " + targetName + ". Motivo: " + reason);
+          // A API já gravou a ocorrência e a trilha de auditoria de forma transacional.
+          // Não executar syncToCloud aqui: o array local poderia sobrescrever o histórico recém-gravado.
           closeEmergencyDelegationModal();
           renderAll();
           showToast("OM " + item.om + " delegada para " + targetName + ".");

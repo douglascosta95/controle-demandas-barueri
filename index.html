@@ -1079,6 +1079,25 @@
     </div>
   </div>
 
+  <div id="account-lock-gate" class="hidden fixed inset-0 z-[110] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-6 shadow-2xl space-y-4">
+      <div class="text-center">
+        <div class="mx-auto mb-3 w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-2xl">🔒</div>
+        <p class="text-[10px] font-bold tracking-[0.18em] uppercase text-purple-700 dark:text-purple-300">Controle Operacional de Demandas</p>
+        <h2 class="text-xl font-extrabold text-slate-900 dark:text-white mt-1">Sessão bloqueada</h2>
+        <p class="text-xs text-slate-500 mt-2">Por segurança, confirme seu PIN para continuar.</p>
+        <p id="account-lock-username" class="mt-2 text-sm font-bold text-purple-700 dark:text-purple-300"></p>
+      </div>
+      <div class="space-y-2">
+        <label for="account-lock-pin" class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-300">Seu PIN individual</label>
+        <input id="account-lock-pin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="••••" class="w-full px-3 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-center tracking-[0.6em] text-xl font-bold focus:outline-none focus:ring-2 focus:ring-purple-500" />
+      </div>
+      <p id="account-lock-error" class="hidden text-xs font-semibold text-rose-600" role="alert"></p>
+      <button id="btn-account-unlock" type="button" class="w-full py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-bold shadow-lg">Desbloquear</button>
+      <p class="text-[10px] leading-relaxed text-center text-slate-400">A sessão será revalidada antes de liberar o sistema.</p>
+    </div>
+  </div>
+
   <!-- ==================== MODAL: GERENCIAR EQUIPE (ADICIONAR / REMOVER) ==================== -->
   <div id="team-modal" class="fixed inset-0 bg-purple-950/70 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
@@ -1304,6 +1323,11 @@
     let fbAuth = null;
     let fbConfigUnsub = null;
     let isPreviewDeployment = true;
+    const ACCOUNT_INACTIVITY_TIMEOUT_MS = 2 * 60 * 1000;
+    let accountInactivityTimer = null;
+    let accountLastActivityAt = 0;
+    let accountInactivityEventsBound = false;
+    let lockedAccount = null;
 
     // ==================== THEME (LIGHT / DARK MODE) ====================
     const THEME_STORAGE_KEY = "cd_barueri_theme_v1";
@@ -2065,6 +2089,7 @@
         setAccountAdminControls();
         renderAll();
         showToast("Acesso liberado — perfil " + (authenticatedUser.role === "admin" ? "ADM" : authenticatedUser.role === "supervisor" ? "Supervisor" : "Operador") + ".");
+        resetAccountInactivityTimer();
       } catch (error) {
         console.error("Falha no acesso por conta:", error);
         setAccountAuthError(error.message || "Não foi possível validar o acesso.");
@@ -2074,7 +2099,169 @@
       }
     }
 
+    function resetAccountInactivityTimer() {
+      if (!state.currentUser || lockedAccount) return;
+      clearTimeout(accountInactivityTimer);
+      accountLastActivityAt = Date.now();
+      accountInactivityTimer = setTimeout(lockAccountForInactivity, ACCOUNT_INACTIVITY_TIMEOUT_MS);
+    }
+
+    function noteAccountActivity() {
+      if (!state.currentUser || lockedAccount) return;
+      const now = Date.now();
+      if (now - accountLastActivityAt < 750) return;
+      resetAccountInactivityTimer();
+    }
+
+    function bindAccountInactivityEvents() {
+      if (accountInactivityEventsBound) return;
+      ["pointerdown", "pointermove", "keydown", "touchstart", "wheel"].forEach(eventName => {
+        document.addEventListener(eventName, noteAccountActivity, { passive: true });
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState !== "visible" || !state.currentUser || lockedAccount) return;
+        if (Date.now() - accountLastActivityAt >= ACCOUNT_INACTIVITY_TIMEOUT_MS) {
+          lockAccountForInactivity();
+        } else {
+          resetAccountInactivityTimer();
+        }
+      });
+      document.addEventListener("keydown", event => {
+        if (!lockedAccount) return;
+        const gate = document.getElementById("account-lock-gate");
+        if (gate && !gate.contains(event.target)) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      }, true);
+      accountInactivityEventsBound = true;
+    }
+
+    async function lockAccountForInactivity() {
+      if (!state.currentUser || lockedAccount) return;
+      lockedAccount = {
+        username: state.currentUser.username,
+        operatorName: state.currentOperator || state.currentUser.operatorName || null
+      };
+      clearTimeout(accountInactivityTimer);
+      accountInactivityTimer = null;
+
+      const gate = document.getElementById("account-lock-gate");
+      document.getElementById("account-lock-username").textContent = lockedAccount.username;
+      document.getElementById("account-lock-pin").value = "";
+      document.getElementById("account-lock-error").classList.add("hidden");
+      gate.classList.remove("hidden");
+
+      state.currentUser = null;
+      state.currentOperator = "";
+      state.cloudConnected = false;
+      if (fbConfigUnsub) { fbConfigUnsub(); fbConfigUnsub = null; }
+      if (state.cloudUnsub) { state.cloudUnsub(); state.cloudUnsub = null; }
+      if (state.insumosCloudUnsub) { state.insumosCloudUnsub(); state.insumosCloudUnsub = null; }
+      try {
+        if (fbAuthMod && fbAuth) await fbAuthMod.signOut(fbAuth);
+      } catch (error) {
+        console.warn("Falha ao encerrar autenticação durante bloqueio:", error);
+      }
+
+      const badge = document.getElementById("cloud-status-badge");
+      const dot = document.getElementById("cloud-dot");
+      const txt = document.getElementById("cloud-status-text");
+      if (badge && dot && txt) {
+        badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5";
+        dot.className = "w-2 h-2 rounded-full bg-amber-500";
+        txt.textContent = "Sessão bloqueada";
+      }
+      setTimeout(() => document.getElementById("account-lock-pin")?.focus(), 50);
+    }
+
+    async function handleAccountUnlock() {
+      if (!lockedAccount) return;
+      const pinInput = document.getElementById("account-lock-pin");
+      const errorEl = document.getElementById("account-lock-error");
+      const button = document.getElementById("btn-account-unlock");
+      const username = lockedAccount.username;
+      const pin = pinInput.value.trim();
+      errorEl.classList.add("hidden");
+      if (!/^\\d{4}$/.test(pin)) {
+        errorEl.textContent = "O PIN deve conter exatamente quatro números.";
+        errorEl.classList.remove("hidden");
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Validando...";
+      try {
+        const response = await fetch("/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "login", username, pin })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          if (response.status === 400 && /novo PIN|PIN provisório|confirmado/i.test(result.error || "")) {
+            lockedAccount = null;
+            clearTimeout(accountInactivityTimer);
+            document.getElementById("account-lock-gate").classList.add("hidden");
+            showAccountAuth();
+            document.getElementById("account-username").value = username;
+            document.getElementById("account-auth-description").textContent = "Seu PIN precisa ser configurado novamente. Use o PIN provisório 0000 para cadastrar um novo PIN pessoal.";
+            setAccountAuthError(result.error || "Configure seu novo PIN para continuar.");
+            return;
+          }
+          throw new Error(result.error || "Não foi possível validar seu PIN.");
+        }
+
+        await connectAuthenticatedCloud(result.customToken, username);
+        const authenticatedUser = result.user;
+        state.currentUser = {
+          username: authenticatedUser.username,
+          role: authenticatedUser.role,
+          operatorName: authenticatedUser.operatorName || null
+        };
+        state.currentOperator = authenticatedUser.operatorName && state.operators.includes(authenticatedUser.operatorName)
+          ? authenticatedUser.operatorName
+          : (lockedAccount.operatorName && state.operators.includes(lockedAccount.operatorName)
+            ? lockedAccount.operatorName : (username === "ADM" ? "ADM" : ""));
+        sessionStorage.setItem("cd_barueri_account", username);
+
+        if (["admin", "supervisor"].includes(state.currentUser.role) && !isPreviewDeployment) {
+          try {
+            const accountData = await authenticatedApi("/api/accounts", { action: "list" });
+            state.users = normalizeUserAccounts(Object.fromEntries(accountData.accounts.map(account => [account.username, account])));
+            renderAccountsList();
+          } catch (accountError) {
+            console.warn("Não foi possível atualizar a lista de contas após desbloqueio:", accountError);
+          }
+        } else {
+          state.users = normalizeUserAccounts({ [username]: authenticatedUser });
+        }
+
+        lockedAccount = null;
+        document.getElementById("account-lock-gate").classList.add("hidden");
+        renderOperatorSelectors();
+        setAccountAdminControls();
+        renderAll();
+        showToast("Sessão revalidada com sucesso.");
+        resetAccountInactivityTimer();
+      } catch (error) {
+        console.warn("Falha ao desbloquear sessão:", error);
+        errorEl.textContent = error.message || "Não foi possível desbloquear. Tente novamente.";
+        errorEl.classList.remove("hidden");
+        pinInput.value = "";
+        pinInput.focus();
+      } finally {
+        button.disabled = false;
+        button.textContent = "Desbloquear";
+      }
+    }
+
     function logoutAccount() {
+      clearTimeout(accountInactivityTimer);
+      accountInactivityTimer = null;
+      accountLastActivityAt = 0;
+      lockedAccount = null;
+      document.getElementById("account-lock-gate")?.classList.add("hidden");
       state.currentUser = null;
       state.currentOperator = "";
       state.cloudConnected = false;
@@ -4030,6 +4217,8 @@
       document.getElementById("account-pin-1").addEventListener("keydown", e => { if (e.key === "Enter") handleAccountAuth(); });
       document.getElementById("account-pin-2").addEventListener("keydown", e => { if (e.key === "Enter") handleAccountAuth(); });
       document.getElementById("account-pin-3").addEventListener("keydown", e => { if (e.key === "Enter") handleAccountAuth(); });
+      document.getElementById("btn-account-unlock").addEventListener("click", handleAccountUnlock);
+      document.getElementById("account-lock-pin").addEventListener("keydown", e => { if (e.key === "Enter") handleAccountUnlock(); });
       document.getElementById("account-username").addEventListener("input", () => {
         const username = document.getElementById("account-username").value.trim().toUpperCase();
         document.getElementById("account-username").value = username;
@@ -4617,6 +4806,7 @@
       try { state.insumosDate = localStorage.getItem(INSUMOS_DATE_FILTER_KEY) || state.date; } catch (e) { state.insumosDate = state.date; }
       populateDynamicFilters();
       bindEvents();
+      bindAccountInactivityEvents();
       renderAll();
       renderSapCatalog();
       state.insumos = loadInsumosLocal(state.insumosDate);

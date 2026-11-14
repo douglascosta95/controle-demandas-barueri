@@ -1753,7 +1753,7 @@
           if (parsed && Array.isArray(parsed.oms)) {
             return {
               oms: ensureRecordIds(parsed.oms, dateStr),
-              auditLog: Array.isArray(parsed.auditLog) ? parsed.auditLog : []
+              auditLog: ensureAuditEventIds(parsed.auditLog, dateStr)
             };
           }
         }
@@ -1791,7 +1791,7 @@
       const dbToSync = state.cloudDb;
       const canSyncCloud = state.cloudConnected && !!dbToSync;
       const omsSnapshot = JSON.parse(JSON.stringify(state.oms));
-      const auditSnapshot = JSON.parse(JSON.stringify(state.auditLog.slice(0, 500)));
+      const auditSnapshot = JSON.parse(JSON.stringify(ensureAuditEventIds(state.auditLog.slice(0, 500), dateToSync)));
       saveLocalState();
       if (!canSyncCloud) return false;
 
@@ -1831,7 +1831,7 @@
           const data = snap.data();
           if (Array.isArray(data.oms)) {
             state.oms = ensureRecordIds(data.oms, dateStr);
-            state.auditLog = Array.isArray(data.auditLog) ? data.auditLog : state.auditLog;
+            state.auditLog = Array.isArray(data.auditLog) ? ensureAuditEventIds(data.auditLog, dateStr) : state.auditLog;
             saveLocalState();
             renderAll();
           }
@@ -3021,13 +3021,42 @@
     }
 
     // ==================== AUDIT LOG / PAINEL DE ATIVIDADES ====================
+    // Stable event IDs prepare the audit trail for safe deduplication during future merges.
+    function ensureAuditEventIds(events, dateStr = state.date) {
+      const occurrences = new Map();
+      return (Array.isArray(events) ? events : []).map((entry, index) => {
+        const row = { ...entry };
+        if (!row.eventId) {
+          const identity = [
+            dateStr,
+            row.timestamp || row.time || "",
+            row.accountUsername || row.who || "",
+            row.om || "",
+            row.actionText || "",
+            index
+          ].join("|");
+          const occurrence = occurrences.get(identity) || 0;
+          occurrences.set(identity, occurrence + 1);
+          let hash = 2166136261;
+          const source = identity + "|" + occurrence;
+          for (let i = 0; i < source.length; i++) {
+            hash ^= source.charCodeAt(i);
+            hash = Math.imul(hash, 16777619);
+          }
+          row.eventId = "audit-" + (hash >>> 0).toString(36);
+        }
+        return row;
+      });
+    }
+
     function pushAudit(om, actionText) {
       const now = new Date();
       const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       const accountUsername = state.currentUser?.username || null;
       const role = state.currentUser?.role || null;
       const who = state.currentUser ? (state.currentUser.username + (state.currentUser.operatorName ? " · " + state.currentUser.operatorName : "")) : (state.currentOperator || "SISTEMA");
-      state.auditLog.unshift({ who, accountUsername, role, om: String(om || "—"), actionText: String(actionText || ""), time, date: state.date, timestamp: now.toISOString() });
+      const eventId = globalThis.crypto?.randomUUID?.() || ("audit-" + now.getTime().toString(36) + "-" + Math.random().toString(36).slice(2));
+      state.auditLog.unshift({ eventId, who, accountUsername, role, om: String(om || "—"), actionText: String(actionText || ""), time, date: state.date, timestamp: now.toISOString() });
       if (state.auditLog.length > 500) state.auditLog.length = 500;
       renderAuditFeed();
       if (document.getElementById("audit-modal").classList.contains("flex") && auditViewDate === state.date) {

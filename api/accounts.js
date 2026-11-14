@@ -175,6 +175,7 @@ module.exports = async (req, res) => {
         ...hashPin("0000"),
         pinConfigured: true,
         mustChangePin: true,
+        authVersion: 0,
         createdAt: now,
         updatedAt: now
       };
@@ -191,12 +192,13 @@ module.exports = async (req, res) => {
       // Invalidate existing sessions before issuing a provisional PIN.
       // requireIdentity verifies revoked ID tokens on every protected API request.
       await admin.auth(getAdminApp()).revokeRefreshTokens(accountUid(username));
-      await ref.set({ ...hashPin("0000"), pinConfigured: true, mustChangePin: true, updatedAt: now }, { merge: true });
+      const authVersion = Number.isSafeInteger(current.authVersion) && current.authVersion >= 0 ? current.authVersion + 1 : 1;
+      await ref.set({ ...hashPin("0000"), pinConfigured: true, mustChangePin: true, authVersion, updatedAt: now }, { merge: true });
       return reply(res, 200, { ok: true, username, provisionalPin: "0000", mustChangePin: true });
     }
     if (action === "setActive") {
       if (username === "ADM" && body.active === false) return reply(res, 400, { error: "A conta ADM principal não pode ser desativada por esta operação." });
-      await ref.set({ active: body.active === true, updatedAt: now }, { merge: true });
+      await ref.set({ active: body.active === true, authVersion: (Number.isSafeInteger(current.authVersion) && current.authVersion >= 0 ? current.authVersion : 0) + 1, updatedAt: now }, { merge: true });
       return reply(res, 200, { account: cleanAccount({ ...current, active: body.active === true, updatedAt: now }) });
     }
     if (action === "update") {
@@ -205,6 +207,7 @@ module.exports = async (req, res) => {
       if (!["supervisor", "operator"].includes(role)) return reply(res, 400, { error: "Perfil inválido para esta conta." });
       const update = {
         role,
+        authVersion: (Number.isSafeInteger(current.authVersion) && current.authVersion >= 0 ? current.authVersion : 0) + 1,
         operatorName: typeof body.operatorName === "string" && body.operatorName.trim() ? body.operatorName.trim() : null,
         updatedAt: now
       };

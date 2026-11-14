@@ -3869,6 +3869,8 @@
           const pairRows = new Map();
           const importedOmDestinations = new Map();
           const existingOmDestinations = new Map();
+          const existingPairCounts = new Map();
+          const ambiguousExistingPairs = [];
           const duplicatePairs = [];
           const missingDestinationRows = [];
           const repeatedOmDifferentDestination = new Set();
@@ -3879,6 +3881,8 @@
             if (!omKey) return;
             if (!existingOmDestinations.has(omKey)) existingOmDestinations.set(omKey, new Set());
             existingOmDestinations.get(omKey).add(destinationKey);
+            const pairKey = [omKey, destinationKey].join("|");
+            existingPairCounts.set(pairKey, (existingPairCounts.get(pairKey) || 0) + 1);
           });
 
           rows.forEach(raw => {
@@ -3915,6 +3919,10 @@
             if (destinations.size > 1 || Array.from(existingDestinations).some(existingDestination => existingDestination && !destinations.has(existingDestination))) {
               repeatedOmDifferentDestination.add(omKey);
             }
+            destinations.forEach(destinationKey => {
+              const pairKey = [omKey, destinationKey].join("|");
+              if ((existingPairCounts.get(pairKey) || 0) > 1) ambiguousExistingPairs.push("OM " + omKey + " (destino " + destinationKey + ")");
+            });
           });
 
           if (duplicatePairs.length) {
@@ -3925,6 +3933,7 @@
           const warningParts = [];
           if (repeatedOmDifferentDestination.size) warningParts.push(repeatedOmDifferentDestination.size + " OM(s) aparecem com destinos diferentes; serão mantidas como ocorrências distintas.");
           if (missingDestinationRows.length) warningParts.push(missingDestinationRows.length + " registro(s) sem destino exigem revisão manual: " + missingDestinationRows.slice(0, 5).join(", ") + (missingDestinationRows.length > 5 ? ", ..." : ""));
+          if (ambiguousExistingPairs.length) warningParts.push(ambiguousExistingPairs.length + " combinação(ões) já possuem múltiplos registros no dia; os campos operacionais anteriores não serão reaproveitados automaticamente.");
           if (warningParts.length && !window.confirm("Atenção antes de importar:\n\n" + warningParts.join("\n\n") + "\n\nNenhum registro será descartado. Deseja continuar?")) return;
 
           const existingMap = new Map();

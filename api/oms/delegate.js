@@ -9,10 +9,6 @@ function accountUid(username) {
 
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
-  if (process.env.VERCEL_ENV !== "production") {
-    res.setHeader("Allow", "POST");
-    return res.status(409).json({ error: "Delegações ficam bloqueadas no Preview para proteger os dados operacionais da produção." });
-  }
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Método não permitido." });

@@ -2,9 +2,6 @@ const { admin, getAdminApp, requireIdentity, sendError } = require("../_lib/fire
 
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
-  if (process.env.VERCEL_ENV !== "production") {
-    return res.status(409).json({ error: "A consulta de sessão fica bloqueada fora de Production para proteger as contas reais." });
-  }
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: "Método não permitido." });

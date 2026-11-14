@@ -1748,18 +1748,27 @@
     }
 
     async function syncToCloud() {
+      // Capture a consistent day snapshot before the first await. The selected date
+      // or live state may change while config synchronization is in progress.
+      const dateToSync = state.date;
+      const dbToSync = state.cloudDb;
+      const canSyncCloud = state.cloudConnected && !!dbToSync;
+      const omsSnapshot = JSON.parse(JSON.stringify(state.oms));
+      const auditSnapshot = JSON.parse(JSON.stringify(state.auditLog.slice(0, 500)));
       saveLocalState();
+      if (!canSyncCloud) return false;
+
       const configSynced = await syncConfigToCloud();
-      if (!state.cloudConnected || !state.cloudDb) return false;
       try {
         const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
-        const dayRef = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "demandas_dias", state.date);
+        const dayRef = fbFirestoreMod.doc(dbToSync, "artifacts", appId, "public", "data", "demandas_dias", dateToSync);
         await fbFirestoreMod.setDoc(dayRef, {
-          oms: state.oms,
-          auditLog: state.auditLog.slice(0, 500),
+          oms: omsSnapshot,
+          auditLog: auditSnapshot,
           updatedAt: new Date().toISOString()
         }, { merge: true });
-        return configSynced;
+        if (!configSynced) console.warn("Dados operacionais sincronizados, mas a configuração não foi confirmada.");
+        return true;
       } catch (err) {
         console.warn("Erro ao sincronizar nuvem:", err);
         return false;
@@ -1775,6 +1784,8 @@
       const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
       const dayRef = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "demandas_dias", dateStr);
       state.cloudUnsub = fbFirestoreMod.onSnapshot(dayRef, (snap) => {
+        // Ignore callbacks already queued for a date that is no longer selected.
+        if (dateStr !== state.date) return;
         if (snap.exists()) {
           const data = snap.data();
           if (Array.isArray(data.oms)) {

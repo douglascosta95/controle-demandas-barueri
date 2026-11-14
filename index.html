@@ -2324,11 +2324,37 @@
       try {
         const raw = localStorage.getItem(INSUMOS_STORAGE_PREFIX + dateStr);
         const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? parsed : [];
+        return Array.isArray(parsed) ? ensureInsumoIds(parsed, dateStr) : [];
       } catch (e) { return []; }
     }
 
+    function ensureInsumoIds(items, dateStr = state.insumosDate) {
+      const occurrences = new Map();
+      const used = new Set();
+      return (Array.isArray(items) ? items : []).map(item => {
+        const row = { ...item };
+        let id = String(row.id || row.recordId || "").trim();
+        if (!id || used.has(id)) {
+          const fingerprint = insumoFingerprint(row);
+          const occurrence = occurrences.get(fingerprint) || 0;
+          occurrences.set(fingerprint, occurrence + 1);
+          let hash = 2166136261;
+          const source = [dateStr, fingerprint, occurrence].join("|");
+          for (let i = 0; i < source.length; i++) {
+            hash ^= source.charCodeAt(i);
+            hash = Math.imul(hash, 16777619);
+          }
+          id = "ins-" + (hash >>> 0).toString(36) + "-" + occurrence.toString(36);
+          while (used.has(id)) id += "x";
+        }
+        row.id = id;
+        used.add(id);
+        return row;
+      });
+    }
+
     async function syncInsumosToCloud() {
+      state.insumos = ensureInsumoIds(state.insumos, state.insumosDate);
       saveInsumosLocal();
       if (!state.cloudConnected || !state.cloudDb) return false;
       try {
@@ -2352,7 +2378,7 @@
         if (snap.exists()) {
           const data = snap.data();
           if (Array.isArray(data.insumos)) {
-            state.insumos = data.insumos;
+            state.insumos = ensureInsumoIds(data.insumos, dateStr);
             saveInsumosLocal();
             renderInsumos();
           }
@@ -2456,7 +2482,7 @@
         const key = insumoFingerprint(item);
         if (!existing.has(key)) { existing.add(key); fresh.push(item); }
       });
-      state.insumos.push(...fresh);
+      state.insumos = ensureInsumoIds([...state.insumos, ...fresh], state.insumosDate);
       if (fresh.length) pushAudit("INSUMOS", fresh.length + " linhas importadas de " + sourceName);
       const cloudSynced = await syncInsumosToCloud();
       renderInsumos();

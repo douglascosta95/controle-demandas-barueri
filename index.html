@@ -3894,13 +3894,16 @@
             const label = rowNumber ? "linha " + rowNumber : "linha não identificada";
 
             if (!destino) missingDestinationRows.push(label + " (OM " + om + ")");
-            if (pairRows.has(pairKey)) {
-              pairRows.get(pairKey).push(label);
-            } else {
-              pairRows.set(pairKey, [label]);
+            // Sem destino, a ocorrência fica para revisão manual; não classificamos como duplicata.
+            if (destinationKey) {
+              if (pairRows.has(pairKey)) {
+                pairRows.get(pairKey).push(label);
+              } else {
+                pairRows.set(pairKey, [label]);
+              }
             }
             if (!importedOmDestinations.has(omKey)) importedOmDestinations.set(omKey, new Set());
-            importedOmDestinations.get(omKey).add(destinationKey);
+            if (destinationKey) importedOmDestinations.get(omKey).add(destinationKey);
           });
 
           pairRows.forEach((locations, pairKey) => {
@@ -3909,7 +3912,7 @@
 
           importedOmDestinations.forEach((destinations, omKey) => {
             const existingDestinations = existingOmDestinations.get(omKey) || new Set();
-            if (destinations.size > 1 || Array.from(destinations).some(d => existingDestinations.size && !existingDestinations.has(d))) {
+            if (destinations.size > 1 || Array.from(existingDestinations).some(existingDestination => existingDestination && !destinations.has(existingDestination))) {
               repeatedOmDifferentDestination.add(omKey);
             }
           });

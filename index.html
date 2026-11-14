@@ -391,7 +391,7 @@
           <button data-tab="canceladas" class="nav-tab sidebar-link"><span class="sidebar-icon">×</span><span>Canceladas</span><span id="badge-canceladas" class="sidebar-badge">0</span></button>
         </div>
       </div>
-      <div class="sidebar-group">
+      <div class="sidebar-group hidden" aria-hidden="true">
         <button type="button" class="sidebar-group-toggle" data-nav-group-toggle="outras" aria-expanded="true"><span>▤</span> Outras demandas <span class="ml-auto">⌄</span></button>
         <div class="sidebar-group-items" data-nav-group="outras">
           <button data-tab="insumos" class="nav-tab sidebar-link"><span class="sidebar-icon">▧</span><span>Insumos</span><span id="badge-insumos" class="sidebar-badge">0</span></button>
@@ -2206,7 +2206,6 @@
       }, err => console.warn("Snapshot da configuração:", err));
 
       subscribeCloudDay(state.date);
-      subscribeCloudInsumos(state.insumosDate);
     }
 
     async function authenticatedApi(path, payload) {
@@ -2784,10 +2783,13 @@
     }
 
     function syncInsumosToCloud() {
-      return trackPendingCloudWrite(performSyncInsumosToCloud());
+      // Módulo temporariamente desativado: não gravar dados de Insumos na nuvem.
+      return Promise.resolve(false);
     }
 
     function subscribeCloudInsumos(dateStr) {
+      // Módulo temporariamente desativado: não ler dados de Insumos da nuvem.
+      return;
       if (!state.cloudConnected || !state.cloudDb) return;
       if (state.insumosCloudUnsub) { state.insumosCloudUnsub(); state.insumosCloudUnsub = null; }
       const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
@@ -4856,7 +4858,8 @@
       document.getElementById("btn-goto-chip-raffle").addEventListener("click", () => switchTab("importar"));
       document.getElementById("btn-export-xlsx").addEventListener("click", exportToExcel);
 
-      // Atendimento de Insumos
+      // Atendimento de Insumos — listeners suspensos enquanto o módulo estiver desativado.
+      if (false) {
       const insDate = document.getElementById("insumos-date");
       insDate.value = state.insumosDate;
       insDate.addEventListener("change", async () => {
@@ -4894,6 +4897,7 @@
       });
       document.getElementById("btn-insumos-fracionar").addEventListener("click", fracionarInsumos);
       document.getElementById("btn-insumos-copy-nf").addEventListener("click", copyInsumosNf);
+      }
 
       // Cadastro e manutenção da Base GRADE
       document.getElementById("btn-grade-save").addEventListener("click", saveGradeEntry);
@@ -5535,8 +5539,6 @@
       bindAccountInactivityEvents();
       renderAll();
       renderSapCatalog();
-      state.insumos = loadInsumosLocal(state.insumosDate);
-      renderInsumos();
       switchTab("overview");
       showAccountAuth();
       setAccountAdminControls();

@@ -1794,6 +1794,7 @@
         if (!raw) return null;
         const base = JSON.parse(raw);
         if (!base || !Array.isArray(base.oms) || !Array.isArray(base.auditLog)) return null;
+        assertNoDuplicateRecordIds(base.oms, "versão-base");
         return {
           oms: ensureRecordIds(base.oms, dateStr),
           auditLog: ensureAuditEventIds(base.auditLog, dateStr)
@@ -1802,6 +1803,19 @@
         console.warn("Não foi possível ler a versão-base local:", e);
         return null;
       }
+    }
+
+    function assertNoDuplicateRecordIds(rows, label) {
+      if (!Array.isArray(rows)) throw new Error("Lista inválida de " + label + ".");
+      const seen = new Set();
+      rows.forEach(row => {
+        const id = String(row && row.recordId || "").trim();
+        if (!id) return;
+        if (seen.has(id)) {
+          throw new Error("recordId duplicado em " + label + ": " + id + ". Sincronização interrompida para evitar misturar ocorrências.");
+        }
+        seen.add(id);
+      });
     }
 
     function snapshotField(record, key) {
@@ -1971,6 +1985,7 @@
       const dateToSync = state.date;
       const dbToSync = state.cloudDb;
       const canSyncCloud = state.cloudConnected && !!dbToSync;
+      assertNoDuplicateRecordIds(state.oms, "dados locais");
       const omsSnapshot = JSON.parse(JSON.stringify(ensureRecordIds(state.oms, dateToSync)));
       const auditSnapshot = JSON.parse(JSON.stringify(ensureAuditEventIds(state.auditLog.slice(0, 500), dateToSync)));
       const baseSnapshot = loadCloudBaseState(dateToSync);
@@ -1994,6 +2009,7 @@
           if (snap.exists() && !Array.isArray(data.oms)) {
             throw new Error("O documento remoto não contém uma lista válida de OMs. Nenhuma alteração foi gravada.");
           }
+          if (Array.isArray(data.oms)) assertNoDuplicateRecordIds(data.oms, "nuvem");
           const remoteOms = ensureRecordIds(Array.isArray(data.oms) ? data.oms : [], dateToSync);
           const remoteAudit = ensureAuditEventIds(Array.isArray(data.auditLog) ? data.auditLog : [], dateToSync);
           let base = baseSnapshot;

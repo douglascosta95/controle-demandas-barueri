@@ -3032,8 +3032,7 @@
             row.timestamp || row.time || "",
             row.accountUsername || row.who || "",
             row.om || "",
-            row.actionText || "",
-            index
+            row.actionText || ""
           ].join("|");
           const occurrence = occurrences.get(identity) || 0;
           occurrences.set(identity, occurrence + 1);

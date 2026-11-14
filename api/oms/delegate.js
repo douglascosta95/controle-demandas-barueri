@@ -33,11 +33,12 @@ module.exports = async function handler(req, res) {
     const actorAccount = actorSnap.data();
     const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
     const date = String(body.date || "");
+    const recordId = String(body.recordId || "").trim();
     const om = String(body.om || "").trim();
     const targetUsername = String(body.targetUsername || "").trim().toUpperCase();
     const reason = String(body.reason || "").trim();
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !om ||
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !recordId || !om ||
         !/^[A-Z0-9._-]{2,30}$/.test(targetUsername) || !reason) {
       return res.status(400).json({ error: "Informe data, OM, usuário destinatário e motivo." });
     }
@@ -67,7 +68,16 @@ module.exports = async function handler(req, res) {
 
       const data = daySnap.data();
       const oms = Array.isArray(data.oms) ? [...data.oms] : [];
-      const index = oms.findIndex(item => String(item.om) === om);
+      const matches = oms.reduce((found, item, index) => {
+        if (String(item.recordId || "") === recordId) found.push(index);
+        return found;
+      }, []);
+      if (matches.length > 1) {
+        const error = new Error("Identificador da ocorrência duplicado; revise os dados antes de delegar.");
+        error.status = 409;
+        throw error;
+      }
+      const index = matches.length === 1 ? matches[0] : -1;
       if (index < 0) {
         const error = new Error("OM não encontrada na data informada.");
         error.status = 404;
@@ -75,6 +85,11 @@ module.exports = async function handler(req, res) {
       }
 
       const item = { ...oms[index] };
+      if (String(item.om || "").trim() !== om) {
+        const error = new Error("A OM não corresponde à ocorrência selecionada.");
+        error.status = 409;
+        throw error;
+      }
       if (item.status === "CANCELADA" ||
           !(item.isEmergencial || item.status === "EMERGENCIAL")) {
         const error = new Error("A OM não está ativa na fila de Emergenciais.");
@@ -107,9 +122,26 @@ module.exports = async function handler(req, res) {
       item.assignedToUid = targetUid;
       item.assignedToUsername = targetUsername;
       item.assignedToNameSnapshot = targetName;
-      item.assignmentHistory = [
-        ...(Array.isArray(item.assignmentHistory) ? item.assignmentHistory : []),
-        event
+      if (!Object.prototype.hasOwnProperty.call(item, "originalAssignee")) {
+        item.originalAssignee = previousName || "";
+      }
+      item.delegationHistory = [
+        ...(Array.isArray(item.delegationHistory) ? item.delegationHistory : []),
+        {
+          from: previousName || "",
+          to: targetName,
+          by: actorName,
+          role: actorAccount.role || actor.role || null,
+          at: now.toDate().toISOString(),
+          action: event.action,
+          module: MODULE_KEY,
+          actorUid: actor.uid,
+          actorUsername,
+          previousTargetUid: previousUid,
+          targetUid,
+          targetUsername,
+          reason
+        }
       ];
       item.updatedBy = actorName;
       item.updatedAt = now.toDate().toISOString();

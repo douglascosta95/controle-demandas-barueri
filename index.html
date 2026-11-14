@@ -1663,8 +1663,11 @@
         const raw = localStorage.getItem(STORAGE_KEY_PREFIX + dateStr);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (parsed && Array.isArray(parsed.oms) && parsed.oms.length > 0) {
-            return parsed;
+          if (parsed && Array.isArray(parsed.oms)) {
+            return {
+              oms: parsed.oms,
+              auditLog: Array.isArray(parsed.auditLog) ? parsed.auditLog : []
+            };
           }
         }
       } catch (e) {}
@@ -1716,7 +1719,7 @@
       state.cloudUnsub = fbFirestoreMod.onSnapshot(dayRef, (snap) => {
         if (snap.exists()) {
           const data = snap.data();
-          if (Array.isArray(data.oms) && data.oms.length > 0) {
+          if (Array.isArray(data.oms)) {
             state.oms = data.oms;
             state.auditLog = Array.isArray(data.auditLog) ? data.auditLog : state.auditLog;
             saveLocalState();

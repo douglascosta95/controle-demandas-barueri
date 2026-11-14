@@ -1356,6 +1356,7 @@
     let accountLastActivityAt = 0;
     let accountInactivityEventsBound = false;
     let lockedAccount = null;
+    let logoutInProgress = false;
 
     // Track cloud writes so session and date transitions can safely wait for them.
     const pendingCloudWrites = new Set();
@@ -1372,18 +1373,21 @@
 
     async function flushPendingCloudWrites(timeoutMs = 12000) {
       const deadline = Date.now() + timeoutMs;
+      let successful = true;
       while (pendingCloudWrites.size) {
         const remaining = deadline - Date.now();
-        if (remaining <= 0) return false;
+        if (remaining <= 0) return { completed: false, successful: false };
         let timeoutId;
-        const completed = await Promise.race([
-          Promise.allSettled(Array.from(pendingCloudWrites)).then(() => true),
-          new Promise(resolve => { timeoutId = setTimeout(() => resolve(false), remaining); })
+        const batch = Array.from(pendingCloudWrites);
+        const results = await Promise.race([
+          Promise.allSettled(batch),
+          new Promise(resolve => { timeoutId = setTimeout(() => resolve(null), remaining); })
         ]);
         clearTimeout(timeoutId);
-        if (!completed) return false;
+        if (!results) return { completed: false, successful: false };
+        if (results.some(result => result.status !== "fulfilled" || result.value === false)) successful = false;
       }
-      return true;
+      return { completed: true, successful };
     }
 
     // ==================== THEME (LIGHT / DARK MODE) ====================
@@ -2248,12 +2252,27 @@
 
     async function lockAccountForInactivity() {
       if (!state.currentUser || lockedAccount) return;
+      clearTimeout(accountInactivityTimer);
+      accountInactivityTimer = null;
+      const flushResult = await flushPendingCloudWrites();
+      if (!state.currentUser || lockedAccount) return;
+      if (!flushResult.completed) {
+        showToast("Há gravações ainda em andamento. A sessão continuará aberta; tente novamente após alguns instantes.");
+        resetAccountInactivityTimer();
+        return;
+      }
+      if (Date.now() - accountLastActivityAt < ACCOUNT_INACTIVITY_TIMEOUT_MS) {
+        resetAccountInactivityTimer();
+        return;
+      }
+      if (!flushResult.successful) {
+        showToast("Atenção: nem todas as alterações tiveram confirmação da nuvem. Os dados locais foram preservados.");
+      }
+
       lockedAccount = {
         username: state.currentUser.username,
         operatorName: state.currentOperator || state.currentUser.operatorName || null
       };
-      clearTimeout(accountInactivityTimer);
-      accountInactivityTimer = null;
 
       const gate = document.getElementById("account-lock-gate");
       document.getElementById("account-lock-username").textContent = lockedAccount.username;
@@ -2365,23 +2384,42 @@
       }
     }
 
-    function logoutAccount() {
+    async function logoutAccount() {
+      if (logoutInProgress) return;
+      logoutInProgress = true;
       clearTimeout(accountInactivityTimer);
       accountInactivityTimer = null;
-      accountLastActivityAt = 0;
-      lockedAccount = null;
-      document.getElementById("account-lock-gate")?.classList.add("hidden");
-      state.currentUser = null;
-      state.currentOperator = "";
-      state.cloudConnected = false;
-      if (fbConfigUnsub) { fbConfigUnsub(); fbConfigUnsub = null; }
-      if (state.cloudUnsub) { state.cloudUnsub(); state.cloudUnsub = null; }
-      if (state.insumosCloudUnsub) { state.insumosCloudUnsub(); state.insumosCloudUnsub = null; }
-      if (fbAuthMod && fbAuth) fbAuthMod.signOut(fbAuth).catch(err => console.warn("Falha ao encerrar sessão Firebase:", err));
-      sessionStorage.removeItem("cd_barueri_account");
-      sessionStorage.removeItem("cd_barueri_op");
-      showAccountAuth();
-      setAccountAdminControls();
+      try {
+        const flushResult = await flushPendingCloudWrites();
+        if (!flushResult.completed) {
+          showToast("Ainda há gravações em andamento. A sessão permanece aberta para evitar perda de alterações.");
+          resetAccountInactivityTimer();
+          return;
+        }
+        if (!flushResult.successful && !window.confirm("Algumas alterações não foram confirmadas na nuvem. Os dados locais foram preservados. Deseja sair mesmo assim?")) {
+          resetAccountInactivityTimer();
+          return;
+        }
+        accountLastActivityAt = 0;
+        lockedAccount = null;
+        document.getElementById("account-lock-gate")?.classList.add("hidden");
+        state.currentUser = null;
+        state.currentOperator = "";
+        state.cloudConnected = false;
+        if (fbConfigUnsub) { fbConfigUnsub(); fbConfigUnsub = null; }
+        if (state.cloudUnsub) { state.cloudUnsub(); state.cloudUnsub = null; }
+        if (state.insumosCloudUnsub) { state.insumosCloudUnsub(); state.insumosCloudUnsub = null; }
+        if (fbAuthMod && fbAuth) {
+          try { await fbAuthMod.signOut(fbAuth); }
+          catch (err) { console.warn("Falha ao encerrar sessão Firebase:", err); }
+        }
+        sessionStorage.removeItem("cd_barueri_account");
+        sessionStorage.removeItem("cd_barueri_op");
+        showAccountAuth();
+        setAccountAdminControls();
+      } finally {
+        logoutInProgress = false;
+      }
     }
 
     function isAdmin() {
@@ -4492,15 +4530,31 @@
       // Atendimento de Insumos
       const insDate = document.getElementById("insumos-date");
       insDate.value = state.insumosDate;
-      insDate.addEventListener("change", () => {
-        if (!insDate.value) return;
-        state.insumosDate = insDate.value;
-        try { localStorage.setItem(INSUMOS_DATE_FILTER_KEY, state.insumosDate); } catch (e) {}
-        state.insumos = loadInsumosLocal(state.insumosDate);
-        insumosFracionados = [];
-        document.getElementById("insumos-result-tbody").innerHTML = '<tr><td colspan="7" class="p-4 text-slate-500">Clique em Fracionar lote para gerar a relação desta data.</td></tr>';
-        renderInsumos();
-        subscribeCloudInsumos(state.insumosDate);
+      insDate.addEventListener("change", async () => {
+        if (!insDate.value || insDate.value === state.insumosDate) return;
+        const requestedDate = insDate.value;
+        const previousDate = state.insumosDate;
+        insDate.disabled = true;
+        try {
+          const flushResult = await flushPendingCloudWrites();
+          if (!flushResult.completed) {
+            insDate.value = previousDate;
+            showToast("Há gravações de Insumos ou outras alterações ainda em andamento. A data não foi alterada.");
+            return;
+          }
+          if (!flushResult.successful) {
+            showToast("Atenção: houve gravação sem confirmação da nuvem. Os dados locais foram preservados antes da troca.");
+          }
+          state.insumosDate = requestedDate;
+          try { localStorage.setItem(INSUMOS_DATE_FILTER_KEY, state.insumosDate); } catch (e) {}
+          state.insumos = loadInsumosLocal(state.insumosDate);
+          insumosFracionados = [];
+          document.getElementById("insumos-result-tbody").innerHTML = '<tr><td colspan="7" class="p-4 text-slate-500">Clique em Fracionar lote para gerar a relação desta data.</td></tr>';
+          renderInsumos();
+          subscribeCloudInsumos(state.insumosDate);
+        } finally {
+          insDate.disabled = false;
+        }
       });
       document.getElementById("btn-insumos-import-file").addEventListener("click", handleInsumosFileUpload);
       document.getElementById("btn-insumos-import").addEventListener("click", async () => {
@@ -4571,14 +4625,31 @@
       // Data operacional
       const dateInput = document.getElementById("op-date");
       dateInput.value = state.date;
-      dateInput.addEventListener("change", (e) => {
-        state.date = e.target.value || todayStr;
-        const saved = loadLocalState(state.date);
-        state.oms = saved ? saved.oms : buildFullDrpOms(state.date);
-        state.auditLog = saved ? saved.auditLog : [];
-        populateDynamicFilters();
-        renderAll();
-        subscribeCloudDay(state.date);
+      dateInput.addEventListener("change", async (e) => {
+        const requestedDate = e.target.value || todayStr;
+        const previousDate = state.date;
+        if (requestedDate === previousDate) return;
+        dateInput.disabled = true;
+        try {
+          const flushResult = await flushPendingCloudWrites();
+          if (!flushResult.completed) {
+            dateInput.value = previousDate;
+            showToast("Há gravações ainda em andamento. A data operacional permaneceu inalterada.");
+            return;
+          }
+          if (!flushResult.successful) {
+            showToast("Atenção: houve gravação sem confirmação da nuvem. Os dados locais foram preservados antes da troca.");
+          }
+          state.date = requestedDate;
+          const saved = loadLocalState(state.date);
+          state.oms = saved ? saved.oms : buildFullDrpOms(state.date);
+          state.auditLog = saved ? saved.auditLog : [];
+          populateDynamicFilters();
+          renderAll();
+          subscribeCloudDay(state.date);
+        } finally {
+          dateInput.disabled = false;
+        }
       });
 
       // Seleção de Operador + PIN

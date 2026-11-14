@@ -1467,8 +1467,34 @@
       return "PA";
     }
 
+    // ID técnico determinístico por data, OM e destino; OM segue como dado operacional.
+    function ensureRecordIds(oms, dateStr) {
+      const occurrences = new Map();
+      const usedIds = new Set();
+      return (Array.isArray(oms) ? oms : []).map(item => {
+        const key = [String(dateStr || ""), normalizeText(item.om), normalizeText(item.destino)].join("|");
+        const occurrence = occurrences.get(key) || 0;
+        occurrences.set(key, occurrence + 1);
+        let recordId = String(item.recordId || "").trim();
+        if (!recordId) {
+          let hash = 2166136261;
+          const source = key + "|" + occurrence;
+          for (let i = 0; i < source.length; i++) {
+            hash ^= source.charCodeAt(i);
+            hash = Math.imul(hash, 16777619);
+          }
+          recordId = "om_" + (hash >>> 0).toString(36);
+        }
+        const baseId = recordId;
+        let suffix = 1;
+        while (usedIds.has(recordId)) recordId = baseId + "_" + suffix++;
+        usedIds.add(recordId);
+        return { ...item, recordId };
+      });
+    }
+
     function buildFullDrpOms() {
-      return ALL_DRP_DATA.map(r => {
+      return ensureRecordIds(ALL_DRP_DATA.map(r => {
         const [om, destino, ct, uf, tipoRaw, modelo, tecnologia, risco, qtd, tim, vivo, claro, rawTipoChip] = r;
         const gr = lookupGrade(destino, uf);
         const exempt = isChipExempt(modelo, tecnologia, rawTipoChip);
@@ -1524,7 +1550,7 @@
           updatedBy: "",
           updatedAt: ""
         };
-      });
+      }), todayStr);
     }
 
     // ==================== STATE ====================
@@ -1557,7 +1583,7 @@
       cloudConnected: false,
       cloudDb: null,
       cloudUnsub: null,
-      editingCommentOm: null,
+      editingCommentRecordId: null,
       sapCatalog: [],
       gradeCatalog: GRADE_DATA.map(row => [...row]),
       insumos: [],
@@ -1665,7 +1691,7 @@
           const parsed = JSON.parse(raw);
           if (parsed && Array.isArray(parsed.oms)) {
             return {
-              oms: parsed.oms,
+              oms: ensureRecordIds(parsed.oms, dateStr),
               auditLog: Array.isArray(parsed.auditLog) ? parsed.auditLog : []
             };
           }
@@ -1720,7 +1746,7 @@
         if (snap.exists()) {
           const data = snap.data();
           if (Array.isArray(data.oms)) {
-            state.oms = data.oms;
+            state.oms = ensureRecordIds(data.oms, dateStr);
             state.auditLog = Array.isArray(data.auditLog) ? data.auditLog : state.auditLog;
             saveLocalState();
             renderAll();
@@ -2680,11 +2706,11 @@
     // ==================== AUTH / PIN SYSTEM ====================
     let pendingOperator = "";
     let pinModalMode = "verify";
-    let pendingUnlockOm = null;
+    let pendingUnlockRecordId = null;
     let pendingUnlockCallback = null;
 
     function openPinModalForUnlock(om, callback) {
-      pendingUnlockOm = om;
+      pendingUnlockRecordId = om;
       pendingUnlockCallback = callback;
       openPinModal(state.currentOperator, "verify");
       document.getElementById("pin-modal-title").textContent = `Destravar OM ${om} — ${state.currentOperator}`;
@@ -2823,7 +2849,7 @@
         if (pendingUnlockCallback) {
           const cb = pendingUnlockCallback;
           pendingUnlockCallback = null;
-          pendingUnlockOm = null;
+          pendingUnlockRecordId = null;
           cb();
         } else {
           showToast(`Operador ativo: ${pendingOperator}`);
@@ -3140,7 +3166,7 @@
           : [o.colaborador, ...state.operators];
 
         return `
-          <tr class="${rowClass} transition" data-om="${o.om}">
+          <tr class="${rowClass} transition" data-record-id="${o.recordId}">
             <td class="py-2.5 px-3 align-top">
               <div class="flex items-center gap-1.5">
                 ${o.pinned ? `<span title="OM Fixada no topo" class="text-purple-700 dark:text-purple-300 text-xs">📌</span>` : ""}${(o.isEmergencial || o.status === "EMERGENCIAL") ? `<span title="OM Emergencial" class="text-xs">🚨</span>` : ""}
@@ -3148,7 +3174,7 @@
                 <span class="px-1.5 py-0.2 rounded text-[10px] font-bold ${o.tipo === "AG" ? "bg-purple-100 text-purple-900 dark:bg-purple-900/70 dark:text-purple-200" : "bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200"}">${o.tipo}</span>
               </div>
               <div class="mt-1">
-                <button data-action="comment" data-om="${o.om}" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border transition cursor-pointer ${hasHighlight ? "bg-purple-700 text-white border-purple-700 shadow-2xs" : "bg-purple-50/80 dark:bg-purple-950/60 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800 hover:opacity-85"}">
+                <button data-action="comment" data-record-id="${o.recordId}" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border transition cursor-pointer ${hasHighlight ? "bg-purple-700 text-white border-purple-700 shadow-2xs" : "bg-purple-50/80 dark:bg-purple-950/60 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800 hover:opacity-85"}">
                   💬 ${o.comment ? "Editar Obs" : "Obs"}
                 </button>
               </div>
@@ -3186,13 +3212,13 @@
                   min="1"
                   max="9999"
                   data-field="vl"
-                  data-om="${o.om}"
+                  data-record-id="${o.recordId}"
                   value="${o.vl ? parseInt(o.vl, 10) : ""}"
                   placeholder="VL"
                   class="mono w-16 text-center font-bold text-xs py-1 px-1.5 rounded-lg border focus:outline-none focus:ring-2 ${hasVl ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 focus:ring-emerald-500" : "border-rose-300 bg-rose-50/70 text-rose-900 dark:text-rose-200 focus:ring-purple-500"}"
                 />
                 ${!hasVl && sug ? `
-                  <button type="button" data-action="apply-sug" data-om="${o.om}" data-sug="${sug}" title="Aplicar sugestão de ${sug} volume(s)" class="px-1.5 py-1 rounded bg-purple-100 dark:bg-purple-900/60 hover:bg-purple-700 hover:text-white text-purple-900 dark:text-purple-200 mono text-[10px] font-bold transition cursor-pointer">
+                  <button type="button" data-action="apply-sug" data-record-id="${o.recordId}" data-sug="${sug}" title="Aplicar sugestão de ${sug} volume(s)" class="px-1.5 py-1 rounded bg-purple-100 dark:bg-purple-900/60 hover:bg-purple-700 hover:text-white text-purple-900 dark:text-purple-200 mono text-[10px] font-bold transition cursor-pointer">
                     ${sug}?
                   </button>
                 ` : ""}
@@ -3206,14 +3232,14 @@
             </td>
 
             <td class="py-2.5 px-3 align-top">
-              <select data-field="colaborador" data-om="${o.om}" class="px-2 py-1 text-xs font-semibold rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+              <select data-field="colaborador" data-record-id="${o.recordId}" class="px-2 py-1 text-xs font-semibold rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500">
                 <option value="">-- Atribuir --</option>
                 ${opChoices.map(op => `<option value="${op}" ${o.colaborador === op ? "selected" : ""}>${op}</option>`).join("")}
               </select>
             </td>
 
             <td class="py-2.5 px-3 align-top">
-              <select data-field="status" data-om="${o.om}" class="px-2 py-1 text-xs font-bold rounded-lg border status-${statusKey} focus:outline-none cursor-pointer">
+              <select data-field="status" data-record-id="${o.recordId}" class="px-2 py-1 text-xs font-bold rounded-lg border status-${statusKey} focus:outline-none cursor-pointer">
                 ${STATUS_LIST.map(st => `<option value="${st}" ${o.status === st ? "selected" : ""}>${st}</option>`).join("")}
               </select>
               ${o.validatedBy ? `<div class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">Validada por ${escapeSapHtml(o.validatedBy)}</div>` : ""}
@@ -3224,7 +3250,7 @@
               <button
                 type="button"
                 data-action="zebra"
-                data-om="${o.om}"
+                data-record-id="${o.recordId}"
                 ${!hasVl ? "disabled" : ""}
                 title="${hasVl ? "Copiar linha formatada para o software Zebra" : "Informe o Volume (VL) primeiro"}"
                 class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 transition ${hasVl ? "bg-purple-800 dark:bg-purple-600 hover:opacity-90 text-white shadow-xs cursor-pointer" : "bg-slate-100 text-slate-400 cursor-not-allowed"}"
@@ -3312,7 +3338,7 @@
             <td class="py-2.5 px-2.5 text-center mono font-bold text-rose-700 dark:text-rose-400">${o.chipExempt ? "-" : o.claro}</td>
             <td class="py-2.5 px-3">
               ${o.chipExempt ? `<span class="text-[11px] text-slate-400 italic">Isento</span>` : `
-                <select data-chip-field="colaboradorChip" data-om="${o.om}" class="px-2 py-1 text-xs font-semibold rounded-lg border border-slate-300 bg-white">
+                <select data-chip-field="colaboradorChip" data-record-id="${o.recordId}" class="px-2 py-1 text-xs font-semibold rounded-lg border border-slate-300 bg-white">
                   <option value="">-- Atribuir --</option>
                   ${opChoices.map(op => `<option value="${op}" ${o.colaboradorChip === op ? "selected" : ""}>${op}</option>`).join("")}
                 </select>
@@ -3320,7 +3346,7 @@
             </td>
             <td class="py-2.5 px-3">
               ${o.chipExempt ? `<span class="text-[11px] text-slate-400">-</span>` : `
-                <select data-chip-field="statusChip" data-om="${o.om}" class="px-2 py-1 text-xs font-bold rounded-lg border status-${stKey} cursor-pointer">
+                <select data-chip-field="statusChip" data-record-id="${o.recordId}" class="px-2 py-1 text-xs font-bold rounded-lg border status-${stKey} cursor-pointer">
                   ${STATUS_LIST.map(st => `<option value="${st}" ${(o.statusChip || "NOVA") === st ? "selected" : ""}>${st}</option>`).join("")}
                 </select>
               `}
@@ -3513,7 +3539,7 @@
             : [o.colaborador, ...state.operators];
 
           return `
-            <tr class="row-pinned transition" data-om="${o.om}">
+            <tr class="row-pinned transition" data-record-id="${o.recordId}">
               <td class="py-2.5 px-3 align-top">
                 <div class="flex items-center gap-1.5">
                   <span>${o.status === "VALIDADA" ? "✅" : "🚨"}</span>
@@ -3521,7 +3547,7 @@
                   <span class="px-1.5 py-0.2 rounded text-[10px] font-bold ${o.tipo === "AG" ? "bg-purple-100 text-purple-900 dark:bg-purple-900/70 dark:text-purple-200" : "bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200"}">${o.tipo}</span>
                 </div>
                 <div class="mt-1">
-                  <button type="button" data-action="unmark-emergencial" data-om="${o.om}" title="Remover marcação emergencial desta OM" class="text-[10px] text-slate-400 hover:text-rose-600 underline cursor-pointer">
+                  <button type="button" data-action="unmark-emergencial" data-record-id="${o.recordId}" title="Remover marcação emergencial desta OM" class="text-[10px] text-slate-400 hover:text-rose-600 underline cursor-pointer">
                     Remover de emergenciais
                   </button>
                 </div>
@@ -3540,27 +3566,27 @@
               </td>
               <td class="py-2.5 px-2.5 align-top text-center">
                 <div class="inline-flex items-center gap-1">
-                  <input type="number" min="1" max="9999" data-field="vl" data-om="${o.om}" value="${o.vl ? parseInt(o.vl, 10) : ""}" placeholder="VL" class="mono w-16 text-center font-bold text-xs py-1 px-1.5 rounded-lg border ${hasVl ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-rose-300 bg-rose-50/70 text-rose-900"}" />
-                  ${!hasVl && sug ? `<button type="button" data-action="apply-sug" data-om="${o.om}" data-sug="${sug}" class="px-1.5 py-1 rounded bg-purple-100 hover:bg-purple-700 hover:text-white text-purple-900 mono text-[10px] font-bold cursor-pointer">${sug}?</button>` : ""}
+                  <input type="number" min="1" max="9999" data-field="vl" data-record-id="${o.recordId}" value="${o.vl ? parseInt(o.vl, 10) : ""}" placeholder="VL" class="mono w-16 text-center font-bold text-xs py-1 px-1.5 rounded-lg border ${hasVl ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-rose-300 bg-rose-50/70 text-rose-900"}" />
+                  ${!hasVl && sug ? `<button type="button" data-action="apply-sug" data-record-id="${o.recordId}" data-sug="${sug}" class="px-1.5 py-1 rounded bg-purple-100 hover:bg-purple-700 hover:text-white text-purple-900 mono text-[10px] font-bold cursor-pointer">${sug}?</button>` : ""}
                 </div>
               </td>
               <td class="py-2.5 px-3 align-top">
                 <span class="px-2 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-200">${o.transporte}</span>
               </td>
               <td class="py-2.5 px-3 align-top">
-                <select data-field="colaborador" data-om="${o.om}" class="px-2 py-1 text-xs font-semibold rounded-lg border border-slate-300 bg-white">
+                <select data-field="colaborador" data-record-id="${o.recordId}" class="px-2 py-1 text-xs font-semibold rounded-lg border border-slate-300 bg-white">
                   <option value="">-- Atribuir --</option>
                   ${opChoices.map(op => `<option value="${op}" ${o.colaborador === op ? "selected" : ""}>${op}</option>`).join("")}
                 </select>
               </td>
               <td class="py-2.5 px-3 align-top">
-                <select data-field="status" data-om="${o.om}" class="px-2 py-1 text-xs font-bold rounded-lg border status-${statusKey} cursor-pointer">
+                <select data-field="status" data-record-id="${o.recordId}" class="px-2 py-1 text-xs font-bold rounded-lg border status-${statusKey} cursor-pointer">
                   ${STATUS_LIST.map(st => `<option value="${st}" ${o.status === st ? "selected" : ""}>${st}</option>`).join("")}
                 </select>
                 ${o.updatedBy ? `<div class="text-[10px] text-slate-400 mt-0.5">${o.updatedBy} • ${o.updatedAt}</div>` : ""}
               </td>
               <td class="py-2.5 px-3 align-top text-right">
-                <button type="button" data-action="zebra" data-om="${o.om}" ${!hasVl ? "disabled" : ""} class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 transition ${hasVl ? "bg-orange-600 hover:bg-orange-500 text-white shadow-xs cursor-pointer" : "bg-slate-100 text-slate-400 cursor-not-allowed"}">
+                <button type="button" data-action="zebra" data-record-id="${o.recordId}" ${!hasVl ? "disabled" : ""} class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 transition ${hasVl ? "bg-orange-600 hover:bg-orange-500 text-white shadow-xs cursor-pointer" : "bg-slate-100 text-slate-400 cursor-not-allowed"}">
                   Gerar Etiqueta
                 </button>
               </td>
@@ -3578,7 +3604,7 @@
       } else {
         cancEmpty.classList.add("hidden");
         cancTbody.innerHTML = cancList.map(o => `
-          <tr class="row-normal opacity-85 transition" data-om="${o.om}">
+          <tr class="row-normal opacity-85 transition" data-record-id="${o.recordId}">
             <td class="py-2.5 px-3 align-top">
               <div class="flex items-center gap-1.5">
                 <span class="mono font-bold text-slate-700 line-through">${o.om}</span>
@@ -3597,7 +3623,7 @@
             </td>
             <td class="py-2.5 px-3 align-top font-semibold text-slate-600">${o.colaborador || "-"}</td>
             <td class="py-2.5 px-3 align-top">
-              <select data-field="status" data-om="${o.om}" class="px-2 py-1 text-xs font-bold rounded-lg border status-CANCELADA cursor-pointer">
+              <select data-field="status" data-record-id="${o.recordId}" class="px-2 py-1 text-xs font-bold rounded-lg border status-CANCELADA cursor-pointer">
                 ${STATUS_LIST.map(st => `<option value="${st}" ${o.status === st ? "selected" : ""}>${st}</option>`).join("")}
               </select>
               ${o.updatedBy ? `<div class="text-[10px] text-slate-400 mt-0.5">Cancelada por ${o.updatedBy} • ${o.updatedAt}</div>` : ""}
@@ -3837,7 +3863,7 @@
             return;
           }
 
-          const existingMap = new Map(state.oms.map(o => [String(o.om), o]));
+          const existingMap = new Map(state.oms.map(o => [[normalizeText(o.om), normalizeText(o.destino)].join("|"), o]));
           const imported = [];
 
           rows.forEach(raw => {
@@ -3882,7 +3908,7 @@
               }
             }
 
-            const prev = existingMap.get(om);
+            const prev = existingMap.get([normalizeText(om), normalizeText(destino)].join("|"));
             imported.push({
               om,
               destino,
@@ -3922,7 +3948,7 @@
             return;
           }
 
-          state.oms = imported;
+          state.oms = ensureRecordIds(imported, state.date);
           pushAudit("DRP", `Importadas ${imported.length} OMs de ${file.name}`);
           syncToCloud();
           populateDynamicFilters();
@@ -4465,16 +4491,17 @@
       // Handler unificado para Tabela Máquinas, Emergenciais e Canceladas
       const handleOperationalTableChange = (e) => {
         const el = e.target;
-        const om = el.dataset.om;
+        const recordId = el.dataset.recordId;
         const field = el.dataset.field;
-        if (!om || !field) return;
+        if (!recordId || !field) return;
 
         if (!requireOperator()) {
           renderAll();
           return;
         }
-        const item = state.oms.find(x => x.om === om);
+        const item = state.oms.find(x => x.recordId === recordId);
         if (!item) return;
+        const om = item.om;
 
         // Status de OMs já validadas/SAPB1 sempre exige PIN.
         const isLockedStatus = item.status === "VALIDADA" || item.status === "SAPB1";
@@ -4570,7 +4597,7 @@
           renderAll();
 
           if (nextStatus === "DIVERGENTE") {
-            state.editingCommentOm = om;
+            state.editingCommentRecordId = recordId;
             document.getElementById("comment-modal-title").textContent = `OM ${item.om} — Divergência`;
             document.getElementById("comment-modal-sub").textContent = "Descreva o motivo da divergência para facilitar a tratativa (opcional).";
             document.getElementById("comment-textarea").value = item.comment || "";
@@ -4619,10 +4646,11 @@
       const handleOperationalTableClick = (e) => {
         const btn = e.target.closest("[data-action]");
         if (!btn) return;
-        const om = btn.dataset.om;
+        const recordId = btn.dataset.recordId;
         const action = btn.dataset.action;
-        const item = state.oms.find(x => x.om === om);
+        const item = state.oms.find(x => x.recordId === recordId);
         if (!item) return;
+        const om = item.om;
 
         if (action === "apply-sug") {
           if (!requireOperator()) return;
@@ -4645,7 +4673,7 @@
           copyToClipboard(formatZebraBlock(item), `Etiqueta OM ${om} copiada (formato Excel 4x2)! Cole no Excel ou Zebra (Ctrl + V).`);
         } else if (action === "comment") {
           if (!requireOperator()) return;
-          state.editingCommentOm = om;
+          state.editingCommentRecordId = recordId;
           document.getElementById("comment-modal-title").textContent = `OM ${item.om} — ${item.tipo}`;
           document.getElementById("comment-modal-sub").textContent = `${item.destino} • ${item.modelo} (${item.qtd} un)`;
           document.getElementById("comment-textarea").value = item.comment || "";
@@ -4660,13 +4688,13 @@
         const m = document.getElementById("comment-modal");
         m.classList.add("hidden");
         m.classList.remove("flex");
-        state.editingCommentOm = null;
+        state.editingCommentRecordId = null;
       };
       document.getElementById("comment-modal-close").addEventListener("click", closeCommentModal);
       document.getElementById("btn-comment-cancel").addEventListener("click", closeCommentModal);
       document.getElementById("btn-comment-save").addEventListener("click", () => {
         if (!requireOperator()) return;
-        const item = state.oms.find(x => x.om === state.editingCommentOm);
+        const item = state.oms.find(x => x.recordId === state.editingCommentRecordId);
         if (!item) return;
         item.comment = document.getElementById("comment-textarea").value.trim();
         item.pinned = document.getElementById("comment-pin-checkbox").checked;
@@ -4680,7 +4708,7 @@
       });
       document.getElementById("btn-comment-clear").addEventListener("click", () => {
         if (!requireOperator()) return;
-        const item = state.oms.find(x => x.om === state.editingCommentOm);
+        const item = state.oms.find(x => x.recordId === state.editingCommentRecordId);
         if (!item) return;
         item.comment = "";
         item.pinned = false;
@@ -4719,15 +4747,16 @@
 
       document.getElementById("simcards-tbody").addEventListener("change", (e) => {
         const el = e.target;
-        const om = el.dataset.om;
+        const recordId = el.dataset.recordId;
         const field = el.dataset.chipField;
-        if (!om || !field) return;
+        if (!recordId || !field) return;
         if (!requireOperator()) {
           renderSimCards();
           return;
         }
-        const item = state.oms.find(x => x.om === om);
+        const item = state.oms.find(x => x.recordId === recordId);
         if (!item) return;
+        const om = item.om;
         item[field] = el.value;
         item.updatedBy = state.currentUser?.username || state.currentOperator;
         pushAudit(om, field === "colaboradorChip" ? `SIM Card atribuído a ${el.value || "ninguém"}` : `Status Chip → ${el.value}`);

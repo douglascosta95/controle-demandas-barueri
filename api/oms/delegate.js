@@ -32,6 +32,20 @@ module.exports = async function handler(req, res) {
 
     const actorAccount = actorSnap.data();
     const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+    if (body.action === "listTargets") {
+      const accountsSnap = await db.collection("cd_barueri_accounts").get();
+      const accounts = accountsSnap.docs
+        .map(doc => doc.data())
+        .filter(account => account && account.active !== false && /^[A-Z0-9._-]{2,30}$/.test(String(account.username || "")) && String(account.username).toUpperCase() !== actorUsername)
+        .map(account => ({
+          username: String(account.username).toUpperCase(),
+          operatorName: account.operatorName || null,
+          role: account.role || "operator"
+        }))
+        .sort((a, b) => a.username.localeCompare(b.username));
+      return res.status(200).json({ accounts });
+    }
+
     const date = String(body.date || "");
     const recordId = String(body.recordId || "").trim();
     const om = String(body.om || "").trim();

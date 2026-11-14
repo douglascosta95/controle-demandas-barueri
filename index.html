@@ -3865,7 +3865,71 @@
             return;
           }
 
-          const existingMap = new Map(state.oms.map(o => [[normalizeText(o.om), normalizeText(o.destino)].join("|"), o]));
+          // Pré-validação: não importar silenciosamente ocorrências ambíguas.
+          const pairRows = new Map();
+          const importedOmDestinations = new Map();
+          const existingOmDestinations = new Map();
+          const duplicatePairs = [];
+          const missingDestinationRows = [];
+          const repeatedOmDifferentDestination = new Set();
+
+          state.oms.forEach(o => {
+            const omKey = normalizeText(o.om);
+            const destinationKey = normalizeText(o.destino);
+            if (!omKey) return;
+            if (!existingOmDestinations.has(omKey)) existingOmDestinations.set(omKey, new Set());
+            existingOmDestinations.get(omKey).add(destinationKey);
+          });
+
+          rows.forEach(raw => {
+            const normalized = {};
+            Object.keys(raw).forEach(k => { normalized[normalizeText(k)] = raw[k]; });
+            const om = String(normalized["OM"] || "").trim();
+            if (!om || om === "OM") return;
+            const destino = String(normalized["BASE"] || normalized["DESTINO"] || "").trim();
+            const rowNumber = Number.isInteger(raw.__rowNum__) ? raw.__rowNum__ + 1 : null;
+            const omKey = normalizeText(om);
+            const destinationKey = normalizeText(destino);
+            const pairKey = [omKey, destinationKey].join("|");
+            const label = rowNumber ? "linha " + rowNumber : "linha não identificada";
+
+            if (!destino) missingDestinationRows.push(label + " (OM " + om + ")");
+            if (pairRows.has(pairKey)) {
+              pairRows.get(pairKey).push(label);
+            } else {
+              pairRows.set(pairKey, [label]);
+            }
+            if (!importedOmDestinations.has(omKey)) importedOmDestinations.set(omKey, new Set());
+            importedOmDestinations.get(omKey).add(destinationKey);
+          });
+
+          pairRows.forEach((locations, pairKey) => {
+            if (locations.length > 1) duplicatePairs.push("OM " + pairKey.split("|")[0] + ": " + locations.join(", "));
+          });
+
+          importedOmDestinations.forEach((destinations, omKey) => {
+            const existingDestinations = existingOmDestinations.get(omKey) || new Set();
+            if (destinations.size > 1 || Array.from(destinations).some(d => existingDestinations.size && !existingDestinations.has(d))) {
+              repeatedOmDifferentDestination.add(omKey);
+            }
+          });
+
+          if (duplicatePairs.length) {
+            showToast("Importação cancelada: há OMs repetidas para o mesmo destino. " + duplicatePairs.slice(0, 4).join("; ") + (duplicatePairs.length > 4 ? "; e outras." : ""));
+            return;
+          }
+
+          const warningParts = [];
+          if (repeatedOmDifferentDestination.size) warningParts.push(repeatedOmDifferentDestination.size + " OM(s) aparecem com destinos diferentes; serão mantidas como ocorrências distintas.");
+          if (missingDestinationRows.length) warningParts.push(missingDestinationRows.length + " registro(s) sem destino exigem revisão manual: " + missingDestinationRows.slice(0, 5).join(", ") + (missingDestinationRows.length > 5 ? ", ..." : ""));
+          if (warningParts.length && !window.confirm("Atenção antes de importar:\n\n" + warningParts.join("\n\n") + "\n\nNenhum registro será descartado. Deseja continuar?")) return;
+
+          const existingMap = new Map();
+          state.oms.forEach(o => {
+            const key = [normalizeText(o.om), normalizeText(o.destino)].join("|");
+            if (!existingMap.has(key)) existingMap.set(key, []);
+            existingMap.get(key).push(o);
+          });
           const imported = [];
 
           rows.forEach(raw => {
@@ -3910,7 +3974,8 @@
               }
             }
 
-            const prev = existingMap.get([normalizeText(om), normalizeText(destino)].join("|"));
+            const previousMatches = existingMap.get([normalizeText(om), normalizeText(destino)].join("|")) || [];
+            const prev = previousMatches.length === 1 ? previousMatches[0] : null;
             imported.push({
               om,
               destino,
@@ -3956,7 +4021,8 @@
           populateDynamicFilters();
           renderAll();
           switchTab("maquinas");
-          showToast(`${imported.length} OMs importadas com sucesso!`);
+          const warningSuffix = missingDestinationRows.length ? " Atenção: " + missingDestinationRows.length + " sem destino para revisão." : "";
+          showToast(`${imported.length} OMs importadas com sucesso!${warningSuffix}`);
         } catch (err) {
           console.error(err);
           showToast("Erro ao ler arquivo Excel. Verifique o formato.");

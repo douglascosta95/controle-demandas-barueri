@@ -1702,7 +1702,7 @@
 
     async function syncConfigToCloud() {
       saveLocalConfig();
-      if (!state.cloudConnected || !state.cloudDb) return;
+      if (!state.cloudConnected || !state.cloudDb) return false;
       try {
         const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
         const cfgRef = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "config", "operator_pins");
@@ -1712,15 +1712,17 @@
           gradeCatalog: state.gradeCatalog,
           updatedAt: new Date().toISOString()
         }, { merge: true });
+        return true;
       } catch (err) {
         console.warn("Erro ao sincronizar equipe/PIN na nuvem:", err);
+        return false;
       }
     }
 
     async function syncToCloud() {
       saveLocalState();
-      await syncConfigToCloud();
-      if (!state.cloudConnected || !state.cloudDb) return;
+      const configSynced = await syncConfigToCloud();
+      if (!state.cloudConnected || !state.cloudDb) return false;
       try {
         const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
         const dayRef = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "demandas_dias", state.date);
@@ -1729,8 +1731,10 @@
           auditLog: state.auditLog.slice(0, 500),
           updatedAt: new Date().toISOString()
         }, { merge: true });
+        return configSynced;
       } catch (err) {
         console.warn("Erro ao sincronizar nuvem:", err);
+        return false;
       }
     }
 
@@ -2615,11 +2619,11 @@
       }
       await syncConfigToCloud();
       pushAudit("CÓDIGOS SAP", "Código SAP cadastrado: " + name.trim() + " (" + code.trim() + ")");
-      await syncToCloud();
+      const cloudSynced = await syncToCloud();
       document.getElementById("sap-name-input").value = "";
       document.getElementById("sap-code-input").value = "";
       renderSapCatalog();
-      showToast("Código SAP cadastrado e sincronizado.");
+      showToast(cloudSynced ? "Código SAP cadastrado e sincronizado na nuvem." : "Código SAP salvo localmente, mas a sincronização com a nuvem não foi confirmada.");
     }
 
     async function handleSapBulkImport() {
@@ -2641,9 +2645,9 @@
       });
       await syncConfigToCloud();
       if (added) pushAudit("CÓDIGOS SAP", "Importação em lote: " + added + " novos códigos; " + skipped + " já existentes; " + invalid + " linhas inválidas.");
-      await syncToCloud();
+      const cloudSynced = await syncToCloud();
       renderSapCatalog();
-      showToast(`Importação concluída: ${added} novos, ${skipped} já existentes, ${invalid} linhas ignoradas.`);
+      showToast(`${cloudSynced ? "Importação sincronizada" : "Importação salva localmente; sincronização não confirmada"}: ${added} novos, ${skipped} já existentes, ${invalid} linhas ignoradas.`);
     }
 
     async function removeSapEntry(index) {
@@ -2674,10 +2678,10 @@
       state.selectedMaqOperators.add(rawName);
       input.value = "";
       pushAudit("EQUIPE", `Colaborador ${rawName} adicionado`);
-      await syncToCloud();
+      const cloudSynced = await syncToCloud();
       renderTeamModalList();
       renderAll();
-      showToast(`${rawName} adicionado(a) à equipe e salvo no banco!`);
+      showToast(cloudSynced ? `${rawName} adicionado(a) à equipe e sincronizado(a) na nuvem.` : `${rawName} adicionado(a) localmente; sincronização com a nuvem não confirmada.`);
     }
 
     async function handleRemoveOperator(opName) {
@@ -2697,10 +2701,10 @@
       }
 
       pushAudit("EQUIPE", `Colaborador ${opName} removido`);
-      await syncToCloud();
+      const cloudSynced = await syncToCloud();
       renderTeamModalList();
       renderAll();
-      showToast(`${opName} removido(a) da equipe.`);
+      showToast(cloudSynced ? `${opName} removido(a) e sincronizado(a) na nuvem.` : `${opName} removido(a) localmente; sincronização com a nuvem não confirmada.`);
     }
 
     // ==================== AUTH / PIN SYSTEM ====================
@@ -3475,12 +3479,12 @@
       state.gradeCatalog.sort((a, b) => String(a[0]).localeCompare(String(b[0]), "pt-BR"));
       rebuildGradeLookup();
       pushAudit("BASE GRADE", (isEdit ? "Cadastro atualizado: " : "Nova base cadastrada: ") + values[0]);
-      await syncToCloud();
+      const cloudSynced = await syncToCloud();
       clearGradeForm();
       renderGrade();
       populateDynamicFilters();
       renderAll();
-      showToast(isEdit ? "Base atualizada e sincronizada." : "Nova base cadastrada e sincronizada.");
+      showToast(cloudSynced ? (isEdit ? "Base atualizada e sincronizada na nuvem." : "Nova base cadastrada e sincronizada na nuvem.") : "Alteração salva localmente, mas a sincronização com a nuvem não foi confirmada.");
     }
 
     // ==================== RENDER GRADE ====================

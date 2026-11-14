@@ -25,11 +25,11 @@ jobs:
           node --input-type=commonjs -e '
             const fs = require("fs");
             const html = fs.readFileSync("index.html", "utf8");
-            const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)];
+            const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
             let checked = 0;
             for (const [, attrs, source] of scripts) {
-              if (/\\bsrc\\s*=/.test(attrs)) continue;
-              const extension = /\\btype=["\\x27]module["\\x27]/i.test(attrs) ? "mjs" : "js";
+              if (/\bsrc\s*=/.test(attrs)) continue;
+              const extension = /\btype=["\x27]module["\x27]/i.test(attrs) ? "mjs" : "js";
               const file = ".inline-check-" + checked + "." + extension;
               fs.writeFileSync(file, source);
               checked++;

@@ -1658,6 +1658,7 @@
 
     // ==================== CLOUD & LOCAL STORAGE ====================
     const STORAGE_KEY_PREFIX = "cd_barueri_demandas_v3_";
+    const CLOUD_BASE_STORAGE_PREFIX = "cd_barueri_cloud_base_v1_";
     const CONFIG_STORAGE_KEY = "cd_barueri_team_config_v1";
     const USER_ROLES = Object.freeze({
       ADMIN: "admin",
@@ -1761,6 +1762,24 @@
       return null;
     }
 
+    // Keep the last server-confirmed snapshot separate from editable local state.
+    // Cached snapshots and writes still pending in Firestore are not valid baselines.
+    function saveCloudBaseState(dateStr, data) {
+      if (!dateStr || !data || !Array.isArray(data.oms)) return false;
+      try {
+        const baseline = {
+          oms: ensureRecordIds(data.oms, dateStr),
+          auditLog: ensureAuditEventIds(Array.isArray(data.auditLog) ? data.auditLog.slice(0, 500) : [], dateStr),
+          confirmedAt: new Date().toISOString()
+        };
+        localStorage.setItem(CLOUD_BASE_STORAGE_PREFIX + dateStr, JSON.stringify(baseline));
+        return true;
+      } catch (e) {
+        console.warn("Não foi possível guardar a versão-base confirmada:", e);
+        return false;
+      }
+    }
+
     async function performSyncConfigToCloud() {
       saveLocalConfig();
       if (!state.cloudConnected || !state.cloudDb) return false;
@@ -1830,6 +1849,9 @@
         if (snap.exists()) {
           const data = snap.data();
           if (Array.isArray(data.oms)) {
+            if (snap.metadata && snap.metadata.fromCache === false && snap.metadata.hasPendingWrites === false) {
+              saveCloudBaseState(dateStr, data);
+            }
             state.oms = ensureRecordIds(data.oms, dateStr);
             state.auditLog = Array.isArray(data.auditLog) ? ensureAuditEventIds(data.auditLog, dateStr) : state.auditLog;
             saveLocalState();
@@ -2428,6 +2450,7 @@
 
     // ==================== INSUMOS: HISTÓRICO E FRACIONAMENTO ====================
     const INSUMOS_STORAGE_PREFIX = "cd_barueri_insumos_v1_";
+    const INSUMOS_CLOUD_BASE_PREFIX = "cd_barueri_insumos_cloud_base_v1_";
     const INSUMOS_DATE_FILTER_KEY = "cd_barueri_insumos_selected_date_v1";
 
     function saveInsumosLocal() {
@@ -2440,6 +2463,21 @@
         const parsed = raw ? JSON.parse(raw) : [];
         return Array.isArray(parsed) ? ensureInsumoIds(parsed, dateStr) : [];
       } catch (e) { return []; }
+    }
+
+    function saveInsumosCloudBase(dateStr, rows) {
+      if (!dateStr || !Array.isArray(rows)) return false;
+      try {
+        const baseline = {
+          insumos: ensureInsumoIds(rows, dateStr),
+          confirmedAt: new Date().toISOString()
+        };
+        localStorage.setItem(INSUMOS_CLOUD_BASE_PREFIX + dateStr, JSON.stringify(baseline));
+        return true;
+      } catch (e) {
+        console.warn("Não foi possível guardar a versão-base confirmada dos insumos:", e);
+        return false;
+      }
     }
 
     function ensureInsumoIds(items, dateStr = state.insumosDate) {
@@ -2502,6 +2540,9 @@
         if (snap.exists()) {
           const data = snap.data();
           if (Array.isArray(data.insumos)) {
+            if (snap.metadata && snap.metadata.fromCache === false && snap.metadata.hasPendingWrites === false) {
+              saveInsumosCloudBase(dateStr, data.insumos);
+            }
             state.insumos = ensureInsumoIds(data.insumos, dateStr);
             saveInsumosLocal();
             renderInsumos();

@@ -194,6 +194,9 @@ module.exports = async (req, res) => {
 
     if (action === "resetPin") {
       if (username === "ADM") return reply(res, 400, { error: "A conta ADM principal não pode ter o PIN redefinido por aqui." });
+      if (actor.role === "operator" && username === actor.username) {
+        return reply(res, 403, { error: "Você não pode redefinir o PIN da própria conta por esta tela." });
+      }
       if (actor.role === "operator" && current.role !== "operator") {
         return reply(res, 403, { error: "Operadores só podem redefinir PINs de outras contas de Operador." });
       }
@@ -206,6 +209,9 @@ module.exports = async (req, res) => {
     }
     if (action === "setActive") {
       if (username === "ADM" && body.active === false) return reply(res, 400, { error: "A conta ADM principal não pode ser desativada por esta operação." });
+      if (actor.role === "operator" && username === actor.username) {
+        return reply(res, 403, { error: "Você não pode ativar ou desativar a própria conta." });
+      }
       if (actor.role === "operator" && current.role !== "operator") {
         return reply(res, 403, { error: "Operadores só podem ativar ou desativar outras contas de Operador." });
       }

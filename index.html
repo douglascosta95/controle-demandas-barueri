@@ -4777,7 +4777,7 @@
       };
       document.getElementById("comment-modal-close").addEventListener("click", closeCommentModal);
       document.getElementById("btn-comment-cancel").addEventListener("click", closeCommentModal);
-      document.getElementById("btn-comment-save").addEventListener("click", () => {
+      document.getElementById("btn-comment-save").addEventListener("click", async () => {
         if (!requireOperator()) return;
         const item = state.oms.find(x => x.recordId === state.editingCommentRecordId);
         if (!item) return;
@@ -4786,12 +4786,12 @@
         item.commentBy = state.currentUser?.username || state.currentOperator;
         item.updatedBy = state.currentUser?.username || state.currentOperator;
         pushAudit(item.om, item.pinned ? "Fixada com destaque/comentário" : "Comentário atualizado");
-        syncToCloud();
+        const cloudSynced = await syncToCloud();
         renderAll();
         closeCommentModal();
-        showToast(`Observação salva na OM ${item.om}!`);
+        showToast(cloudSynced ? `Observação da OM ${item.om} sincronizada na nuvem.` : `Observação da OM ${item.om} salva localmente; sincronização não confirmada.`);
       });
-      document.getElementById("btn-comment-clear").addEventListener("click", () => {
+      document.getElementById("btn-comment-clear").addEventListener("click", async () => {
         if (!requireOperator()) return;
         const item = state.oms.find(x => x.recordId === state.editingCommentRecordId);
         if (!item) return;
@@ -4800,10 +4800,10 @@
         item.commentBy = "";
         item.updatedBy = state.currentUser?.username || state.currentOperator;
         pushAudit(item.om, "Comentário removido e desafixada");
-        syncToCloud();
+        const cloudSynced = await syncToCloud();
         renderAll();
         closeCommentModal();
-        showToast(`Destaque removido da OM ${item.om}.`);
+        showToast(cloudSynced ? `Destaque da OM ${item.om} removido e sincronizado.` : `Destaque da OM ${item.om} removido localmente; sincronização não confirmada.`);
       });
       maqTbody.addEventListener("click", handleOperationalTableClick);
       emergTbody.addEventListener("click", handleOperationalTableClick);

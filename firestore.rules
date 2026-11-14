@@ -11,11 +11,11 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/cd_barueri_accounts/$(request.auth.token.username)).data.get('authVersion', 0) == request.auth.token.get('authVersion', 0);
     }
 
-    // Operational data: all authenticated operational profiles share the
-    // permissions agreed for this application.
+    // Operational data: Insumos remains suspended and is intentionally not
+    // included in the browser-accessible collection allowlist.
     match /artifacts/{appId}/public/data/{collection}/{document} {
       allow read, write: if hasValidAccount()
-        && collection in ['config', 'demandas_dias', 'insumos_dias'];
+        && collection in ['config', 'demandas_dias'];
     }
 
     // Account credentials are private and are accessed only by Firebase Admin

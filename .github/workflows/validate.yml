@@ -20,6 +20,27 @@ jobs:
       - name: Check serverless API JavaScript
         run: |
           find api -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Check inline JavaScript in application HTML
+        run: |
+          node --input-type=commonjs -e '
+            const fs = require("fs");
+            const html = fs.readFileSync("index.html", "utf8");
+            const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)];
+            let checked = 0;
+            for (const [, attrs, source] of scripts) {
+              if (/\\bsrc\\s*=/.test(attrs)) continue;
+              const extension = /\\btype=["\\x27]module["\\x27]/i.test(attrs) ? "mjs" : "js";
+              const file = ".inline-check-" + checked + "." + extension;
+              fs.writeFileSync(file, source);
+              checked++;
+            }
+            if (!checked) throw new Error("No inline scripts found to validate");
+          '
+          for file in .inline-check-*.js .inline-check-*.mjs; do
+            [ -f "$file" ] || continue
+            node --check "$file"
+          done
+          rm -f .inline-check-*.js .inline-check-*.mjs
       - name: Validate JSON configuration
         run: |
           node -e "JSON.parse(require('fs').readFileSync('package.json', 'utf8'))"

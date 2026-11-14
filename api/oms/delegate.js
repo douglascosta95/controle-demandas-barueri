@@ -182,7 +182,7 @@ module.exports = async function handler(req, res) {
         updatedAt: now.toDate().toISOString()
       });
 
-      return { recordId, om, targetUsername, targetName, previousTargetUid: previousUid };
+      return { recordId, om, targetUid, targetUsername, targetName, previousTargetUid: previousUid };
     });
 
     return res.status(200).json({ ok: true, delegation: result });

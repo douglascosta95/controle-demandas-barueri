@@ -1892,7 +1892,7 @@
           const data = snap.data();
           if (Array.isArray(data.oms)) {
             const isServerConfirmed = snap.metadata && snap.metadata.fromCache === false && snap.metadata.hasPendingWrites === false;
-            if (isServerConfirmed && !canApplyRemoteDaySnapshot(dateStr, data)) {
+            if (!canApplyRemoteDaySnapshot(dateStr, data)) {
               showToast("Há dados locais diferentes da última versão confirmada. Mantive seus dados locais para evitar sobrescrita; a sincronização precisa de reconciliação.");
               return;
             }
@@ -2605,7 +2605,7 @@
           const data = snap.data();
           if (Array.isArray(data.insumos)) {
             const isServerConfirmed = snap.metadata && snap.metadata.fromCache === false && snap.metadata.hasPendingWrites === false;
-            if (isServerConfirmed && !canApplyRemoteInsumosSnapshot(dateStr, data.insumos)) {
+            if (!canApplyRemoteInsumosSnapshot(dateStr, data.insumos)) {
               showToast("Há Insumos locais diferentes da última versão confirmada. Mantive os dados locais para evitar sobrescrita; será necessária reconciliação.");
               return;
             }

@@ -1357,6 +1357,35 @@
     let accountInactivityEventsBound = false;
     let lockedAccount = null;
 
+    // Track cloud writes so session and date transitions can safely wait for them.
+    const pendingCloudWrites = new Set();
+
+    function trackPendingCloudWrite(operation) {
+      const pending = Promise.resolve(operation);
+      pendingCloudWrites.add(pending);
+      pending.then(
+        () => pendingCloudWrites.delete(pending),
+        () => pendingCloudWrites.delete(pending)
+      );
+      return pending;
+    }
+
+    async function flushPendingCloudWrites(timeoutMs = 12000) {
+      const deadline = Date.now() + timeoutMs;
+      while (pendingCloudWrites.size) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) return false;
+        let timeoutId;
+        const completed = await Promise.race([
+          Promise.allSettled(Array.from(pendingCloudWrites)).then(() => true),
+          new Promise(resolve => { timeoutId = setTimeout(() => resolve(false), remaining); })
+        ]);
+        clearTimeout(timeoutId);
+        if (!completed) return false;
+      }
+      return true;
+    }
+
     // ==================== THEME (LIGHT / DARK MODE) ====================
     const THEME_STORAGE_KEY = "cd_barueri_theme_v1";
 
@@ -1728,7 +1757,7 @@
       return null;
     }
 
-    async function syncConfigToCloud() {
+    async function performSyncConfigToCloud() {
       saveLocalConfig();
       if (!state.cloudConnected || !state.cloudDb) return false;
       try {
@@ -1747,7 +1776,11 @@
       }
     }
 
-    async function syncToCloud() {
+    function syncConfigToCloud() {
+      return trackPendingCloudWrite(performSyncConfigToCloud());
+    }
+
+    async function performSyncToCloud() {
       // Capture a consistent day snapshot before the first await. The selected date
       // or live state may change while config synchronization is in progress.
       const dateToSync = state.date;
@@ -1773,6 +1806,10 @@
         console.warn("Erro ao sincronizar nuvem:", err);
         return false;
       }
+    }
+
+    function syncToCloud() {
+      return trackPendingCloudWrite(performSyncToCloud());
     }
 
     function subscribeCloudDay(dateStr) {
@@ -2392,7 +2429,7 @@
       });
     }
 
-    async function syncInsumosToCloud() {
+    async function performSyncInsumosToCloud() {
       // Capture the selected day, database and rows before the first await.
       // A date change or later edit must not redirect this write to another day.
       const dateToSync = state.insumosDate;
@@ -2411,6 +2448,10 @@
         console.warn("Erro ao sincronizar insumos:", err);
         return false;
       }
+    }
+
+    function syncInsumosToCloud() {
+      return trackPendingCloudWrite(performSyncInsumosToCloud());
     }
 
     function subscribeCloudInsumos(dateStr) {

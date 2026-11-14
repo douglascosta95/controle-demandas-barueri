@@ -1177,7 +1177,7 @@
         <div>
           <p class="text-[10px] font-bold tracking-widest uppercase text-purple-600">Acesso administrativo</p>
           <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Gestão de contas</h3>
-          <p class="text-xs text-slate-500 mt-1">Crie acessos individuais para Supervisores e Operadores.</p>
+          <p class="text-xs text-slate-500 mt-1">Gerencie acessos individuais conforme seu nível de permissão.</p>
         </div>
         <button id="accounts-modal-close" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
       </div>
@@ -1208,7 +1208,7 @@
         <h4 class="text-sm font-bold text-slate-800 dark:text-white mb-2">Contas cadastradas</h4>
         <div id="accounts-list" class="space-y-2"></div>
       </div>
-      <p class="text-[10px] text-slate-400">Versão de homologação: o PIN provisório e as permissões ainda são controlados no cliente.</p>
+      <p class="text-[10px] text-slate-400">Operadores podem criar e administrar contas de Operadores. A gestão de contas de Supervisor e ADM permanece restrita aos perfis administrativos.</p>
     </div>
   </div>
 
@@ -2347,7 +2347,7 @@
 
     // ==================== GESTÃO DE CONTAS (ADM E SUPERVISOR) ====================
     function canManageAccounts() {
-      return Boolean(state.currentUser && [USER_ROLES.ADMIN, USER_ROLES.SUPERVISOR].includes(state.currentUser.role));
+      return Boolean(state.currentUser);
     }
 
     function setAccountAdminControls() {
@@ -2359,6 +2359,10 @@
 
     function openAccountsModal() {
       if (!canManageAccounts()) return showToast("Seu perfil não permite gerenciar contas.");
+      const roleSelect = document.getElementById("account-new-role");
+      const supervisorOption = roleSelect.querySelector('option[value="supervisor"]');
+      if (supervisorOption) supervisorOption.disabled = state.currentUser.role === USER_ROLES.OPERATOR;
+      if (state.currentUser.role === USER_ROLES.OPERATOR) roleSelect.value = USER_ROLES.OPERATOR;
       const select = document.getElementById("account-new-operator");
       select.innerHTML = '<option value="">Sem vínculo operacional</option>';
       state.operators.forEach(name => {
@@ -2388,7 +2392,9 @@
         const status = user.active ? "Ativa" : "Desativada";
         const pinStatus = user.pinConfigured ? "PIN cadastrado" : "Aguardando primeiro acesso";
         const linked = user.operatorName ? " • " + escapeSapHtml(user.operatorName) : "";
-        const canManage = user.username !== "ADM" && (isAdmin() || user.username !== state.currentUser.username);
+        const canManage = user.username !== "ADM"
+          && user.username !== state.currentUser.username
+          && (isAdmin() || state.currentUser.role === USER_ROLES.SUPERVISOR || user.role === USER_ROLES.OPERATOR);
         return '<div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-700 p-3">' +
           '<div class="min-w-0"><div class="text-xs font-bold text-slate-800 dark:text-white">' + escapeSapHtml(user.username) + ' <span class="font-medium text-purple-600">· ' + (roleNames[user.role] || "Operador") + '</span></div>' +
           '<div class="text-[10px] text-slate-500 mt-1">' + status + ' • ' + pinStatus + linked + '</div></div>' +
@@ -2404,7 +2410,10 @@
       const operatorName = document.getElementById("account-new-operator").value || null;
       if (!/^[A-Z0-9._-]{2,30}$/.test(username)) return showToast("Use um usuário de 2 a 30 caracteres.");
       if (username === "ADM" || state.users[username]) return showToast("Esse usuário já existe ou é reservado.");
-      if (![USER_ROLES.OPERATOR, USER_ROLES.SUPERVISOR].includes(role)) return showToast("Perfil inválido.");
+      if (![USER_ROLES.OPERATOR, USER_ROLES.SUPERVISOR].includes(role)
+        || (state.currentUser.role === USER_ROLES.OPERATOR && role !== USER_ROLES.OPERATOR)) {
+        return showToast("Operadores só podem criar contas com perfil Operador.");
+      }
       if (operatorName && !state.operators.includes(operatorName)) return showToast("Colaborador operacional não encontrado.");
       try {
         const result = await authenticatedApi("/api/accounts", { action: "create", username, role, operatorName });
@@ -2564,7 +2573,7 @@
           ? authenticatedUser.operatorName : (username === "ADM" ? "ADM" : "");
         sessionStorage.setItem("cd_barueri_account", username);
 
-        if (["admin", "supervisor"].includes(state.currentUser.role)) {
+        if (canManageAccounts()) {
           try {
             const accountData = await authenticatedApi("/api/accounts", { action: "list" });
             state.users = normalizeUserAccounts(Object.fromEntries(accountData.accounts.map(account => [account.username, account])));
@@ -2732,7 +2741,7 @@
             ? lockedAccount.operatorName : (username === "ADM" ? "ADM" : ""));
         sessionStorage.setItem("cd_barueri_account", username);
 
-        if (["admin", "supervisor"].includes(state.currentUser.role)) {
+        if (canManageAccounts()) {
           try {
             const accountData = await authenticatedApi("/api/accounts", { action: "list" });
             state.users = normalizeUserAccounts(Object.fromEntries(accountData.accounts.map(account => [account.username, account])));

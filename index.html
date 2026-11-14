@@ -1780,6 +1780,48 @@
       }
     }
 
+    function stableSnapshotString(value) {
+      if (Array.isArray(value)) return "[" + value.map(stableSnapshotString).join(",") + "]";
+      if (value && typeof value === "object") {
+        return "{" + Object.keys(value).sort().map(key => JSON.stringify(key) + ":" + stableSnapshotString(value[key])).join(",") + "}";
+      }
+      return JSON.stringify(value);
+    }
+
+    // Refuse to replace local work when it differs from both the last confirmed
+    // baseline and the incoming server snapshot. Legacy local data without a
+    // baseline is treated as unverified and preserved rather than discarded.
+    function canApplyRemoteDaySnapshot(dateStr, remoteData) {
+      try {
+        const rawLocal = localStorage.getItem(STORAGE_KEY_PREFIX + dateStr);
+        if (rawLocal === null) return true;
+        const local = JSON.parse(rawLocal);
+        if (!local || !Array.isArray(local.oms)) return false;
+        const localSnapshot = {
+          oms: ensureRecordIds(local.oms, dateStr),
+          auditLog: ensureAuditEventIds(Array.isArray(local.auditLog) ? local.auditLog : [], dateStr)
+        };
+        const remoteSnapshot = {
+          oms: ensureRecordIds(remoteData.oms, dateStr),
+          auditLog: ensureAuditEventIds(Array.isArray(remoteData.auditLog) ? remoteData.auditLog : [], dateStr)
+        };
+        const localKey = stableSnapshotString(localSnapshot);
+        const remoteKey = stableSnapshotString(remoteSnapshot);
+        if (localKey === remoteKey) return true;
+        const rawBase = localStorage.getItem(CLOUD_BASE_STORAGE_PREFIX + dateStr);
+        if (!rawBase) return false;
+        const base = JSON.parse(rawBase);
+        const baseKey = stableSnapshotString({
+          oms: ensureRecordIds(base.oms, dateStr),
+          auditLog: ensureAuditEventIds(Array.isArray(base.auditLog) ? base.auditLog : [], dateStr)
+        });
+        return localKey === baseKey;
+      } catch (e) {
+        console.warn("Não foi possível comparar o estado local com a nuvem:", e);
+        return false;
+      }
+    }
+
     async function performSyncConfigToCloud() {
       saveLocalConfig();
       if (!state.cloudConnected || !state.cloudDb) return false;
@@ -1849,9 +1891,12 @@
         if (snap.exists()) {
           const data = snap.data();
           if (Array.isArray(data.oms)) {
-            if (snap.metadata && snap.metadata.fromCache === false && snap.metadata.hasPendingWrites === false) {
-              saveCloudBaseState(dateStr, data);
+            const isServerConfirmed = snap.metadata && snap.metadata.fromCache === false && snap.metadata.hasPendingWrites === false;
+            if (isServerConfirmed && !canApplyRemoteDaySnapshot(dateStr, data)) {
+              showToast("Há dados locais diferentes da última versão confirmada. Mantive seus dados locais para evitar sobrescrita; a sincronização precisa de reconciliação.");
+              return;
             }
+            if (isServerConfirmed) saveCloudBaseState(dateStr, data);
             state.oms = ensureRecordIds(data.oms, dateStr);
             state.auditLog = Array.isArray(data.auditLog) ? ensureAuditEventIds(data.auditLog, dateStr) : state.auditLog;
             saveLocalState();
@@ -2480,6 +2525,25 @@
       }
     }
 
+    function canApplyRemoteInsumosSnapshot(dateStr, remoteRows) {
+      try {
+        const rawLocal = localStorage.getItem(INSUMOS_STORAGE_PREFIX + dateStr);
+        if (rawLocal === null) return true;
+        const localRows = JSON.parse(rawLocal);
+        if (!Array.isArray(localRows)) return false;
+        const localKey = stableSnapshotString(ensureInsumoIds(localRows, dateStr));
+        const remoteKey = stableSnapshotString(ensureInsumoIds(remoteRows, dateStr));
+        if (localKey === remoteKey) return true;
+        const rawBase = localStorage.getItem(INSUMOS_CLOUD_BASE_PREFIX + dateStr);
+        if (!rawBase) return false;
+        const base = JSON.parse(rawBase);
+        return localKey === stableSnapshotString(ensureInsumoIds(base.insumos, dateStr));
+      } catch (e) {
+        console.warn("Não foi possível comparar Insumos locais com a nuvem:", e);
+        return false;
+      }
+    }
+
     function ensureInsumoIds(items, dateStr = state.insumosDate) {
       const occurrences = new Map();
       const used = new Set();
@@ -2540,9 +2604,12 @@
         if (snap.exists()) {
           const data = snap.data();
           if (Array.isArray(data.insumos)) {
-            if (snap.metadata && snap.metadata.fromCache === false && snap.metadata.hasPendingWrites === false) {
-              saveInsumosCloudBase(dateStr, data.insumos);
+            const isServerConfirmed = snap.metadata && snap.metadata.fromCache === false && snap.metadata.hasPendingWrites === false;
+            if (isServerConfirmed && !canApplyRemoteInsumosSnapshot(dateStr, data.insumos)) {
+              showToast("Há Insumos locais diferentes da última versão confirmada. Mantive os dados locais para evitar sobrescrita; será necessária reconciliação.");
+              return;
             }
+            if (isServerConfirmed) saveInsumosCloudBase(dateStr, data.insumos);
             state.insumos = ensureInsumoIds(data.insumos, dateStr);
             saveInsumosLocal();
             renderInsumos();

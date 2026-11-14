@@ -98,7 +98,7 @@ module.exports = async (req, res) => {
       if (!account.pinConfigured || !account.pinHash || !account.pinSalt || account.mustChangePin) {
         if (pin !== "0000") return reply(res, 401, { error: "Use o PIN provisório 0000 para configurar seu acesso." });
         if (!validPin(body.newPin) || body.newPin === "0000" || body.newPin !== body.confirmPin) return reply(res, 400, { error: "O novo PIN deve ter quatro dígitos, ser diferente de 0000 e estar confirmado." });
-        Object.assign(account, hashPin(body.newPin), { pinConfigured: true, mustChangePin: false, updatedAt: new Date().toISOString() });
+        Object.assign(account, hashPin(body.newPin), { pinConfigured: true, mustChangePin: false, authVersion: Number.isSafeInteger(account.authVersion) && account.authVersion >= 0 ? account.authVersion : 0, updatedAt: new Date().toISOString() });
       } else if (!verifyPin(pin, account.pinSalt, account.pinHash)) {
         await recordFailedLogin(username);
         return reply(res, 401, { error: "PIN incorreto." });
@@ -107,7 +107,8 @@ module.exports = async (req, res) => {
       await attemptRef(username).delete();
       await ref.set(account, { merge: true });
       const uid = "cdbarueri_" + username.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
-      const customToken = await auth.createCustomToken(uid, { username, role: account.role, operatorName: account.operatorName || null });
+      const authVersion = Number.isSafeInteger(account.authVersion) && account.authVersion >= 0 ? account.authVersion : 0;
+      const customToken = await auth.createCustomToken(uid, { username, role: account.role, operatorName: account.operatorName || null, authVersion });
       return reply(res, 200, { customToken, user: { username, role: account.role, operatorName: account.operatorName || null, mustChangePin: false } });
     }
 

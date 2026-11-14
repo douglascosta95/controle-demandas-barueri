@@ -1987,6 +1987,13 @@
         const committed = await fbFirestoreMod.runTransaction(dbToSync, async transaction => {
           const snap = await transaction.get(dayRef);
           const data = snap.exists() ? snap.data() : {};
+          if (!snap.exists() && baseSnapshot &&
+              (baseSnapshot.oms.length > 0 || baseSnapshot.auditLog.length > 0)) {
+            throw new Error("O documento da data não existe mais na nuvem, embora este navegador tenha uma versão-base com dados. Não recriei o documento para evitar sobrescrita; é necessária verificação administrativa.");
+          }
+          if (snap.exists() && !Array.isArray(data.oms)) {
+            throw new Error("O documento remoto não contém uma lista válida de OMs. Nenhuma alteração foi gravada.");
+          }
           const remoteOms = ensureRecordIds(Array.isArray(data.oms) ? data.oms : [], dateToSync);
           const remoteAudit = ensureAuditEventIds(Array.isArray(data.auditLog) ? data.auditLog : [], dateToSync);
           let base = baseSnapshot;

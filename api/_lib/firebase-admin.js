@@ -15,6 +15,15 @@ function getAdminApp() {
     throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON não contém JSON válido.");
   }
 
+  const expectedProjectId = process.env.VERCEL_ENV === "production"
+    ? "demanda-cd-barueri"
+    : process.env.VERCEL_ENV === "preview"
+      ? "cd-barueri---homologacao"
+      : null;
+  if (!serviceAccount.project_id || (expectedProjectId && serviceAccount.project_id !== expectedProjectId)) {
+    throw new Error("A credencial Firebase não corresponde ao projeto autorizado para este ambiente.");
+  }
+
   if (typeof serviceAccount.private_key === "string") {
     serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
   }

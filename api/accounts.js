@@ -27,9 +27,6 @@ function accountRef(username) { return admin.firestore(getAdminApp()).collection
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return reply(res, 405, { error: "Método não permitido." });
-  if (process.env.VERCEL_ENV !== "production") {
-    return reply(res, 409, { error: "A gestão de contas fica bloqueada fora de Production porque Preview compartilha o Firebase com a produção." });
-  }
   try {
     const actor = await requireIdentity(req);
     if (!["admin", "supervisor"].includes(actor.role)) {
@@ -50,11 +47,10 @@ module.exports = async (req, res) => {
       return reply(res, 200, { accounts });
     }
 
-    if (process.env.VERCEL_ENV !== "production") {
-      return reply(res, 409, { error: "A gestão de contas fica somente leitura no Preview, pois ele compartilha o Firebase com a produção." });
-    }
-
     if (action === "migrateLegacy") {
+      if (process.env.VERCEL_ENV !== "production") {
+        return reply(res, 409, { error: "A migração de contas legadas é exclusiva de Production." });
+      }
       if (actor.role !== "admin" || actor.username !== "ADM") {
         const error = new Error("Somente a conta ADM principal pode executar a migração.");
         error.status = 403;

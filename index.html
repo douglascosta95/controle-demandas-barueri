@@ -2183,7 +2183,7 @@
       const username = lockedAccount.username;
       const pin = pinInput.value.trim();
       errorEl.classList.add("hidden");
-      if (!/^\\d{4}$/.test(pin)) {
+      if (!/^\d{4}$/.test(pin)) {
         errorEl.textContent = "O PIN deve conter exatamente quatro números.";
         errorEl.classList.remove("hidden");
         return;

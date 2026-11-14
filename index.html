@@ -1788,6 +1788,126 @@
       return JSON.stringify(value);
     }
 
+    function loadCloudBaseState(dateStr) {
+      try {
+        const raw = localStorage.getItem(CLOUD_BASE_STORAGE_PREFIX + dateStr);
+        if (!raw) return null;
+        const base = JSON.parse(raw);
+        if (!base || !Array.isArray(base.oms) || !Array.isArray(base.auditLog)) return null;
+        return {
+          oms: ensureRecordIds(base.oms, dateStr),
+          auditLog: ensureAuditEventIds(base.auditLog, dateStr)
+        };
+      } catch (e) {
+        console.warn("Não foi possível ler a versão-base local:", e);
+        return null;
+      }
+    }
+
+    function snapshotField(record, key) {
+      return Object.prototype.hasOwnProperty.call(record, key)
+        ? { present: true, value: record[key] }
+        : { present: false };
+    }
+
+    function sameSnapshotField(a, b) {
+      return stableSnapshotString(a) === stableSnapshotString(b);
+    }
+
+    // Three-way merge by immutable recordId. Nested objects and arrays are
+    // atomic fields: if both sides change them differently, require review.
+    function mergeOmRecords(baseRows, localRows, remoteRows) {
+      const index = rows => {
+        if (!Array.isArray(rows)) throw new Error("Lista de OMs inválida.");
+        const map = new Map();
+        rows.forEach(row => {
+          const id = String(row && row.recordId || "").trim();
+          if (!id || map.has(id)) throw new Error("Há recordId ausente ou duplicado; sincronização interrompida.");
+          map.set(id, row);
+        });
+        return map;
+      };
+      const base = index(baseRows);
+      const local = index(localRows);
+      const remote = index(remoteRows);
+      const ids = new Set([...base.keys(), ...local.keys(), ...remote.keys()]);
+      const merged = [];
+      const conflicts = [];
+
+      ids.forEach(id => {
+        const b = base.get(id);
+        const l = local.get(id);
+        const r = remote.get(id);
+
+        if (!b) {
+          if (l && r && !sameSnapshotField(l, r)) {
+            conflicts.push({ recordId: id, field: "registro", reason: "inclusão simultânea divergente" });
+          } else if (l || r) {
+            merged.push({ ...(l || r) });
+          }
+          return;
+        }
+
+        if (!l && !r) return;
+        if (!l) {
+          if (!sameSnapshotField(r, b)) conflicts.push({ recordId: id, field: "registro", reason: "exclusão local versus edição remota" });
+          return;
+        }
+        if (!r) {
+          if (!sameSnapshotField(l, b)) conflicts.push({ recordId: id, field: "registro", reason: "exclusão remota versus edição local" });
+          return;
+        }
+
+        const result = {};
+        const keys = new Set([...Object.keys(b), ...Object.keys(l), ...Object.keys(r)]);
+        keys.forEach(key => {
+          if (key === "recordId") {
+            result[key] = id;
+            return;
+          }
+          const baseValue = snapshotField(b, key);
+          const localValue = snapshotField(l, key);
+          const remoteValue = snapshotField(r, key);
+          let chosen;
+          if (sameSnapshotField(localValue, baseValue)) chosen = remoteValue;
+          else if (sameSnapshotField(remoteValue, baseValue) || sameSnapshotField(localValue, remoteValue)) chosen = localValue;
+          else {
+            conflicts.push({ recordId: id, field: key, reason: "edição simultânea do mesmo campo" });
+            return;
+          }
+          if (chosen.present) result[key] = chosen.value;
+        });
+        merged.push(result);
+      });
+
+      return { ok: conflicts.length === 0, oms: conflicts.length ? null : merged, conflicts };
+    }
+
+    // Audit is append-only: union by eventId, reject collisions, newest first.
+    function mergeAuditEvents(localRows, remoteRows) {
+      const events = new Map();
+      const conflicts = [];
+      [localRows, remoteRows].forEach(rows => {
+        if (!Array.isArray(rows)) throw new Error("Histórico de auditoria inválido.");
+        rows.forEach(event => {
+          const id = String(event && event.eventId || "").trim();
+          if (!id) throw new Error("Evento de auditoria sem eventId; sincronização interrompida.");
+          if (events.has(id) && !sameSnapshotField(events.get(id), event)) {
+            conflicts.push({ eventId: id, reason: "eventId repetido com conteúdo diferente" });
+          } else {
+            events.set(id, event);
+          }
+        });
+      });
+      if (conflicts.length) return { ok: false, events: null, conflicts };
+      const merged = [...events.values()].sort((a, b) => {
+        const ta = Date.parse(a.timestamp || "") || 0;
+        const tb = Date.parse(b.timestamp || "") || 0;
+        return tb - ta;
+      }).slice(0, 500);
+      return { ok: true, events: merged, conflicts: [] };
+    }
+
     // Refuse to replace local work when it differs from both the last confirmed
     // baseline and the incoming server snapshot. Legacy local data without a
     // baseline is treated as unverified and preserved rather than discarded.
@@ -1846,29 +1966,77 @@
     }
 
     async function performSyncToCloud() {
-      // Capture a consistent day snapshot before the first await. The selected date
-      // or live state may change while config synchronization is in progress.
+      // Capture a consistent local version before any await. The transaction below
+      // always reads the latest server document before deciding what can be merged.
       const dateToSync = state.date;
       const dbToSync = state.cloudDb;
       const canSyncCloud = state.cloudConnected && !!dbToSync;
-      const omsSnapshot = JSON.parse(JSON.stringify(state.oms));
+      const omsSnapshot = JSON.parse(JSON.stringify(ensureRecordIds(state.oms, dateToSync)));
       const auditSnapshot = JSON.parse(JSON.stringify(ensureAuditEventIds(state.auditLog.slice(0, 500), dateToSync)));
+      const baseSnapshot = loadCloudBaseState(dateToSync);
       saveLocalState();
       if (!canSyncCloud) return false;
 
       const configSynced = await syncConfigToCloud();
       try {
+        if (typeof fbFirestoreMod.runTransaction !== "function") {
+          throw new Error("Transações do Firestore indisponíveis neste cliente.");
+        }
         const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
         const dayRef = fbFirestoreMod.doc(dbToSync, "artifacts", appId, "public", "data", "demandas_dias", dateToSync);
-        await fbFirestoreMod.setDoc(dayRef, {
-          oms: omsSnapshot,
-          auditLog: auditSnapshot,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
+        const committed = await fbFirestoreMod.runTransaction(dbToSync, async transaction => {
+          const snap = await transaction.get(dayRef);
+          const data = snap.exists() ? snap.data() : {};
+          const remoteOms = ensureRecordIds(Array.isArray(data.oms) ? data.oms : [], dateToSync);
+          const remoteAudit = ensureAuditEventIds(Array.isArray(data.auditLog) ? data.auditLog : [], dateToSync);
+          let base = baseSnapshot;
+
+          // Without a confirmed ancestor, only an empty document or an exact
+          // local/server match is safe to initialize. Never guess a legacy merge.
+          if (!base) {
+            const sameOms = sameSnapshotField(omsSnapshot, remoteOms);
+            const sameAudit = sameSnapshotField(auditSnapshot, remoteAudit);
+            if (snap.exists() && (!sameOms || !sameAudit)) {
+              throw new Error("Não há versão-base confirmada neste navegador. Mantive os dados locais e não gravei por cima da nuvem; aguarde a confirmação inicial ou solicite reconciliação.");
+            }
+            base = { oms: remoteOms, auditLog: remoteAudit };
+          }
+
+          const omsResult = mergeOmRecords(base.oms, omsSnapshot, remoteOms);
+          if (!omsResult.ok) {
+            const fields = [...new Set(omsResult.conflicts.slice(0, 3).map(item => item.field))].join(", ");
+            throw new Error("Conflito em OMs (" + fields + "). Nenhuma alteração foi gravada; revise os registros antes de sincronizar.");
+          }
+          const auditResult = mergeAuditEvents(auditSnapshot, remoteAudit);
+          if (!auditResult.ok) {
+            throw new Error("Conflito no histórico de auditoria. Nenhuma alteração foi gravada; os dados foram preservados.");
+          }
+
+          const mergedData = {
+            oms: omsResult.oms,
+            auditLog: auditResult.events,
+            updatedAt: new Date().toISOString()
+          };
+          transaction.set(dayRef, mergedData, { merge: true });
+          return mergedData;
+        });
+
+        // Persist only a server-committed baseline. Do not replace live state if
+        // the operator made further edits while the transaction was in flight.
+        saveCloudBaseState(dateToSync, committed);
+        if (dateToSync === state.date &&
+            sameSnapshotField(ensureRecordIds(state.oms, dateToSync), omsSnapshot) &&
+            sameSnapshotField(ensureAuditEventIds(state.auditLog, dateToSync), auditSnapshot)) {
+          state.oms = ensureRecordIds(committed.oms, dateToSync);
+          state.auditLog = ensureAuditEventIds(committed.auditLog, dateToSync);
+          saveLocalState();
+          renderAll();
+        }
         if (!configSynced) console.warn("Dados operacionais sincronizados, mas a configuração não foi confirmada.");
         return true;
       } catch (err) {
-        console.warn("Erro ao sincronizar nuvem:", err);
+        console.warn("Erro ao reconciliar/sincronizar nuvem:", err);
+        showToast(err && err.message ? err.message : "Não foi possível confirmar a sincronização. Os dados locais foram preservados.");
         return false;
       }
     }

@@ -1424,7 +1424,7 @@
 
     initTheme();
 
-    // Credenciais do projeto Firebase: demanda-cd-barueri
+    // Configurações públicas separadas por ambiente: Preview nunca usa o Firebase de produção.
     const FIREBASE_CONFIG_VERCEL = {
       apiKey: "AIzaSyDnM2kWjHO23mr9akhJZP34fDFQBfpgEu0",
       authDomain: "demanda-cd-barueri.firebaseapp.com",
@@ -1433,6 +1433,14 @@
       messagingSenderId: "85643219803",
       appId: "1:85643219803:web:299ed7aced8b339de49b7e",
       measurementId: "G-4HYYYJECP1"
+    };
+    const FIREBASE_CONFIG_PREVIEW = {
+      apiKey: "AIzaSyAGxuaEV0ZYoxnxrXo7-hITAz9HWzJvS3E",
+      authDomain: "cd-barueri---homologacao.firebaseapp.com",
+      projectId: "cd-barueri---homologacao",
+      storageBucket: "cd-barueri---homologacao.firebasestorage.app",
+      messagingSenderId: "258739600727",
+      appId: "1:258739600727:web:148d30bc2f32f29e61d212"
     };
 
     const DEFAULT_OPERATORS = ["BEATRIZ", "DOUGLAS", "GABI", "GISELE", "ITALO", "LEO", "LUANA", "NEUSA", "ORLANDA"];
@@ -2116,8 +2124,9 @@
       try {
         if (typeof __firebase_config !== "undefined" && __firebase_config) {
           cfg = typeof __firebase_config === "string" ? JSON.parse(__firebase_config) : __firebase_config;
-        } else if (FIREBASE_CONFIG_VERCEL && FIREBASE_CONFIG_VERCEL.apiKey && !FIREBASE_CONFIG_VERCEL.apiKey.includes("COLE_SUA")) {
-          cfg = FIREBASE_CONFIG_VERCEL;
+        } else {
+          const environmentConfig = isPreviewDeployment ? FIREBASE_CONFIG_PREVIEW : FIREBASE_CONFIG_VERCEL;
+          if (environmentConfig && environmentConfig.apiKey) cfg = environmentConfig;
         }
       } catch (e) { cfg = null; }
 
@@ -2158,13 +2167,6 @@
       const badge = document.getElementById("cloud-status-badge");
       const dot = document.getElementById("cloud-dot");
       const txt = document.getElementById("cloud-status-text");
-      if (isPreviewDeployment) {
-        state.cloudConnected = false;
-        badge.className = "px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5";
-        dot.className = "w-2 h-2 rounded-full bg-amber-500";
-        txt.textContent = "Preview isolado";
-        return;
-      }
       await fbAuthMod.signInWithCustomToken(fbAuth, customToken);
       // A migração de contas legadas deve ser iniciada manualmente após backup
       // completo e validação explícita; nunca durante o login.

@@ -1493,7 +1493,7 @@
       });
     }
 
-    function buildFullDrpOms() {
+    function buildFullDrpOms(dateStr = todayStr) {
       return ensureRecordIds(ALL_DRP_DATA.map(r => {
         const [om, destino, ct, uf, tipoRaw, modelo, tecnologia, risco, qtd, tim, vivo, claro, rawTipoChip] = r;
         const gr = lookupGrade(destino, uf);
@@ -1550,7 +1550,7 @@
           updatedBy: "",
           updatedAt: ""
         };
-      }), todayStr);
+      }), dateStr);
     }
 
     // ==================== STATE ====================
@@ -2709,8 +2709,10 @@
     let pendingUnlockRecordId = null;
     let pendingUnlockCallback = null;
 
-    function openPinModalForUnlock(om, callback) {
-      pendingUnlockRecordId = om;
+    function openPinModalForUnlock(recordId, callback) {
+      pendingUnlockRecordId = recordId;
+      const item = state.oms.find(x => x.recordId === recordId);
+      const om = item ? item.om : "";
       pendingUnlockCallback = callback;
       openPinModal(state.currentOperator, "verify");
       document.getElementById("pin-modal-title").textContent = `Destravar OM ${om} — ${state.currentOperator}`;
@@ -4364,7 +4366,7 @@
       dateInput.addEventListener("change", (e) => {
         state.date = e.target.value || todayStr;
         const saved = loadLocalState(state.date);
-        state.oms = saved ? saved.oms : buildFullDrpOms();
+        state.oms = saved ? saved.oms : buildFullDrpOms(state.date);
         state.auditLog = saved ? saved.auditLog : [];
         populateDynamicFilters();
         renderAll();
@@ -4509,7 +4511,7 @@
         if (!state.currentUser && ((field === "status" && isLockedStatus && !statusPinApproved) || (isLockedStatus && !item.unlocked))) {
           e.preventDefault();
           const requestedStatus = field === "status" ? el.value : null;
-          openPinModalForUnlock(om, () => {
+          openPinModalForUnlock(recordId, () => {
             item.unlocked = true;
             if (requestedStatus) {
               item.statusChangePinApproved = true;
@@ -4774,7 +4776,7 @@
 
       document.getElementById("btn-load-sample").addEventListener("click", () => {
         if (!requireOperator()) return;
-        state.oms = buildFullDrpOms();
+        state.oms = buildFullDrpOms(state.date);
         pushAudit("DRP", "Base padrão de 169 OMs restaurada");
         syncToCloud();
         populateDynamicFilters();
@@ -4833,7 +4835,7 @@
       loadLocalConfig();
       rebuildGradeLookup();
       const saved = loadLocalState(state.date);
-      state.oms = saved ? saved.oms : buildFullDrpOms();
+      state.oms = saved ? saved.oms : buildFullDrpOms(state.date);
       state.auditLog = saved ? saved.auditLog : [];
       try { state.insumosDate = localStorage.getItem(INSUMOS_DATE_FILTER_KEY) || state.date; } catch (e) { state.insumosDate = state.date; }
       populateDynamicFilters();

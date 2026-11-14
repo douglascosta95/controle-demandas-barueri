@@ -24,7 +24,6 @@ function accountRef(username) { return db().collection("cd_barueri_accounts").do
 
 function attemptRef(username) { return db().collection("cd_barueri_auth_attempts").doc(username); }
 async function checkLoginLock(username) {
-  if (process.env.VERCEL_ENV !== "production") return { locked: false };
   const ref = attemptRef(username);
   return db().runTransaction(async tx => {
     const snap = await tx.get(ref);
@@ -39,7 +38,6 @@ async function checkLoginLock(username) {
   });
 }
 async function recordFailedLogin(username) {
-  if (process.env.VERCEL_ENV !== "production") return { locked: false };
   const ref = attemptRef(username);
   return db().runTransaction(async tx => {
     const snap = await tx.get(ref);
@@ -56,9 +54,6 @@ async function recordFailedLogin(username) {
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return reply(res, 405, { error: "Método não permitido." });
-  if (process.env.VERCEL_ENV !== "production") {
-    return reply(res, 409, { error: "A autenticação fica bloqueada fora de Production para impedir acesso ao Firebase compartilhado." });
-  }
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
     const action = body.action || "login";
@@ -75,6 +70,9 @@ module.exports = async (req, res) => {
       const snap = await ref.get();
       let account = snap.exists ? snap.data() : null;
       if (!account) {
+        if (process.env.VERCEL_ENV === "preview") {
+          return reply(res, 403, { error: "Conta de homologação não cadastrada. Crie uma conta fictícia no ambiente isolado." });
+        }
         if (username !== "ADM") {
           return reply(res, 403, { error: "A conta principal ainda precisa concluir a migração dos acessos. Solicite ao ADM que entre primeiro." });
         }
@@ -98,9 +96,6 @@ module.exports = async (req, res) => {
       if (!["admin", "supervisor", "operator"].includes(account.role)) return reply(res, 403, { error: "Perfil inválido." });
 
       if (!account.pinConfigured || !account.pinHash || !account.pinSalt || account.mustChangePin) {
-        if (process.env.VERCEL_ENV !== "production") {
-          return reply(res, 409, { error: "A configuração ou troca inicial do PIN fica bloqueada no Preview para proteger as contas reais." });
-        }
         if (pin !== "0000") return reply(res, 401, { error: "Use o PIN provisório 0000 para configurar seu acesso." });
         if (!validPin(body.newPin) || body.newPin === "0000" || body.newPin !== body.confirmPin) return reply(res, 400, { error: "O novo PIN deve ter quatro dígitos, ser diferente de 0000 e estar confirmado." });
         Object.assign(account, hashPin(body.newPin), { pinConfigured: true, mustChangePin: false, updatedAt: new Date().toISOString() });
@@ -109,15 +104,14 @@ module.exports = async (req, res) => {
         return reply(res, 401, { error: "PIN incorreto." });
       }
 
-      if (process.env.VERCEL_ENV === "production") await attemptRef(username).delete();
-      if (process.env.VERCEL_ENV === "production") await ref.set(account, { merge: true });
+      await attemptRef(username).delete();
+      await ref.set(account, { merge: true });
       const uid = "cdbarueri_" + username.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
       const customToken = await auth.createCustomToken(uid, { username, role: account.role, operatorName: account.operatorName || null });
       return reply(res, 200, { customToken, user: { username, role: account.role, operatorName: account.operatorName || null, mustChangePin: false } });
     }
 
     if (action === "changePin") {
-      if (process.env.VERCEL_ENV !== "production") return reply(res, 409, { error: "A alteração de PIN fica bloqueada no Preview para proteger as contas reais." });
       const match = String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i);
       if (!match) return reply(res, 401, { error: "Sessão não informada." });
       const decoded = await requireIdentity(req);

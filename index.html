@@ -3928,7 +3928,7 @@
       if (!requireOperator()) return;
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const data = new Uint8Array(e.target.result);
           const wb = XLSX.read(data, { type: "array" });
@@ -4104,12 +4104,14 @@
 
           state.oms = ensureRecordIds(imported, state.date);
           pushAudit("DRP", `Importadas ${imported.length} OMs de ${file.name}`);
-          syncToCloud();
+          const cloudSynced = await syncToCloud();
           populateDynamicFilters();
           renderAll();
           switchTab("maquinas");
           const warningSuffix = missingDestinationRows.length ? " Atenção: " + missingDestinationRows.length + " sem destino para revisão." : "";
-          showToast(`${imported.length} OMs importadas com sucesso!${warningSuffix}`);
+          showToast(cloudSynced
+            ? `${imported.length} OMs importadas e sincronizadas na nuvem.${warningSuffix}`
+            : `${imported.length} OMs importadas localmente, mas a nuvem não confirmou a gravação. Verifique a conexão antes de encerrar.${warningSuffix}`);
         } catch (err) {
           console.error(err);
           showToast("Erro ao ler arquivo Excel. Verifique o formato.");

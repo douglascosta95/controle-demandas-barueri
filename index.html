@@ -2227,7 +2227,7 @@
 
     // ==================== GESTÃO DE CONTAS (ADM E SUPERVISOR) ====================
     function canManageAccounts() {
-      return Boolean(!isPreviewDeployment && state.currentUser && [USER_ROLES.ADMIN, USER_ROLES.SUPERVISOR].includes(state.currentUser.role));
+      return Boolean(state.currentUser && [USER_ROLES.ADMIN, USER_ROLES.SUPERVISOR].includes(state.currentUser.role));
     }
 
     function setAccountAdminControls() {
@@ -2444,7 +2444,7 @@
           ? authenticatedUser.operatorName : (username === "ADM" ? "ADM" : "");
         sessionStorage.setItem("cd_barueri_account", username);
 
-        if (["admin", "supervisor"].includes(state.currentUser.role) && !isPreviewDeployment) {
+        if (["admin", "supervisor"].includes(state.currentUser.role)) {
           try {
             const accountData = await authenticatedApi("/api/accounts", { action: "list" });
             state.users = normalizeUserAccounts(Object.fromEntries(accountData.accounts.map(account => [account.username, account])));
@@ -2612,7 +2612,7 @@
             ? lockedAccount.operatorName : (username === "ADM" ? "ADM" : ""));
         sessionStorage.setItem("cd_barueri_account", username);
 
-        if (["admin", "supervisor"].includes(state.currentUser.role) && !isPreviewDeployment) {
+        if (["admin", "supervisor"].includes(state.currentUser.role)) {
           try {
             const accountData = await authenticatedApi("/api/accounts", { action: "list" });
             state.users = normalizeUserAccounts(Object.fromEntries(accountData.accounts.map(account => [account.username, account])));

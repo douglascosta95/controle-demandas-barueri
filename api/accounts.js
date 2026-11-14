@@ -24,6 +24,7 @@ function cleanAccount(data) {
 }
 function validUsername(value) { return /^[A-Z0-9._-]{2,30}$/.test(value); }
 function accountRef(username) { return admin.firestore(getAdminApp()).collection("cd_barueri_accounts").doc(username); }
+function accountUid(username) { return "cdbarueri_" + String(username).toLowerCase().replace(/[^a-z0-9_-]/g, "_"); }
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return reply(res, 405, { error: "Método não permitido." });
@@ -187,6 +188,9 @@ module.exports = async (req, res) => {
 
     if (action === "resetPin") {
       if (username === "ADM") return reply(res, 400, { error: "A conta ADM principal não pode ter o PIN redefinido por aqui." });
+      // Invalidate existing sessions before issuing a provisional PIN.
+      // requireIdentity verifies revoked ID tokens on every protected API request.
+      await admin.auth(getAdminApp()).revokeRefreshTokens(accountUid(username));
       await ref.set({ ...hashPin("0000"), pinConfigured: true, mustChangePin: true, updatedAt: now }, { merge: true });
       return reply(res, 200, { ok: true, username, provisionalPin: "0000", mustChangePin: true });
     }

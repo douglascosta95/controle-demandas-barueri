@@ -2393,13 +2393,19 @@
     }
 
     async function syncInsumosToCloud() {
-      state.insumos = ensureInsumoIds(state.insumos, state.insumosDate);
+      // Capture the selected day, database and rows before the first await.
+      // A date change or later edit must not redirect this write to another day.
+      const dateToSync = state.insumosDate;
+      const dbToSync = state.cloudDb;
+      const canSyncCloud = state.cloudConnected && !!dbToSync;
+      const insumosSnapshot = JSON.parse(JSON.stringify(ensureInsumoIds(state.insumos, dateToSync)));
+      state.insumos = insumosSnapshot;
       saveInsumosLocal();
-      if (!state.cloudConnected || !state.cloudDb) return false;
+      if (!canSyncCloud) return false;
       try {
         const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
-        const ref = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "insumos_dias", state.insumosDate);
-        await fbFirestoreMod.setDoc(ref, { insumos: state.insumos, updatedAt: new Date().toISOString() }, { merge: true });
+        const ref = fbFirestoreMod.doc(dbToSync, "artifacts", appId, "public", "data", "insumos_dias", dateToSync);
+        await fbFirestoreMod.setDoc(ref, { insumos: insumosSnapshot, updatedAt: new Date().toISOString() }, { merge: true });
         return true;
       } catch (err) {
         console.warn("Erro ao sincronizar insumos:", err);

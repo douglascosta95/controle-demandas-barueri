@@ -2330,12 +2330,16 @@
 
     async function syncInsumosToCloud() {
       saveInsumosLocal();
-      if (!state.cloudConnected || !state.cloudDb) return;
+      if (!state.cloudConnected || !state.cloudDb) return false;
       try {
         const appId = typeof __app_id !== "undefined" ? __app_id : "cd-barueri-sp";
         const ref = fbFirestoreMod.doc(state.cloudDb, "artifacts", appId, "public", "data", "insumos_dias", state.insumosDate);
         await fbFirestoreMod.setDoc(ref, { insumos: state.insumos, updatedAt: new Date().toISOString() }, { merge: true });
-      } catch (err) { console.warn("Erro ao sincronizar insumos:", err); }
+        return true;
+      } catch (err) {
+        console.warn("Erro ao sincronizar insumos:", err);
+        return false;
+      }
     }
 
     function subscribeCloudInsumos(dateStr) {
@@ -2454,9 +2458,12 @@
       });
       state.insumos.push(...fresh);
       if (fresh.length) pushAudit("INSUMOS", fresh.length + " linhas importadas de " + sourceName);
-      await syncInsumosToCloud();
+      const cloudSynced = await syncInsumosToCloud();
       renderInsumos();
-      showToast(fresh.length + " linhas importadas de " + sourceName + "; " + (rows.length-fresh.length) + " duplicidades ignoradas.");
+      const importMessage = fresh.length + " linhas importadas de " + sourceName + "; " + (rows.length-fresh.length) + " duplicidades ignoradas.";
+      showToast(cloudSynced
+        ? importMessage + " Sincronização na nuvem confirmada."
+        : importMessage + " Salvo localmente; sincronização na nuvem não confirmada.");
     }
 
     function renderInsumos() {

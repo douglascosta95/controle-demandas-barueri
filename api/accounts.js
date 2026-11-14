@@ -30,13 +30,15 @@ module.exports = async (req, res) => {
   if (req.method !== "POST") return reply(res, 405, { error: "Método não permitido." });
   try {
     const actor = await requireIdentity(req);
-    if (!["admin", "supervisor"].includes(actor.role)) {
-      const error = new Error("Apenas ADM ou Supervisor podem administrar contas.");
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+    const action = String(body.action || "");
+    const isPrivileged = ["admin", "supervisor"].includes(actor.role);
+    const operatorAllowedActions = ["list", "create", "resetPin", "setActive"];
+    if (!isPrivileged && !(actor.role === "operator" && operatorAllowedActions.includes(action))) {
+      const error = new Error("Seu perfil não permite esta operação de gestão de contas.");
       error.status = 403;
       throw error;
     }
-    const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
-    const action = String(body.action || "");
     const username = String(body.username || "").trim().toUpperCase();
     const db = admin.firestore(getAdminApp());
     const ref = validUsername(username) ? db.collection("cd_barueri_accounts").doc(username) : null;
@@ -161,7 +163,10 @@ module.exports = async (req, res) => {
 
     if (action === "create") {
       const role = String(body.role || "operator");
-      if (!["supervisor", "operator"].includes(role)) return reply(res, 400, { error: "Perfil de conta inválido." });
+      if (!["supervisor", "operator"].includes(role)
+        || (actor.role === "operator" && role !== "operator")) {
+        return reply(res, 403, { error: "Operadores só podem criar contas com perfil Operador." });
+      }
       const existing = await ref.get();
       if (existing.exists) return reply(res, 409, { error: "Já existe uma conta com esse usuário." });
       const legacy = await db.doc("artifacts/cd-barueri-sp/public/data/config/operator_pins").get();
@@ -189,6 +194,9 @@ module.exports = async (req, res) => {
 
     if (action === "resetPin") {
       if (username === "ADM") return reply(res, 400, { error: "A conta ADM principal não pode ter o PIN redefinido por aqui." });
+      if (actor.role === "operator" && current.role !== "operator") {
+        return reply(res, 403, { error: "Operadores só podem redefinir PINs de outras contas de Operador." });
+      }
       // Invalidate existing sessions before issuing a provisional PIN.
       // requireIdentity verifies revoked ID tokens on every protected API request.
       await admin.auth(getAdminApp()).revokeRefreshTokens(accountUid(username));
@@ -198,6 +206,9 @@ module.exports = async (req, res) => {
     }
     if (action === "setActive") {
       if (username === "ADM" && body.active === false) return reply(res, 400, { error: "A conta ADM principal não pode ser desativada por esta operação." });
+      if (actor.role === "operator" && current.role !== "operator") {
+        return reply(res, 403, { error: "Operadores só podem ativar ou desativar outras contas de Operador." });
+      }
       await ref.set({ active: body.active === true, authVersion: (Number.isSafeInteger(current.authVersion) && current.authVersion >= 0 ? current.authVersion : 0) + 1, updatedAt: now }, { merge: true });
       return reply(res, 200, { account: cleanAccount({ ...current, active: body.active === true, updatedAt: now }) });
     }

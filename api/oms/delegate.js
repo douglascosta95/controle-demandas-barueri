@@ -40,7 +40,7 @@ module.exports = async function handler(req, res) {
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !recordId || !om ||
         !/^[A-Z0-9._-]{2,30}$/.test(targetUsername) || !reason) {
-      return res.status(400).json({ error: "Informe data, OM, usuário destinatário e motivo." });
+      return res.status(400).json({ error: "Informe data, identificador da ocorrência, OM, usuário destinatário e motivo." });
     }
     if (targetUsername === actorUsername) {
       return res.status(400).json({ error: "A delegação deve ser destinada a outro usuário." });
@@ -105,6 +105,7 @@ module.exports = async function handler(req, res) {
       const event = {
         action: previousUid || previousName ? "reassigned" : "assigned",
         module: MODULE_KEY,
+        recordId,
         om,
         actorUid: actor.uid,
         actorUsername,
@@ -167,7 +168,7 @@ module.exports = async function handler(req, res) {
         updatedAt: now.toDate().toISOString()
       });
 
-      return { om, targetUsername, targetName, previousTargetUid: previousUid };
+      return { recordId, om, targetUsername, targetName, previousTargetUid: previousUid };
     });
 
     return res.status(200).json({ ok: true, delegation: result });

@@ -1865,6 +1865,7 @@
         if (!b) {
           if (l && r && !sameSnapshotField(l, r)) {
             conflicts.push({ recordId: id, field: "registro", reason: "inclusão simultânea divergente" });
+            merged.push({ ...l });
           } else if (l || r) {
             merged.push({ ...(l || r) });
           }
@@ -1877,7 +1878,10 @@
           return;
         }
         if (!r) {
-          if (!sameSnapshotField(l, b)) conflicts.push({ recordId: id, field: "registro", reason: "exclusão remota versus edição local" });
+          if (!sameSnapshotField(l, b)) {
+            conflicts.push({ recordId: id, field: "registro", reason: "exclusão remota versus edição local" });
+            merged.push({ ...l });
+          }
           return;
         }
 

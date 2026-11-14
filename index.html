@@ -2120,6 +2120,7 @@
               }
 
               let resolvedOms = mergedOms.oms;
+              let shouldSyncLocalResolution = false;
               if (mergedOms.conflicts.length) {
                 const remoteKey = stableSnapshotString(remoteSnapshot);
                 const promptKey = dateStr + ":" + remoteKey;
@@ -2135,7 +2136,13 @@
                     "\n\nOK: manter as alterações deste navegador.\nCancelar: aceitar a versão da nuvem para os campos conflitantes.\n\nAs alterações independentes serão mescladas automaticamente."
                   );
 
-                  if (!keepLocal) {
+                  if (keepLocal) {
+                    // The operator explicitly chose this browser's value.
+                    // After recording the server snapshot as the new baseline,
+                    // retry synchronization so the chosen local fields can be
+                    // committed through the normal Firestore transaction.
+                    shouldSyncLocalResolution = true;
+                  } else {
                     try {
                       const backupKey = "cd_barueri_recovery_v1_" + dateStr + "_" + Date.now();
                       localStorage.setItem(backupKey, JSON.stringify({
@@ -2174,6 +2181,11 @@
               state.auditLog = mergedAudit.events;
               saveLocalState();
               renderAll();
+              if (shouldSyncLocalResolution) {
+                syncToCloud().then(synced => {
+                  if (synced) showToast("Sua escolha foi sincronizada na nuvem.");
+                });
+              }
               if (mergedOms.conflicts.length) {
                 showToast("Conflito tratado: alterações independentes mescladas; confira o campo escolhido para a OM.");
               }

@@ -54,7 +54,10 @@ async function requireIdentity(req) {
       throw error;
     }
     const accountSnap = await admin.firestore(app).collection("cd_barueri_accounts").doc(username).get();
-    if (!accountSnap.exists || accountSnap.data().active === false || accountSnap.data().role !== role) {
+    const account = accountSnap.exists ? accountSnap.data() : null;
+    const accountVersion = account && Number.isSafeInteger(account.authVersion) && account.authVersion >= 0 ? account.authVersion : 0;
+    const tokenVersion = Number.isSafeInteger(decoded.authVersion) && decoded.authVersion >= 0 ? decoded.authVersion : 0;
+    if (!account || account.active === false || account.role !== role || accountVersion !== tokenVersion) {
       const error = new Error("Conta desativada ou perfil atualizado. Entre novamente.");
       error.status = 401;
       throw error;

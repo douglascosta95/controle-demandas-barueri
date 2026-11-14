@@ -147,7 +147,7 @@
 
     /* Adaptive Surfaces & Tables */
     html.dark .bg-white { background-color: var(--bg-surface) !important; }
-    html.dark .bg-slate-50, html.dark .bg-slate-50\/70, html.dark .bg-slate-50\/90 { background-color: var(--bg-surface-alt) !important; }
+    html.dark .bg-slate-50, html.dark .bg-slate-50/70, html.dark .bg-slate-50\/90 { background-color: var(--bg-surface-alt) !important; }
     .bg-slate-100 { background-color: var(--bg-table-head) !important; }
     html.dark .bg-slate-200 { background-color: #2e2152 !important; }
     .border-slate-100, .border-slate-200 { border-color: var(--border-main) !important; }
@@ -1121,6 +1121,34 @@
 
       <div class="flex justify-end pt-1">
         <button type="button" id="btn-team-modal-done" class="px-4 py-2 rounded-xl bg-purple-900 dark:bg-purple-700 hover:opacity-90 text-white text-xs font-bold cursor-pointer">Concluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: DELEGAÇÃO EMERGENCIAL ==================== -->
+  <div id="emergency-delegation-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs hidden items-center justify-center z-[70] p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-bold tracking-widest uppercase text-rose-600">Fila de Emergenciais</p>
+          <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Delegar ocorrência</h3>
+          <p id="emergency-delegation-subtitle" class="text-xs text-slate-500 mt-1"></p>
+        </div>
+        <button type="button" id="emergency-delegation-close" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <div>
+        <label for="emergency-delegation-target" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Destinatário (conta ativa)</label>
+        <select id="emergency-delegation-target" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-sm">
+          <option value="">Carregando contas...</option>
+        </select>
+      </div>
+      <div>
+        <label for="emergency-delegation-reason" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Motivo obrigatório</label>
+        <textarea id="emergency-delegation-reason" rows="3" maxlength="500" placeholder="Descreva por que esta OM está sendo transferida..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-sm"></textarea>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button type="button" id="emergency-delegation-cancel" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 text-xs font-bold">Cancelar</button>
+        <button type="button" id="emergency-delegation-submit" class="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-600 text-white text-xs font-bold">Confirmar delegação</button>
       </div>
     </div>
   </div>
@@ -3613,10 +3641,8 @@
                 <span class="px-2 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-200">${o.transporte}</span>
               </td>
               <td class="py-2.5 px-3 align-top">
-                <select data-field="colaborador" data-record-id="${o.recordId}" class="px-2 py-1 text-xs font-semibold rounded-lg border border-slate-300 bg-white">
-                  <option value="">-- Atribuir --</option>
-                  ${opChoices.map(op => `<option value="${op}" ${o.colaborador === op ? "selected" : ""}>${op}</option>`).join("")}
-                </select>
+                <div class="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">${escapeSapHtml(o.colaborador || "Sem responsável")}</div>
+                <button type="button" data-action="delegate-emergency" data-record-id="${o.recordId}" class="px-2.5 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-700 hover:text-white text-rose-800 text-[11px] font-bold">Delegar</button>
               </td>
               <td class="py-2.5 px-3 align-top">
                 <select data-field="status" data-record-id="${o.recordId}" class="px-2 py-1 text-xs font-bold rounded-lg border status-${statusKey} cursor-pointer">
@@ -4451,6 +4477,12 @@
       });
 
       // Gestão de contas (ADM)
+      document.getElementById("emergency-delegation-close").addEventListener("click", closeEmergencyDelegationModal);
+      document.getElementById("emergency-delegation-cancel").addEventListener("click", closeEmergencyDelegationModal);
+      document.getElementById("emergency-delegation-submit").addEventListener("click", submitEmergencyDelegation);
+      document.getElementById("emergency-delegation-modal").addEventListener("click", e => {
+        if (e.target.id === "emergency-delegation-modal") closeEmergencyDelegationModal();
+      });
       document.getElementById("btn-open-accounts-modal").addEventListener("click", openAccountsModal);
       document.getElementById("accounts-modal-close").addEventListener("click", closeAccountsModal);
       document.getElementById("btn-create-account").addEventListener("click", createAccount);
@@ -4605,6 +4637,87 @@
         }
         copyToClipboard(formatZebraBatch(list), `${list.length} etiquetas emergenciais copiadas (formato Excel 4x2)!`);
       });
+
+      let pendingEmergencyDelegationRecordId = null;
+
+      function closeEmergencyDelegationModal() {
+        const modal = document.getElementById("emergency-delegation-modal");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+        pendingEmergencyDelegationRecordId = null;
+      }
+
+      async function openEmergencyDelegationModal(recordId) {
+        if (!requireOperator()) return;
+        const item = state.oms.find(entry => entry.recordId === recordId);
+        if (!item || item.status === "CANCELADA" || !(item.isEmergencial || item.status === "EMERGENCIAL")) {
+          return showToast("Esta ocorrência não está mais ativa na fila de Emergenciais.");
+        }
+        pendingEmergencyDelegationRecordId = recordId;
+        document.getElementById("emergency-delegation-subtitle").textContent = "OM " + item.om + " • " + (item.destino || "Destino não informado");
+        document.getElementById("emergency-delegation-reason").value = "";
+        const select = document.getElementById("emergency-delegation-target");
+        select.innerHTML = '<option value="">Carregando contas...</option>';
+        const modal = document.getElementById("emergency-delegation-modal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        try {
+          const result = await authenticatedApi("/api/oms/delegate", { action: "listTargets" });
+          if (pendingEmergencyDelegationRecordId !== recordId) return;
+          const accounts = Array.isArray(result.accounts) ? result.accounts : [];
+          select.innerHTML = '<option value="">Selecione uma conta...</option>' + accounts.map(account => {
+            const label = account.operatorName
+              ? account.username + " — " + account.operatorName + " (" + account.role + ")"
+              : account.username + " (" + account.role + ")";
+            return '<option value="' + escapeSapHtml(account.username) + '">' + escapeSapHtml(label) + '</option>';
+          }).join("");
+          if (!accounts.length) select.innerHTML = '<option value="">Nenhuma outra conta ativa disponível</option>';
+        } catch (error) {
+          select.innerHTML = '<option value="">Não foi possível carregar as contas</option>';
+          showToast(error.message || "Falha ao consultar destinatários.");
+        }
+      }
+
+      async function submitEmergencyDelegation() {
+        if (!requireOperator()) return;
+        const recordId = pendingEmergencyDelegationRecordId;
+        const item = state.oms.find(entry => entry.recordId === recordId);
+        const targetUsername = document.getElementById("emergency-delegation-target").value;
+        const reason = document.getElementById("emergency-delegation-reason").value.trim();
+        if (!item || !recordId) return showToast("Selecione novamente a ocorrência.");
+        if (!targetUsername) return showToast("Selecione a conta destinatária.");
+        if (!reason) return showToast("Informe o motivo da delegação.");
+        const button = document.getElementById("emergency-delegation-submit");
+        button.disabled = true;
+        button.textContent = "Enviando...";
+        try {
+          const result = await authenticatedApi("/api/oms/delegate", {
+            date: state.date,
+            recordId,
+            om: item.om,
+            targetUsername,
+            reason
+          });
+          const delegation = result.delegation || {};
+          const targetName = delegation.targetName || targetUsername;
+          const actor = state.currentUser?.username || "Usuário autenticado";
+          item.colaborador = targetName;
+          item.assignedToUid = delegation.targetUid || item.assignedToUid || null;
+          item.assignedToUsername = targetUsername;
+          item.assignedToNameSnapshot = targetName;
+          item.updatedBy = actor;
+          item.updatedAt = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+          pushAudit(item.om, "Delegação emergencial confirmada pelo servidor para " + targetName + ". Motivo: " + reason);
+          closeEmergencyDelegationModal();
+          renderAll();
+          showToast("OM " + item.om + " delegada para " + targetName + ".");
+        } catch (error) {
+          showToast(error.message || "Não foi possível delegar a ocorrência.");
+        } finally {
+          button.disabled = false;
+          button.textContent = "Confirmar delegação";
+        }
+      }
 
       // Handler unificado para Tabela Máquinas, Emergenciais e Canceladas
       const handleOperationalTableChange = (e) => {
@@ -4770,7 +4883,7 @@
         if (!item) return;
         const om = item.om;
 
-        if (action === "apply-sug") {
+        if (action === "delegate-emergency") {\n          openEmergencyDelegationModal(recordId);\n        } else if (action === "apply-sug") {
           if (!requireOperator()) return;
           item.vl = btn.dataset.sug;
           item.updatedBy = state.currentUser?.username || state.currentOperator;

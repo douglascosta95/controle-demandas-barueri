@@ -3987,7 +3987,8 @@
             }
 
             const previousMatches = existingMap.get([normalizeText(om), normalizeText(destino)].join("|")) || [];
-            const prev = previousMatches.length === 1 ? previousMatches[0] : null;
+            // Sem destino não há identidade suficiente para reaproveitar campos operacionais.
+            const prev = normalizeText(destino) && previousMatches.length === 1 ? previousMatches[0] : null;
             imported.push({
               om,
               destino,

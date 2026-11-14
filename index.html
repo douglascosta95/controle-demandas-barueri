@@ -4884,7 +4884,9 @@
         if (!item) return;
         const om = item.om;
 
-        if (action === "delegate-emergency") {\n          openEmergencyDelegationModal(recordId);\n        } else if (action === "apply-sug") {
+        if (action === "delegate-emergency") {
+          openEmergencyDelegationModal(recordId);
+        } else if (action === "apply-sug") {
           if (!requireOperator()) return;
           item.vl = btn.dataset.sug;
           item.updatedBy = state.currentUser?.username || state.currentOperator;

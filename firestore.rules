@@ -7,7 +7,8 @@ service cloud.firestore {
         && request.auth.token.role in ['admin', 'supervisor', 'operator']
         && exists(/databases/$(database)/documents/cd_barueri_accounts/$(request.auth.token.username))
         && get(/databases/$(database)/documents/cd_barueri_accounts/$(request.auth.token.username)).data.active == true
-        && get(/databases/$(database)/documents/cd_barueri_accounts/$(request.auth.token.username)).data.role == request.auth.token.role;
+        && get(/databases/$(database)/documents/cd_barueri_accounts/$(request.auth.token.username)).data.role == request.auth.token.role
+        && get(/databases/$(database)/documents/cd_barueri_accounts/$(request.auth.token.username)).data.get('authVersion', 0) == request.auth.token.get('authVersion', 0);
     }
 
     // Operational data: all authenticated operational profiles share the

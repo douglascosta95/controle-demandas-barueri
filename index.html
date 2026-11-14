@@ -1652,6 +1652,7 @@
       cloudConnected: false,
       cloudDb: null,
       cloudUnsub: null,
+      remoteConflictPromptKey: null,
       editingCommentRecordId: null,
       sapCatalog: [],
       gradeCatalog: GRADE_DATA.map(row => [...row]),
@@ -1895,14 +1896,16 @@
           else if (sameSnapshotField(remoteValue, baseValue) || sameSnapshotField(localValue, remoteValue)) chosen = localValue;
           else {
             conflicts.push({ recordId: id, field: key, reason: "edição simultânea do mesmo campo" });
-            return;
+            // Keep the local value provisionally. The snapshot handler will ask
+            // the operator which side to retain before finalizing this conflict.
+            chosen = localValue;
           }
           if (chosen.present) result[key] = chosen.value;
         });
         merged.push(result);
       });
 
-      return { ok: conflicts.length === 0, oms: conflicts.length ? null : merged, conflicts };
+      return { ok: conflicts.length === 0, oms: merged, conflicts };
     }
 
     // Audit is append-only: union by eventId, reject collisions, newest first.
@@ -2091,13 +2094,97 @@
           const data = snap.data();
           if (Array.isArray(data.oms)) {
             const isServerConfirmed = snap.metadata && snap.metadata.fromCache === false && snap.metadata.hasPendingWrites === false;
+            const localSnapshot = loadLocalState(dateStr) || {
+              oms: ensureRecordIds(state.oms, dateStr),
+              auditLog: ensureAuditEventIds(state.auditLog, dateStr)
+            };
+            const remoteSnapshot = {
+              oms: ensureRecordIds(data.oms, dateStr),
+              auditLog: ensureAuditEventIds(Array.isArray(data.auditLog) ? data.auditLog : [], dateStr)
+            };
+            const baseSnapshot = loadCloudBaseState(dateStr);
+
+            // A confirmed server snapshot can be three-way merged against the
+            // last confirmed baseline. Independent edits are combined; edits to
+            // the same field require an explicit local-vs-cloud decision.
+            if (isServerConfirmed && baseSnapshot) {
+              const mergedOms = mergeOmRecords(baseSnapshot.oms, localSnapshot.oms, remoteSnapshot.oms);
+              const mergedAudit = mergeAuditEvents(localSnapshot.auditLog, remoteSnapshot.auditLog);
+              if (!mergedAudit.ok) {
+                showToast("Conflito no histórico local. Mantive os dados atuais para evitar perda; é necessária reconciliação.");
+                return;
+              }
+
+              let resolvedOms = mergedOms.oms;
+              if (mergedOms.conflicts.length) {
+                const remoteKey = stableSnapshotString(remoteSnapshot);
+                const promptKey = dateStr + ":" + remoteKey;
+                if (state.remoteConflictPromptKey !== promptKey) {
+                  state.remoteConflictPromptKey = promptKey;
+                  const details = mergedOms.conflicts.slice(0, 5).map(conflict => {
+                    const row = localSnapshot.oms.find(item => item.recordId === conflict.recordId);
+                    return "OM " + (row?.om || conflict.recordId) + " — " + conflict.field;
+                  }).join("\n");
+                  const keepLocal = window.confirm(
+                    "Há alterações diferentes no mesmo campo entre este navegador e a nuvem:\n\n" +
+                    details + (mergedOms.conflicts.length > 5 ? "\n... e mais " + (mergedOms.conflicts.length - 5) + " conflito(s)." : "") +
+                    "\n\nOK: manter as alterações deste navegador.\nCancelar: aceitar a versão da nuvem para os campos conflitantes.\n\nAs alterações independentes serão mescladas automaticamente."
+                  );
+
+                  if (!keepLocal) {
+                    try {
+                      const backupKey = "cd_barueri_recovery_v1_" + dateStr + "_" + Date.now();
+                      localStorage.setItem(backupKey, JSON.stringify({
+                        oms: localSnapshot.oms,
+                        auditLog: localSnapshot.auditLog,
+                        savedAt: new Date().toISOString(),
+                        reason: "Backup automático antes de aceitar campos conflitantes da nuvem"
+                      }));
+                    } catch (backupError) {
+                      showToast("Não consegui criar uma cópia de segurança local. Mantive os dados atuais; libere espaço no navegador e tente novamente.");
+                      return;
+                    }
+
+                    const remoteById = new Map(remoteSnapshot.oms.map(item => [item.recordId, item]));
+                    const resolvedById = new Map(resolvedOms.map(item => [item.recordId, { ...item }]));
+                    mergedOms.conflicts.forEach(conflict => {
+                      if (conflict.field === "registro") {
+                        const remoteRow = remoteById.get(conflict.recordId);
+                        if (remoteRow) resolvedById.set(conflict.recordId, { ...remoteRow });
+                        else resolvedById.delete(conflict.recordId);
+                        return;
+                      }
+                      const target = resolvedById.get(conflict.recordId);
+                      const remoteRow = remoteById.get(conflict.recordId);
+                      if (!target || !remoteRow) return;
+                      if (Object.prototype.hasOwnProperty.call(remoteRow, conflict.field)) target[conflict.field] = remoteRow[conflict.field];
+                      else delete target[conflict.field];
+                    });
+                    resolvedOms = [...resolvedById.values()];
+                  }
+                }
+              }
+
+              saveCloudBaseState(dateStr, data);
+              state.oms = ensureRecordIds(resolvedOms, dateStr);
+              state.auditLog = mergedAudit.events;
+              saveLocalState();
+              renderAll();
+              if (mergedOms.conflicts.length) {
+                showToast("Conflito tratado: alterações independentes mescladas; confira o campo escolhido para a OM.");
+              }
+              return;
+            }
+
+            // Without a confirmed baseline, preserve the existing conservative
+            // behavior. Cached snapshots never become a merge baseline.
             if (!canApplyRemoteDaySnapshot(dateStr, data)) {
-              showToast("Há dados locais diferentes da última versão confirmada. Mantive seus dados locais para evitar sobrescrita; a sincronização precisa de reconciliação.");
+              showToast("Há dados locais sem versão-base confirmada. Mantive seus dados para evitar sobrescrita; é necessária reconciliação.");
               return;
             }
             if (isServerConfirmed) saveCloudBaseState(dateStr, data);
-            state.oms = ensureRecordIds(data.oms, dateStr);
-            state.auditLog = Array.isArray(data.auditLog) ? ensureAuditEventIds(data.auditLog, dateStr) : state.auditLog;
+            state.oms = remoteSnapshot.oms;
+            state.auditLog = remoteSnapshot.auditLog;
             saveLocalState();
             renderAll();
           }
